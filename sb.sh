@@ -61,48 +61,67 @@ else
 yellow "节点后缀文件无效，暂时使用主机名；可在菜单3-10重新设置。" >&2
 fi
 fi
+node_prefix=
+if [[ -f /etc/s-box/node_prefix.conf ]]; then
+saved=$(cat /etc/s-box/node_prefix.conf) || return 1
+if node_suffix_valid "$saved"; then
+node_prefix=$saved
+else
+yellow "节点前缀文件无效，暂时不加前缀；可在菜单3-10重新设置。" >&2
+fi
+fi
+node_prefix_label=${node_prefix:+${node_prefix}-}
+node_prefix_uri_label=$(jq -nr --arg prefix "$node_prefix_label" '$prefix | @uri') || return 1
 node_suffix_uri=$(jq -nr --arg suffix "$node_suffix" '$suffix | @uri')
 }
 
 change_node_suffix(){
-local action input tmp backup file
+local action input tmp backup file setting label
 node_suffix_load || return 1
+green "当前节点名称前缀：${node_prefix:-（无）}"
 green "当前节点名称后缀：$node_suffix"
+green "节点名称示例：${node_prefix_label}anytls-$node_suffix"
 yellow "1：设置自定义后缀"
 yellow "2：恢复使用服务器主机名"
+yellow "3：设置自定义前缀（加在协议名前）"
+yellow "4：清除前缀"
 yellow "0：返回上层"
-readp "请选择【0-2】：" action
+readp "请选择【0-4】：" action
 case "$action" in
-1)
-IFS= read -r -p "$(yellow '请输入后缀（1–48个字，允许中英文字母、数字、点、下划线、连字符；回车取消）：')" input || return 0
+1|3)
+if [[ $action == 1 ]]; then setting=node_suffix.conf; label=后缀; else setting=node_prefix.conf; label=前缀; fi
+IFS= read -r -p "$(yellow "请输入${label}（1–48个字，允许中英文字母、数字、点、下划线、连字符；回车取消）：")" input || return 0
 [[ -n $input ]] || { yellow "已取消，未修改。"; return 0; }
-node_suffix_valid "$input" || { red "后缀格式无效，未修改。"; return 1; }
+node_suffix_valid "$input" || { red "${label}格式无效，未修改。"; return 1; }
 ;;
-2) ;;
+2) setting=node_suffix.conf ;;
+4) setting=node_prefix.conf ;;
 0) changeserv; return $? ;;
 *) return 0 ;;
 esac
 # Back up only the setting and generated exports, not the running server config.
 backup=$(mktemp -d /etc/s-box/node-name.bak.XXXXXX) || return 1
-for file in node_suffix.conf sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt; do
+for file in node_prefix.conf node_suffix.conf sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt; do
 if [[ -f /etc/s-box/$file ]]; then
 cp -p "/etc/s-box/$file" "$backup/$file" || return 1
 fi
 done
-if [[ $action == 1 ]]; then
-tmp=$(mktemp /etc/s-box/node_suffix.tmp.XXXXXX) || return 1
-printf '%s\n' "$input" > "$tmp" && mv -f "$tmp" /etc/s-box/node_suffix.conf || { rm -f "$tmp"; return 1; }
+if [[ $action == 1 || $action == 3 ]]; then
+tmp=$(mktemp "/etc/s-box/${setting}.tmp.XXXXXX") || return 1
+printf '%s\n' "$input" > "$tmp" && mv -f "$tmp" "/etc/s-box/$setting" || { rm -f "$tmp"; return 1; }
 else
-rm -f /etc/s-box/node_suffix.conf || return 1
+rm -f "/etc/s-box/$setting" || return 1
 fi
 node_suffix_load || return 1
+green "节点名称前缀已设置为：${node_prefix:-（无）}"
 green "节点名称后缀已设置为：$node_suffix"
+green "节点名称示例：${node_prefix_label}anytls-$node_suffix"
 green "旧设置和导出文件备份：$backup"
 if sbshare > /dev/null; then
 green "节点分享链接、聚合订阅及Sing-box/Mihomo客户端配置已刷新。"
 yellow "本地订阅同步生效；Gitlab远端订阅请在菜单9-2刷新推送。客户端请重新拉取订阅。"
 else
-red "后缀已保存，但导出刷新失败；请查看错误并用菜单9重试。备份目录：$backup"
+red "节点名称设置已保存，但导出刷新失败；请查看错误并用菜单9重试。备份目录：$backup"
 return 1
 fi
 yellow "未修改服务器主机名、服务端配置、端口或凭据，也未重启服务。"
@@ -1191,7 +1210,7 @@ fi
 resvless(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$node_suffix_uri"
+vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${node_prefix_uri_label}vl-reality-$node_suffix_uri"
 echo "$vl_link" > /etc/s-box/vl_reality.txt
 red "🚀【 vless-reality-vision 】节点信息如下：" && sleep 2
 echo
@@ -1212,10 +1231,10 @@ white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 red "🚀【 vmess-ws(tls)+Argo 】临时节点信息如下(可选择3-8-3，自定义CDN优选地址)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'vm-argo-$node_suffix'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
+echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'${node_prefix_label}vm-argo-$node_suffix'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'vm-argo-$node_suffix'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argols.txt
+echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'${node_prefix_label}vm-argo-$node_suffix'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argols.txt
 qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_argols.txt)"
 fi
 if ps -ef 2>/dev/null | grep -q '[c]loudflared.*run'; then
@@ -1225,10 +1244,10 @@ white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 red "🚀【 vmess-ws(tls)+Argo 】固定节点信息如下 (可选择3-8-3，自定义CDN优选地址)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'vm-argo-$node_suffix'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
+echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'${node_prefix_label}vm-argo-$node_suffix'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'vm-argo-$node_suffix'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argogd.txt
+echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'${node_prefix_label}vm-argo-$node_suffix'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argogd.txt
 qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_argogd.txt)"
 fi
 echo
@@ -1236,10 +1255,10 @@ white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 red "🚀【 vmess-ws 】节点信息如下 (建议选择3-8-1，设置为CDN优选节点)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-$node_suffix'","tls":"","type":"none","v":"2"}' | base64 -w 0)${plain}"
+echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'${node_prefix_label}vm-ws-$node_suffix'","tls":"","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-$node_suffix'","tls":"","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws.txt
+echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'${node_prefix_label}vm-ws-$node_suffix'","tls":"","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws.txt
 qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws.txt)"
 else
 echo
@@ -1247,10 +1266,10 @@ white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 red "🚀【 vmess-ws-tls 】节点信息如下 (建议选择3-8-1，设置为CDN优选节点)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-tls-$node_suffix'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
+echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'${node_prefix_label}vm-ws-tls-$node_suffix'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-tls-$node_suffix'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_tls.txt
+echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'${node_prefix_label}vm-ws-tls-$node_suffix'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_tls.txt
 qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_tls.txt)"
 fi
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1260,8 +1279,8 @@ echo
 reshy2(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=0&allowInsecure=0$hyps&sni=$hy2_name&pinSHA256=$SHA256#hy2-$node_suffix_uri"
-#hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&allowInsecure=$ins_hy2$hyps&sni=$hy2_name#hy2-$node_suffix_uri"
+hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=0&allowInsecure=0$hyps&sni=$hy2_name&pinSHA256=$SHA256#${node_prefix_uri_label}hy2-$node_suffix_uri"
+#hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&allowInsecure=$ins_hy2$hyps&sni=$hy2_name#${node_prefix_uri_label}hy2-$node_suffix_uri"
 echo "$hy2_link" > /etc/s-box/hy2.txt
 red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
 echo
@@ -1277,7 +1296,7 @@ echo
 restu5(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-tuic5_link="tuic://$uuid:$uuid@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&insecure=$ins&allowInsecure=$ins&allow_insecure=$ins#tu5-$node_suffix_uri"
+tuic5_link="tuic://$uuid:$uuid@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&insecure=$ins&allowInsecure=$ins&allow_insecure=$ins#${node_prefix_uri_label}tu5-$node_suffix_uri"
 echo "$tuic5_link" > /etc/s-box/tuic5.txt
 red "🚀【 Tuic-v5 】节点信息如下：" && sleep 2
 echo
@@ -1293,7 +1312,7 @@ echo
 resan(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-an_link="anytls://$uuid@$sb_an_ip:$an_port?&sni=$an_name&allowInsecure=$ins_an&insecure=$ins_an#anytls-$node_suffix_uri"
+an_link="anytls://$uuid@$sb_an_ip:$an_port?&sni=$an_name&allowInsecure=$ins_an&insecure=$ins_an#${node_prefix_uri_label}anytls-$node_suffix_uri"
 echo "$an_link" > /etc/s-box/an.txt
 red "🚀【 Anytls】节点信息如下：" && sleep 2
 echo
@@ -1321,12 +1340,12 @@ fi
 
 sbany1(){
   if [[ "$sbnh" != "1.10" ]]; then
-    echo "\"anytls-$node_suffix\","
+    echo "\"${node_prefix_label}anytls-$node_suffix\","
   fi
 }
 clany1(){
   if [[ "$sbnh" != "1.10" ]]; then
-    echo "- anytls-$node_suffix"
+    echo "- ${node_prefix_label}anytls-$node_suffix"
   fi
 }
 sbany2(){
@@ -1334,7 +1353,7 @@ sbany2(){
     cat <<EOF
          {
             "type": "anytls",
-            "tag": "anytls-$node_suffix",
+            "tag": "${node_prefix_label}anytls-$node_suffix",
             "server": "$sb_an_ip",
             "server_port": $an_port,
             "password": "$uuid",
@@ -1353,7 +1372,7 @@ EOF
 clany2(){
   if [[ "$sbnh" != "1.10" ]]; then
     cat <<EOF
-- name: anytls-$node_suffix
+- name: ${node_prefix_label}anytls-$node_suffix
   type: anytls
   server: $cl_an_ip
   port: $an_port
@@ -1536,7 +1555,7 @@ cat <<EOF
   "outbounds": [
     {
       "type": "vless",
-      "tag": "vless-$node_suffix",
+      "tag": "${node_prefix_label}vless-$node_suffix",
       "server": "$server_ipcl",
       "server_port": $vl_port,
       "uuid": "$uuid",
@@ -1558,7 +1577,7 @@ cat <<EOF
 {
             "server": "$vmadd_local",
             "server_port": $vm_port,
-            "tag": "vmess-$node_suffix",
+            "tag": "${node_prefix_label}vmess-$node_suffix",
             "tls": {
                 "enabled": $tls,
                 "server_name": "$vm_name",
@@ -1584,7 +1603,7 @@ cat <<EOF
 
     {
         "type": "hysteria2",
-        "tag": "hy2-$node_suffix",
+        "tag": "${node_prefix_label}hy2-$node_suffix",
         "server": "$cl_hy2_ip",
         "server_port": $hy2_port,
 $(sbhy2ports)
@@ -1600,7 +1619,7 @@ $(sbhy2ports)
     },
         {
             "type":"tuic",
-            "tag": "tuic5-$node_suffix",
+            "tag": "${node_prefix_label}tuic5-$node_suffix",
             "server": "$cl_tu5_ip",
             "server_port": $tu5_port,
             "uuid": "$uuid",
@@ -1661,7 +1680,7 @@ dns:
     - "https://doh.pub/dns-query"
 
 proxies:
-- name: vless-reality-vision-$node_suffix
+- name: ${node_prefix_label}vless-reality-vision-$node_suffix
   type: vless
   server: $server_ipcl                           
   port: $vl_port                                
@@ -1676,7 +1695,7 @@ proxies:
     short-id: $short_id                      
   client-fingerprint: chrome                  
 
-- name: vmess-ws-$node_suffix
+- name: ${node_prefix_label}vmess-ws-$node_suffix
   type: vmess
   server: $vmadd_local                        
   port: $vm_port                                     
@@ -1692,7 +1711,7 @@ proxies:
     headers:
       Host: $vm_name                     
 
-- name: hysteria2-$node_suffix
+- name: ${node_prefix_label}hysteria2-$node_suffix
   type: hysteria2                                      
   server: $cl_hy2_ip                               
   port: $hy2_port
@@ -1704,7 +1723,7 @@ proxies:
   skip-cert-verify: $hy2_ins
   fast-open: true
 
-- name: tuic5-$node_suffix
+- name: ${node_prefix_label}tuic5-$node_suffix
   server: $cl_tu5_ip                      
   port: $tu5_port                                    
   type: tuic
@@ -1728,7 +1747,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 443,
-            "tag": "vmess-tls-argo固定-$node_suffix",
+            "tag": "${node_prefix_label}vmess-tls-argo固定-$node_suffix",
             "tls": {
                 "enabled": true,
                 "server_name": "$argogd",
@@ -1754,7 +1773,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 8880,
-            "tag": "vmess-argo固定-$node_suffix",
+            "tag": "${node_prefix_label}vmess-argo固定-$node_suffix",
             "tls": {
                 "enabled": false,
                 "server_name": "$argogd",
@@ -1780,7 +1799,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 443,
-            "tag": "vmess-tls-argo临时-$node_suffix",
+            "tag": "${node_prefix_label}vmess-tls-argo临时-$node_suffix",
             "tls": {
                 "enabled": true,
                 "server_name": "$argo",
@@ -1806,7 +1825,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 8880,
-            "tag": "vmess-argo临时-$node_suffix",
+            "tag": "${node_prefix_label}vmess-argo临时-$node_suffix",
             "tls": {
                 "enabled": false,
                 "server_name": "$argo",
@@ -1835,30 +1854,30 @@ $(sbany2)
 			"default": "auto",
             "outbounds": [
         "auto",
-        "vless-$node_suffix",
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix",
 $(sbany1)
-        "vmess-tls-argo固定-$node_suffix",
-        "vmess-argo固定-$node_suffix",
-        "vmess-tls-argo临时-$node_suffix",
-        "vmess-argo临时-$node_suffix"
+        "${node_prefix_label}vmess-tls-argo固定-$node_suffix",
+        "${node_prefix_label}vmess-argo固定-$node_suffix",
+        "${node_prefix_label}vmess-tls-argo临时-$node_suffix",
+        "${node_prefix_label}vmess-argo临时-$node_suffix"
             ]
         },
         {
             "tag": "auto",
             "type": "urltest",
             "outbounds": [
-        "vless-$node_suffix",
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix",
 $(sbany1)
-        "vmess-tls-argo固定-$node_suffix",
-        "vmess-argo固定-$node_suffix",
-        "vmess-tls-argo临时-$node_suffix",
-        "vmess-argo临时-$node_suffix"
+        "${node_prefix_label}vmess-tls-argo固定-$node_suffix",
+        "${node_prefix_label}vmess-argo固定-$node_suffix",
+        "${node_prefix_label}vmess-tls-argo临时-$node_suffix",
+        "${node_prefix_label}vmess-argo临时-$node_suffix"
             ],
             "url": "http://www.gstatic.com/generate_204",
             "interval": "10m",
@@ -1878,7 +1897,7 @@ $(clall)
 
 $(clany2)
 
-- name: vmess-tls-argo固定-$node_suffix
+- name: ${node_prefix_label}vmess-tls-argo固定-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 443                                     
@@ -1895,7 +1914,7 @@ $(clany2)
       Host: $argogd
 
 
-- name: vmess-argo固定-$node_suffix
+- name: ${node_prefix_label}vmess-argo固定-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 8880                                     
@@ -1911,7 +1930,7 @@ $(clany2)
     headers:
       Host: $argogd
 
-- name: vmess-tls-argo临时-$node_suffix
+- name: ${node_prefix_label}vmess-tls-argo临时-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 443                                     
@@ -1927,7 +1946,7 @@ $(clany2)
     headers:
       Host: $argo
 
-- name: vmess-argo临时-$node_suffix
+- name: ${node_prefix_label}vmess-argo临时-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 8880                                     
@@ -1950,15 +1969,15 @@ proxy-groups:
   interval: 300
   strategy: round-robin
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo固定-$node_suffix
-    - vmess-argo固定-$node_suffix
-    - vmess-tls-argo临时-$node_suffix
-    - vmess-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-argo临时-$node_suffix
 
 - name: 自动选择
   type: url-test
@@ -1966,15 +1985,15 @@ proxy-groups:
   interval: 300
   tolerance: 50
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo固定-$node_suffix
-    - vmess-argo固定-$node_suffix
-    - vmess-tls-argo临时-$node_suffix
-    - vmess-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-argo临时-$node_suffix
     
 - name: 🌍选择代理节点
   type: select
@@ -1982,15 +2001,15 @@ proxy-groups:
     - 负载均衡                                         
     - 自动选择
     - DIRECT
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo固定-$node_suffix
-    - vmess-argo固定-$node_suffix
-    - vmess-tls-argo临时-$node_suffix
-    - vmess-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-argo临时-$node_suffix
 rules:
   - GEOIP,LAN,DIRECT
   - GEOSITE,CN,DIRECT
@@ -2005,7 +2024,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 443,
-            "tag": "vmess-tls-argo临时-$node_suffix",
+            "tag": "${node_prefix_label}vmess-tls-argo临时-$node_suffix",
             "tls": {
                 "enabled": true,
                 "server_name": "$argo",
@@ -2031,7 +2050,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 8880,
-            "tag": "vmess-argo临时-$node_suffix",
+            "tag": "${node_prefix_label}vmess-argo临时-$node_suffix",
             "tls": {
                 "enabled": false,
                 "server_name": "$argo",
@@ -2060,26 +2079,26 @@ $(sbany2)
 			"default": "auto",
             "outbounds": [
         "auto",
-        "vless-$node_suffix",
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix",
 $(sbany1)
-        "vmess-tls-argo临时-$node_suffix",
-        "vmess-argo临时-$node_suffix"
+        "${node_prefix_label}vmess-tls-argo临时-$node_suffix",
+        "${node_prefix_label}vmess-argo临时-$node_suffix"
             ]
         },
         {
             "tag": "auto",
             "type": "urltest",
             "outbounds": [
-        "vless-$node_suffix",
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix",
 $(sbany1)
-        "vmess-tls-argo临时-$node_suffix",
-        "vmess-argo临时-$node_suffix"
+        "${node_prefix_label}vmess-tls-argo临时-$node_suffix",
+        "${node_prefix_label}vmess-argo临时-$node_suffix"
             ],
             "url": "http://www.gstatic.com/generate_204",
             "interval": "10m",
@@ -2106,7 +2125,7 @@ $(clall)
 
 $(clany2)
 
-- name: vmess-tls-argo临时-$node_suffix
+- name: ${node_prefix_label}vmess-tls-argo临时-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 443                                     
@@ -2122,7 +2141,7 @@ $(clany2)
     headers:
       Host: $argo
 
-- name: vmess-argo临时-$node_suffix
+- name: ${node_prefix_label}vmess-argo临时-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 8880                                     
@@ -2145,13 +2164,13 @@ proxy-groups:
   interval: 300
   strategy: round-robin
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo临时-$node_suffix
-    - vmess-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-argo临时-$node_suffix
 
 - name: 自动选择
   type: url-test
@@ -2159,13 +2178,13 @@ proxy-groups:
   interval: 300
   tolerance: 50
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo临时-$node_suffix
-    - vmess-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-argo临时-$node_suffix
     
 - name: 🌍选择代理节点
   type: select
@@ -2173,13 +2192,13 @@ proxy-groups:
     - 负载均衡                                         
     - 自动选择
     - DIRECT
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo临时-$node_suffix
-    - vmess-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo临时-$node_suffix
+    - ${node_prefix_label}vmess-argo临时-$node_suffix
 rules:
   - GEOIP,LAN,DIRECT
   - GEOSITE,CN,DIRECT
@@ -2194,7 +2213,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 443,
-            "tag": "vmess-tls-argo固定-$node_suffix",
+            "tag": "${node_prefix_label}vmess-tls-argo固定-$node_suffix",
             "tls": {
                 "enabled": true,
                 "server_name": "$argogd",
@@ -2220,7 +2239,7 @@ $(sbany2)
 {
             "server": "$vmadd_argo",
             "server_port": 8880,
-            "tag": "vmess-argo固定-$node_suffix",
+            "tag": "${node_prefix_label}vmess-argo固定-$node_suffix",
             "tls": {
                 "enabled": false,
                 "server_name": "$argogd",
@@ -2249,26 +2268,26 @@ $(sbany2)
 			"default": "auto",
             "outbounds": [
         "auto",
-        "vless-$node_suffix",
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix",
 $(sbany1)
-        "vmess-tls-argo固定-$node_suffix",
-        "vmess-argo固定-$node_suffix"
+        "${node_prefix_label}vmess-tls-argo固定-$node_suffix",
+        "${node_prefix_label}vmess-argo固定-$node_suffix"
             ]
         },
         {
             "tag": "auto",
             "type": "urltest",
             "outbounds": [
-        "vless-$node_suffix",
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix",
 $(sbany1)
-        "vmess-tls-argo固定-$node_suffix",
-        "vmess-argo固定-$node_suffix"
+        "${node_prefix_label}vmess-tls-argo固定-$node_suffix",
+        "${node_prefix_label}vmess-argo固定-$node_suffix"
             ],
             "url": "http://www.gstatic.com/generate_204",
             "interval": "10m",
@@ -2293,7 +2312,7 @@ $(clall)
 
 $(clany2)
 
-- name: vmess-tls-argo固定-$node_suffix
+- name: ${node_prefix_label}vmess-tls-argo固定-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 443                                     
@@ -2309,7 +2328,7 @@ $(clany2)
     headers:
       Host: $argogd
 
-- name: vmess-argo固定-$node_suffix
+- name: ${node_prefix_label}vmess-argo固定-$node_suffix
   type: vmess
   server: $vmadd_argo                        
   port: 8880                                     
@@ -2332,13 +2351,13 @@ proxy-groups:
   interval: 300
   strategy: round-robin
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo固定-$node_suffix
-    - vmess-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-argo固定-$node_suffix
 
 - name: 自动选择
   type: url-test
@@ -2346,13 +2365,13 @@ proxy-groups:
   interval: 300
   tolerance: 50
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo固定-$node_suffix
-    - vmess-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-argo固定-$node_suffix
     
 - name: 🌍选择代理节点
   type: select
@@ -2360,13 +2379,13 @@ proxy-groups:
     - 负载均衡                                         
     - 自动选择
     - DIRECT
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
-    - vmess-tls-argo固定-$node_suffix
-    - vmess-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-tls-argo固定-$node_suffix
+    - ${node_prefix_label}vmess-argo固定-$node_suffix
 rules:
   - GEOIP,LAN,DIRECT
   - GEOSITE,CN,DIRECT
@@ -2384,22 +2403,22 @@ $(sbany2)
 			"default": "auto",
             "outbounds": [
         "auto",
-        "vless-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
 $(sbany1)
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix"
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix"
             ]
         },
         {
             "tag": "auto",
             "type": "urltest",
             "outbounds": [
-        "vless-$node_suffix",
+        "${node_prefix_label}vless-$node_suffix",
 $(sbany1)
-        "vmess-$node_suffix",
-        "hy2-$node_suffix",
-        "tuic5-$node_suffix"
+        "${node_prefix_label}vmess-$node_suffix",
+        "${node_prefix_label}hy2-$node_suffix",
+        "${node_prefix_label}tuic5-$node_suffix"
             ],
             "url": "http://www.gstatic.com/generate_204",
             "interval": "10m",
@@ -2426,10 +2445,10 @@ proxy-groups:
   interval: 300
   strategy: round-robin
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
 
 - name: 自动选择
@@ -2438,10 +2457,10 @@ proxy-groups:
   interval: 300
   tolerance: 50
   proxies:
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
     
 - name: 🌍选择代理节点
@@ -2450,10 +2469,10 @@ proxy-groups:
     - 负载均衡                                         
     - 自动选择
     - DIRECT
-    - vless-reality-vision-$node_suffix
-    - vmess-ws-$node_suffix
-    - hysteria2-$node_suffix
-    - tuic5-$node_suffix
+    - ${node_prefix_label}vless-reality-vision-$node_suffix
+    - ${node_prefix_label}vmess-ws-$node_suffix
+    - ${node_prefix_label}hysteria2-$node_suffix
+    - ${node_prefix_label}tuic5-$node_suffix
     $(clany1)
 rules:
   - GEOIP,LAN,DIRECT
@@ -3188,7 +3207,7 @@ changeserv(){
 sbactive
 echo
 green "Sing-box配置变更选择如下:"
-readp "1：更换Reality域名伪装地址、切换自签证书与Acme域名证书、开关TLS\n2：更换全协议UUID(密码)、Vmess-Path路径\n3：设置Argo临时隧道、固定隧道\n4：切换IPV4或IPV6的代理优先级 (仅 1.10.7 内核可用)\n5：设置Telegram推送节点通知\n6：更换Warp-wireguard出站账户\n7：设置Gitlab订阅分享链接\n8：设置本地IP订阅分享链接\n9：设置所有Vmess节点的CDN优选地址\n10：设置节点名称后缀（默认主机名）\n0：返回上层\n请选择【0-10】：" menu
+readp "1：更换Reality域名伪装地址、切换自签证书与Acme域名证书、开关TLS\n2：更换全协议UUID(密码)、Vmess-Path路径\n3：设置Argo临时隧道、固定隧道\n4：切换IPV4或IPV6的代理优先级 (仅 1.10.7 内核可用)\n5：设置Telegram推送节点通知\n6：更换Warp-wireguard出站账户\n7：设置Gitlab订阅分享链接\n8：设置本地IP订阅分享链接\n9：设置所有Vmess节点的CDN优选地址\n10：设置节点名称前缀/后缀（默认无前缀、后缀为主机名）\n0：返回上层\n请选择【0-10】：" menu
 if [ "$menu" = "1" ];then
 changeym
 elif [ "$menu" = "2" ];then

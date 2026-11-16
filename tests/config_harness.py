@@ -102,7 +102,7 @@ cp key.pem private.key
 '''
 
 
-def generate_vps(source, directory, version="1.14", argo="none", client_version=None, hopping=False, suffix=None):
+def generate_vps(source, directory, version="1.14", argo="none", client_version=None, hopping=False, suffix=None, prefix=None):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     src = source.replace("/etc/s-box", bashpath(directory))
@@ -124,6 +124,8 @@ inssbjsonser
 '''
     if suffix is not None:
         script += "printf '%s\\n' " + "'" + suffix.replace("'", "'\"'\"'") + "' > node_suffix.conf\n"
+    if prefix is not None:
+        script += "printf '%s\\n' " + "'" + prefix.replace("'", "'\"'\"'") + "' > node_prefix.conf\n"
     if argo != "none":
         script += "jq '.inbounds[1].tls.enabled=false' sb.json > sb.tmp; mv sb.tmp sb.json\n"
     if hopping:

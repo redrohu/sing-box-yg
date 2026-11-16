@@ -215,6 +215,7 @@ serv00_server_profile config.json config.json ./test-core
         fixture = json.loads((ROOT / "tests/fixtures/original-clash-sha256.json").read_text(encoding="utf8"))
         for name, expected in fixture.items():
             template = function(self.sources["sb.sh"], name).replace("$node_suffix", "$hostname")
+            template = template.replace("${node_prefix_label}", "")
             template = "\n".join(line.rstrip() for line in template.splitlines()) + "\n"
             self.assertEqual(hashlib.sha256(template.encode()).hexdigest(), expected)
 
