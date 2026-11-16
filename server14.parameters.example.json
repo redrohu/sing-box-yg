@@ -1,0 +1,17 @@
+{
+  "domain": "vpn.your-domain.com",
+  "email": "admin@your-domain.com",
+  "cloudflare_api_token": "YOUR_CLOUDFLARE_API_TOKEN",
+  "reality_server": "one-piece.com",
+  "ports": {
+    "VLESS-Vision-Reality-in": 443,
+    "anytls-reality-in": 1443,
+    "shadowtls-in": 2443,
+    "naive-in": 3443,
+    "anytls-in": 4443,
+    "trojan-in": 5443,
+    "hysteria-in": 6443,
+    "tuic-in": 7443,
+    "shadowsocks2022-in": 8080
+  }
+}

@@ -1,4 +1,26 @@
 #!/bin/bash
+# New default: exact 1.14 template workflow; legacy functions below are opt-in only.
+if [[ "${1:-}" != "--legacy" ]]; then
+    sb14_lib="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/server14.sh"
+    sb14_download=''
+    if [[ ! -f "$sb14_lib" ]]; then
+        sb14_lib=$(mktemp) || exit 1
+        sb14_download="$sb14_lib"
+        trap 'rm -f -- "$sb14_download"' EXIT
+        curl -fLS --retry 2 -o "$sb14_lib" https://raw.githubusercontent.com/redrohu/sing-box-yg/main/server14.sh || exit 1
+    fi
+    if ! printf '%s  %s\n' '97a3a642f722d7782171c520abff2e66495025264e8d6ffd4401d6b5446793d9' "$sb14_lib" | sha256sum -c - >/dev/null; then
+        printf 'server14.sh 校验失败，请从同一版本重新获取 sb.sh 和 server14.sh。\n' >&2
+        exit 1
+    fi
+    bash "$sb14_lib" "$@"
+    exit $?
+fi
+shift
+if [[ -f /etc/s-box/sb.json ]] && grep -q '"VLESS-Vision-Reality-in"' /etc/s-box/sb.json; then
+    printf '当前配置采用 1.14 模板，禁止旧版五协议菜单改写；请去掉 --legacy。\n' >&2
+    exit 1
+fi
 export LANG=en_US.UTF-8
 red='\033[0;31m'
 green='\033[0;32m'

@@ -1,3 +1,14 @@
+## 此 fork 的默认服务端流程已变更
+
+默认 `bash sb.sh` 严格使用指定的 [1.14X/VPS/server.json](https://github.com/qichiyuhub/rule/blob/main/config/singbox/1.14X/VPS/server.json) 模板：**10 入站 + 内置 ACME/Cloudflare DNS-01**。
+不再混入 1.12 的 DNS/AI/WARP 规则。需要真实证书域名、邮箱及 Cloudflare API Token；只改动态部署参数。
+
+**安装、旧配置迁移、备份恢复及限制请先阅读 [SERVER14.md](SERVER14.md)。旧客户端配置不能直接沿用。**
+
+下方为最初 fork 的旧版说明。旧五协议流程只能通过 `bash sb.sh --legacy` 操作旧配置，不能用于新模板。
+
+---
+
 ### 一、Sing-box-yg精装桶一键五协议共存脚本（VPS专用）
 ### 二、Serv00/Hostuno-sb-yg多平台一键三协议共存脚本（Serv00/Hostuno专用）
 
