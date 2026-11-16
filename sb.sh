@@ -419,13 +419,81 @@ blue "已确认uuid (密码)：${uuid}"
 blue "已确认Vmess的path路径：${uuid}-vm"
 }
 
+sbjqw(){ # sbjqw 配置文件 jq参数... 过滤式：按过滤式改写配置，失败时保持原文件
+local f="$1"; shift
+[ -f "$f" ] || return 1
+local tmp
+tmp=$(mktemp 2>/dev/null) || return 1
+if jq "$@" "$f" > "$tmp" 2>/dev/null && [ -s "$tmp" ]; then
+cat "$tmp" > "$f"
+fi
+rm -f "$tmp"
+}
+sbjqall(){ # 对全部配置执行同一改写
+local f
+for f in $sbfiles; do
+sbjqw "$f" "$@"
+done
+}
+sbrfl(){ # sbrfl 出站tag：输出该出站的分流域名，格式 后缀域名|geosite
+local o="$1" d='' g=''
+if [ -n "$o" ] && [ -f /etc/s-box/sb.json ]; then
+d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r --arg o "$o" '[.route.rules[] | select(.outbound==$o) | (.domain_suffix // [])[]] | join(" ")' 2>/dev/null)
+g=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r --arg o "$o" '[.route.rules[] | select(.outbound==$o) | (.geosite // [])[]] | join(" ")' 2>/dev/null)
+fi
+echo "${d}|${g}"
+}
+sbdomjson(){ # 空格分隔的域名列表转为JSON数组，空则用占位域名
+if [ -z "$1" ]; then
+echo '["yg_kkk"]'
+else
+printf '%s
+' "$1" | tr ' ' '
+' | sed '/^$/d' | jq -R . | jq -s -c .
+fi
+}
+sbflsuf(){ # sbflsuf 文件 出站tag 域名列表：改写该出站的 domain_suffix
+sbjqw "$1" --arg o "$2" --argjson v "$(sbdomjson "$3")" '(.route.rules[] | select(.outbound==$o) | .domain_suffix) = $v'
+}
+sbflgeo(){ # 改写该出站的 geosite（仅1.10内核）
+sbjqw "$1" --arg o "$2" --argjson v "$(sbdomjson "$3")" '(.route.rules[] | select(.outbound==$o) | .geosite) = $v'
+}
+sbflres(){ # 改写resolve规则的domain_suffix（现代内核按IP优先解析分流域名）
+sbjqw "$1" --arg s "$2" --argjson v "$(sbdomjson "$3")" '(.route.rules[] | select(.action=="resolve" and .strategy==$s) | .domain_suffix) = $v'
+}
+
 inssbjsonser(){
 cat > /etc/s-box/sb10.json <<EOF
 {
-"log": {
+  "log": {
     "disabled": false,
     "level": "info",
     "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        "address": "8.8.8.8",
+        "detour": "direct"
+      },
+      {
+        "tag": "cloudflare",
+        "address": "1.1.1.1",
+        "detour": "direct"
+      }
+    ],
+    "rules": [
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "cloudflare"
+      }
+    ],
+    "final": "cloudflare",
+    "strategy": "$ipv"
   },
   "inbounds": [
     {
@@ -444,7 +512,7 @@ cat > /etc/s-box/sb10.json <<EOF
       "tls": {
         "enabled": true,
         "server_name": "${ym_vl_re}",
-          "reality": {
+        "reality": {
           "enabled": true,
           "handshake": {
             "server": "${ym_vl_re}",
@@ -455,227 +523,299 @@ cat > /etc/s-box/sb10.json <<EOF
         }
       }
     },
-{
-        "type": "vmess",
-        "sniff": true,
-        "sniff_override_destination": true,
-        "tag": "vmess-sb",
-        "listen": "::",
-        "listen_port": ${port_vm_ws},
-        "users": [
-            {
-                "uuid": "${uuid}",
-                "alterId": 0
-            }
-        ],
-        "transport": {
-            "type": "ws",
-            "path": "${uuid}-vm",
-            "max_early_data":2048,
-            "early_data_header_name": "Sec-WebSocket-Protocol"    
-        },
-        "tls":{
-                "enabled": ${tlsyn},
-                "server_name": "${ym_vm_ws}",
-                "certificate_path": "$certificatec_vmess_ws",
-                "key_path": "$certificatep_vmess_ws"
-            }
-    }, 
     {
-        "type": "hysteria2",
-        "sniff": true,
-        "sniff_override_destination": true,
-        "tag": "hy2-sb",
-        "listen": "::",
-        "listen_port": ${port_hy2},
-        "users": [
-            {
-                "password": "${uuid}"
-            }
-        ],
-        "ignore_client_bandwidth":false,
-        "tls": {
-            "enabled": true,
-            "alpn": [
-                "h3"
-            ],
-            "certificate_path": "$certificatec_hy2",
-            "key_path": "$certificatep_hy2"
-        }
-    },
+      "type": "vmess",
+      "sniff": true,
+      "sniff_override_destination": true,
+      "tag": "vmess-sb",
+      "listen": "::",
+      "listen_port": ${port_vm_ws},
+      "users": [
         {
-            "type":"tuic",
-            "sniff": true,
-            "sniff_override_destination": true,
-            "tag": "tuic5-sb",
-            "listen": "::",
-            "listen_port": ${port_tu},
-            "users": [
-                {
-                    "uuid": "${uuid}",
-                    "password": "${uuid}"
-                }
-            ],
-            "congestion_control": "bbr",
-            "tls":{
-                "enabled": true,
-                "alpn": [
-                    "h3"
-                ],
-                "certificate_path": "$certificatec_tuic",
-                "key_path": "$certificatep_tuic"
-            }
+          "uuid": "${uuid}",
+          "alterId": 0
         }
-],
-"outbounds": [
-{
-"type":"direct",
-"tag":"direct",
-"domain_strategy": "$ipv"
-},
-{
-"type":"direct",
-"tag": "vps-outbound-v4", 
-"domain_strategy":"prefer_ipv4"
-},
-{
-"type":"direct",
-"tag": "vps-outbound-v6",
-"domain_strategy":"prefer_ipv6"
-},
-{
-"type": "socks",
-"tag": "socks-out",
-"server": "127.0.0.1",
-"server_port": 40000,
-"version": "5"
-},
-{
-"type":"direct",
-"tag":"socks-IPv4-out",
-"detour":"socks-out",
-"domain_strategy":"prefer_ipv4"
-},
-{
-"type":"direct",
-"tag":"socks-IPv6-out",
-"detour":"socks-out",
-"domain_strategy":"prefer_ipv6"
-},
-{
-"type":"direct",
-"tag":"warp-IPv4-out",
-"detour":"wireguard-out",
-"domain_strategy":"prefer_ipv4"
-},
-{
-"type":"direct",
-"tag":"warp-IPv6-out",
-"detour":"wireguard-out",
-"domain_strategy":"prefer_ipv6"
-},
-{
-"type":"wireguard",
-"tag":"wireguard-out",
-"server":"$endip",
-"server_port":2408,
-"local_address":[
-"172.16.0.2/32",
-"${v6}/128"
-],
-"private_key":"$pvk",
-"peer_public_key":"bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
-"reserved":$res
-},
-{
-"type": "block",
-"tag": "block"
-}
-],
-"route":{
-"rules":[
-{
-"protocol": [
-"quic",
-"stun"
-],
-"outbound": "block"
-},
-{
-"outbound":"warp-IPv4-out",
-"domain_suffix": [
-"yg_kkk"
-]
-,"geosite": [
-"yg_kkk"
-]
-},
-{
-"outbound":"warp-IPv6-out",
-"domain_suffix": [
-"yg_kkk"
-]
-,"geosite": [
-"yg_kkk"
-]
-},
-{
-"outbound":"socks-IPv4-out",
-"domain_suffix": [
-"yg_kkk"
-]
-,"geosite": [
-"yg_kkk"
-]
-},
-{
-"outbound":"socks-IPv6-out",
-"domain_suffix": [
-"yg_kkk"
-]
-,"geosite": [
-"yg_kkk"
-]
-},
-{
-"outbound":"vps-outbound-v4",
-"domain_suffix": [
-"yg_kkk"
-]
-,"geosite": [
-"yg_kkk"
-]
-},
-{
-"outbound":"vps-outbound-v6",
-"domain_suffix": [
-"yg_kkk"
-]
-,"geosite": [
-"yg_kkk"
-]
-},
-{
-"outbound": "direct",
-"network": "udp,tcp"
-}
-]
-}
+      ],
+      "transport": {
+        "type": "ws",
+        "path": "${uuid}-vm",
+        "max_early_data": 2048,
+        "early_data_header_name": "Sec-WebSocket-Protocol"
+      },
+      "tls": {
+        "enabled": ${tlsyn},
+        "server_name": "${ym_vm_ws}",
+        "certificate_path": "$certificatec_vmess_ws",
+        "key_path": "$certificatep_vmess_ws"
+      }
+    },
+    {
+      "type": "hysteria2",
+      "sniff": true,
+      "sniff_override_destination": true,
+      "tag": "hy2-sb",
+      "listen": "::",
+      "listen_port": ${port_hy2},
+      "users": [
+        {
+          "password": "${uuid}"
+        }
+      ],
+      "ignore_client_bandwidth": false,
+      "tls": {
+        "enabled": true,
+        "alpn": [
+          "h3"
+        ],
+        "certificate_path": "$certificatec_hy2",
+        "key_path": "$certificatep_hy2"
+      }
+    },
+    {
+      "type": "tuic",
+      "sniff": true,
+      "sniff_override_destination": true,
+      "tag": "tuic5-sb",
+      "listen": "::",
+      "listen_port": ${port_tu},
+      "users": [
+        {
+          "uuid": "${uuid}",
+          "password": "${uuid}"
+        }
+      ],
+      "congestion_control": "bbr",
+      "tls": {
+        "enabled": true,
+        "alpn": [
+          "h3"
+        ],
+        "certificate_path": "$certificatec_tuic",
+        "key_path": "$certificatep_tuic"
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct",
+      "domain_strategy": "$ipv"
+    },
+    {
+      "type": "direct",
+      "tag": "vps-outbound-v4",
+      "domain_strategy": "prefer_ipv4"
+    },
+    {
+      "type": "direct",
+      "tag": "vps-outbound-v6",
+      "domain_strategy": "prefer_ipv6"
+    },
+    {
+      "type": "socks",
+      "tag": "socks-out",
+      "server": "127.0.0.1",
+      "server_port": 40000,
+      "version": "5"
+    },
+    {
+      "type": "direct",
+      "tag": "socks-IPv4-out",
+      "detour": "socks-out",
+      "domain_strategy": "prefer_ipv4"
+    },
+    {
+      "type": "direct",
+      "tag": "socks-IPv6-out",
+      "detour": "socks-out",
+      "domain_strategy": "prefer_ipv6"
+    },
+    {
+      "type": "direct",
+      "tag": "warp-IPv4-out",
+      "detour": "wireguard-out",
+      "domain_strategy": "prefer_ipv4"
+    },
+    {
+      "type": "direct",
+      "tag": "warp-IPv6-out",
+      "detour": "wireguard-out",
+      "domain_strategy": "prefer_ipv6"
+    },
+    {
+      "type": "wireguard",
+      "tag": "wireguard-out",
+      "server": "$endip",
+      "server_port": 2408,
+      "local_address": [
+        "172.16.0.2/32",
+        "${v6}/128"
+      ],
+      "private_key": "$pvk",
+      "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+      "reserved": $res
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
+    },
+    {
+      "type": "selector",
+      "tag": "proxy-out",
+      "outbounds": [
+        "direct",
+        "socks-IPv4-out",
+        "warp-IPv6-out"
+      ],
+      "default": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          {
+            "protocol": "dns"
+          }
+        ],
+        "outbound": "dns-out"
+      },
+      {
+        "protocol": [
+          "quic",
+          "stun"
+        ],
+        "outbound": "block"
+      },
+      {
+        "outbound": "warp-IPv4-out",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "geosite": [
+          "yg_kkk"
+        ]
+      },
+      {
+        "outbound": "warp-IPv6-out",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "geosite": [
+          "yg_kkk"
+        ]
+      },
+      {
+        "outbound": "socks-IPv4-out",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "geosite": [
+          "yg_kkk"
+        ]
+      },
+      {
+        "outbound": "socks-IPv6-out",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "geosite": [
+          "yg_kkk"
+        ]
+      },
+      {
+        "outbound": "vps-outbound-v4",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "geosite": [
+          "yg_kkk"
+        ]
+      },
+      {
+        "outbound": "vps-outbound-v6",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "geosite": [
+          "yg_kkk"
+        ]
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "geosite": [
+          "category-ai-!cn"
+        ],
+        "outbound": "proxy-out"
+      },
+      {
+        "outbound": "direct",
+        "network": "udp,tcp"
+      }
+    ],
+    "final": "direct",
+    "auto_detect_interface": true
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "path": "/etc/s-box/cache.db"
+    }
+  }
 }
 EOF
 
 cat > /etc/s-box/sb11.json <<EOF
 {
-"log": {
+  "log": {
     "disabled": false,
     "level": "info",
     "timestamp": true
   },
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        "type": "udp",
+        "server": "8.8.8.8"
+      },
+      {
+        "tag": "cloudflare",
+        "type": "udp",
+        "server": "1.1.1.1"
+      }
+    ],
+    "rules": [
+      {
+        "query_type": "HTTPS",
+        "action": "reject"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "cloudflare"
+      }
+    ],
+    "final": "cloudflare",
+    "strategy": "$ipv"
+  },
   "inbounds": [
     {
       "type": "vless",
-
-      
       "tag": "vless-sb",
       "listen": "::",
       "listen_port": ${port_vl_re},
@@ -688,7 +828,7 @@ cat > /etc/s-box/sb11.json <<EOF
       "tls": {
         "enabled": true,
         "server_name": "${ym_vl_re}",
-          "reality": {
+        "reality": {
           "enabled": true,
           "handshake": {
             "server": "${ym_vl_re}",
@@ -699,177 +839,282 @@ cat > /etc/s-box/sb11.json <<EOF
         }
       }
     },
-{
-        "type": "vmess",
-
- 
-        "tag": "vmess-sb",
-        "listen": "::",
-        "listen_port": ${port_vm_ws},
-        "users": [
-            {
-                "uuid": "${uuid}",
-                "alterId": 0
-            }
-        ],
-        "transport": {
-            "type": "ws",
-            "path": "${uuid}-vm",
-            "max_early_data":2048,
-            "early_data_header_name": "Sec-WebSocket-Protocol"    
-        },
-        "tls":{
-                "enabled": ${tlsyn},
-                "server_name": "${ym_vm_ws}",
-                "certificate_path": "$certificatec_vmess_ws",
-                "key_path": "$certificatep_vmess_ws"
-            }
-    }, 
     {
-        "type": "hysteria2",
-
- 
-        "tag": "hy2-sb",
-        "listen": "::",
-        "listen_port": ${port_hy2},
-        "users": [
-            {
-                "password": "${uuid}"
-            }
-        ],
-        "ignore_client_bandwidth":false,
-        "tls": {
-            "enabled": true,
-            "alpn": [
-                "h3"
-            ],
-            "certificate_path": "$certificatec_hy2",
-            "key_path": "$certificatep_hy2"
+      "type": "vmess",
+      "tag": "vmess-sb",
+      "listen": "::",
+      "listen_port": ${port_vm_ws},
+      "users": [
+        {
+          "uuid": "${uuid}",
+          "alterId": 0
         }
+      ],
+      "transport": {
+        "type": "ws",
+        "path": "${uuid}-vm",
+        "max_early_data": 2048,
+        "early_data_header_name": "Sec-WebSocket-Protocol"
+      },
+      "tls": {
+        "enabled": ${tlsyn},
+        "server_name": "${ym_vm_ws}",
+        "certificate_path": "$certificatec_vmess_ws",
+        "key_path": "$certificatep_vmess_ws"
+      }
     },
+    {
+      "type": "hysteria2",
+      "tag": "hy2-sb",
+      "listen": "::",
+      "listen_port": ${port_hy2},
+      "users": [
         {
-            "type":"tuic",
-
-     
-            "tag": "tuic5-sb",
-            "listen": "::",
-            "listen_port": ${port_tu},
-            "users": [
-                {
-                    "uuid": "${uuid}",
-                    "password": "${uuid}"
-                }
-            ],
-            "congestion_control": "bbr",
-            "tls":{
-                "enabled": true,
-                "alpn": [
-                    "h3"
-                ],
-                "certificate_path": "$certificatec_tuic",
-                "key_path": "$certificatep_tuic"
-            }
-        },
-        {
-            "type":"anytls",
-            "tag":"anytls-sb",
-            "listen":"::",
-            "listen_port":${port_an},
-            "users":[
-                {
-                  "password":"${uuid}"
-                }
-            ],
-            "padding_scheme":[],
-            "tls":{
-                "enabled": true,
-                "certificate_path": "$certificatec_an",
-                "key_path": "$certificatep_an"
-            }
+          "password": "${uuid}"
         }
-],
-"endpoints":[
-{
-"type":"wireguard",
-"tag":"warp-out",
-"address":[
-"172.16.0.2/32",
-"${v6}/128"
-],
-"private_key":"$pvk",
-"peers": [
-{
-"address": "$endip",
-"port":2408,
-"public_key":"bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
-"allowed_ips": [
-"0.0.0.0/0",
-"::/0"
-],
-"reserved":$res
-}
-]
-}
-],
-
-
-
-
-
-
-
-
-
-"outbounds": [
-{
-"type":"direct",
-"tag":"direct"
-},
-{
-"type": "socks",
-"tag": "socks-out",
-"server": "127.0.0.1",
-"server_port": 40000,
-"version": "5"
-}
-],
-"route":{
-"rules":[
-{
- "action": "sniff"
-},
-{
-"action": "resolve",
-"domain_suffix":[
-"yg_kkk"
-],
-"strategy": "prefer_ipv4"
-},
-{
-"action": "resolve",
-"domain_suffix":[
-"yg_kkk"
-],
-"strategy": "prefer_ipv6"
-},
-{
-"domain_suffix":[
-"yg_kkk"
-],
-"outbound":"socks-out"
-},
-{
-"domain_suffix":[
-"yg_kkk"
-],
-"outbound":"warp-out"
-},
-{
-"outbound": "direct",
-"network": "udp,tcp"
-}
-]
-}
+      ],
+      "ignore_client_bandwidth": false,
+      "tls": {
+        "enabled": true,
+        "alpn": [
+          "h3"
+        ],
+        "certificate_path": "$certificatec_hy2",
+        "key_path": "$certificatep_hy2"
+      }
+    },
+    {
+      "type": "tuic",
+      "tag": "tuic5-sb",
+      "listen": "::",
+      "listen_port": ${port_tu},
+      "users": [
+        {
+          "uuid": "${uuid}",
+          "password": "${uuid}"
+        }
+      ],
+      "congestion_control": "bbr",
+      "tls": {
+        "enabled": true,
+        "alpn": [
+          "h3"
+        ],
+        "certificate_path": "$certificatec_tuic",
+        "key_path": "$certificatep_tuic"
+      }
+    },
+    {
+      "type": "anytls",
+      "tag": "anytls-sb",
+      "listen": "::",
+      "listen_port": ${port_an},
+      "users": [
+        {
+          "password": "${uuid}"
+        }
+      ],
+      "padding_scheme": [],
+      "tls": {
+        "enabled": true,
+        "certificate_path": "$certificatec_an",
+        "key_path": "$certificatep_an"
+      }
+    }
+  ],
+  "endpoints": [
+    {
+      "type": "wireguard",
+      "tag": "warp-out",
+      "address": [
+        "172.16.0.2/32",
+        "${v6}/128"
+      ],
+      "private_key": "$pvk",
+      "peers": [
+        {
+          "address": "$endip",
+          "port": 2408,
+          "public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+          "allowed_ips": [
+            "0.0.0.0/0",
+            "::/0"
+          ],
+          "reserved": $res
+        }
+      ]
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "socks",
+      "tag": "socks-out",
+      "server": "127.0.0.1",
+      "server_port": 40000,
+      "version": "5"
+    },
+    {
+      "type": "selector",
+      "tag": "proxy-out",
+      "outbounds": [
+        "direct",
+        "socks-out",
+        "warp-out"
+      ],
+      "default": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff",
+        "sniffer": [
+          "http",
+          "tls",
+          "quic",
+          "dns"
+        ]
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          {
+            "protocol": "dns"
+          }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "action": "resolve",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "strategy": "prefer_ipv4"
+      },
+      {
+        "action": "resolve",
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "strategy": "prefer_ipv6"
+      },
+      {
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "outbound": "socks-out"
+      },
+      {
+        "domain_suffix": [
+          "yg_kkk"
+        ],
+        "outbound": "warp-out"
+      },
+      {
+        "protocol": [
+          "quic",
+          "stun"
+        ],
+        "action": "reject"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "rule_set": "geosite-ai",
+        "outbound": "proxy-out"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "geosite-ai",
+        "type": "inline",
+        "rules": [
+          {
+            "domain": [
+                "ai.google.dev", "alkalicore-pa.clients6.google.com", "alkalimakersuite-pa.clients6.google.com", "antigravity-pa.googleapis.com",
+                "antigravity.googleapis.com", "appsgenaiserver-pa.clients.google.com", "appsgenaiserver-pa.clients6.google.com", "appsgenaiserver-pa.googleapis.com",
+                "browser-intake-datadoghq.com", "cloudaicompanion.googleapis.com", "cloudcode-pa.googleapis.com", "copilot-proxy.githubusercontent.com",
+                "copilot-telemetry-service.githubusercontent.com", "copilot-telemetry.githubusercontent.com", "copilot-workspace.githubnext.com", "copilotprodattachments.blob.core.windows.net",
+                "daily-cloudcode-pa.googleapis.com", "geminiweb-pa.clients.google.com", "geminiweb-pa.clients6.google.com", "http-intake.logs.us5.datadoghq.com",
+                "notebooklm-pa.googleapis.com", "notebooklm.googleapis.com", "o1158394.ingest.us.sentry.io", "o33249.ingest.sentry.io",
+                "o33249.ingest.us.sentry.io", "openai.qualtrics.com", "openaiapi-site.azureedge.net", "openaiassets.blob.core.windows.net",
+                "openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net", "openaicom.imgix.net", "openaicomproductionae4b.blob.core.windows.net", "ppl-ai-file-upload.s3.amazonaws.com",
+                "pplx-res.cloudinary.com", "production-copilot-host-westus.webpubsub.azure.com", "production-openaicom-storage.azureedge.net", "servd-anthropic-website.b-cdn.net",
+                "webchannel-alkalimakersuite-pa.clients6.google.com"
+            ],
+            "domain_suffix": [
+                "agentclientprotocol.com", "ai.studio", "aicode.googleapis.com", "aida.googleapis.com",
+                "aisandbox-pa.googleapis.com", "aistudio.google.com", "ant.dev", "anthropic.com",
+                "anthropic.team", "antigravity-unleash.goog", "antigravity.google", "antspace.dev",
+                "anythingllm.com", "arena.ai", "artificialanalysis.ai", "bard.google.com",
+                "cerebras.ai", "chat.com", "chatbotclaude.com", "chatgpt.com",
+                "chatgpt.livekit.cloud", "chatgpt.site", "chutes.ai", "cici.com",
+                "ciciai.com", "ciciaicdn.com", "clau.de", "claude.ai",
+                "claude.app", "claude.com", "claude.dev", "claude.new",
+                "claude.site", "claudeacademy.com", "claudemcpclient.com", "claudemcpcontent.com",
+                "claudepages.dev", "claudestudio.com", "claudeusercontent.com", "clawhub.ai",
+                "cline.bot", "clipdrop.co", "codeium.com", "codeiumdata.com",
+                "coderabbit.ai", "coderabbit.gallery.vsassets.io", "cohere.ai", "cohere.com",
+                "comfy.org", "comfyci.org", "comfyregistry.org", "commandcode.ai",
+                "context7.com", "copilot-stg.com", "copilot.cloud.microsoft", "copilot.com",
+                "copilot.microsoft.com", "coze.com", "crewai.com", "crixet.com",
+                "cursor-cdn.com", "cursor.com", "cursor.sh", "cursorapi.com",
+                "cursorvm.com", "deepmind.com", "deepmind.google", "deepwiki.com",
+                "deepwiki.org", "devin.ai", "diabrowser.com", "diabrowser.engineering",
+                "dify.ai", "dola.com", "dreamgen.com", "duck.ai",
+                "elevenlabs.com", "elevenlabs.io", "envato-static.com", "envato.com",
+                "envatousercontent.com", "flow.google", "flow.google.com", "gateway.ai.cloudflare.com",
+                "geller-pa.googleapis.com", "gemini.google", "gemini.google.com", "gemini.gstatic.com",
+                "generativeai.google", "generativelanguage.googleapis.com", "githubcopilot.com", "grazie.ai",
+                "grazie.aws.intellij.net", "grok.com", "grok.x.com", "grokbot.com",
+                "grokipedia.com", "groq.com", "h2o.ai", "hf.co",
+                "hf.space", "host.livekit.cloud", "huggingface.co", "jasper.ai",
+                "jetbrains.ai", "jules.google", "jules.google.com", "kimi.ai",
+                "kiro.dev", "labs.google", "labs.google.com", "labstailwind.pa.googleapis.com",
+                "langchain.com", "liveperson.net", "lmstudio.ai", "lovart.ai",
+                "lpsnmedia.net", "magnific.com", "makersuite.google.com", "manus.im",
+                "manuscdn.com", "marscode.com", "meta.ai", "metaaiusercontent.com",
+                "metaaivm.com", "midjourney.com", "minimax.io", "mistral.ai",
+                "moonshot.ai", "mozilla.ai", "muse.ai", "notebook.google",
+                "notebook.google.com", "notebooklm.google", "notebooklm.google.com", "notegpt.io",
+                "nousresearch.com", "novelai.net", "oaistatic.com", "oaistatsig.com",
+                "oaiusercontent.com", "ollama.com", "opal.google", "opal.google.com",
+                "openai.com", "openai.com.cdn.cloudflare.net", "openai.org", "openart.ai",
+                "openclaw.ai", "opencode.ai", "openrouter.ai", "openspec.dev",
+                "oystermercury.top", "perplexity.ai", "perplexity.com", "plannotator.ai",
+                "poe.com", "poecdn.net", "pplx.ai", "proactivebackend-pa.googleapis.com",
+                "qoder.com", "robinfrontend-pa.googleapis.com", "sider.ai", "sora.com",
+                "spicywriter.com", "stitch.withgoogle.com", "syntx.ai", "talkai.info",
+                "tapnow.ai", "themeforest.net", "trae.ai", "tripo3d.ai",
+                "turn.livekit.cloud", "typesafe.ai", "windsurf.build", "windsurf.com",
+                "x.ai", "youmind.ai", "youmind.com", "youmind.site"
+            ]
+          }
+        ]
+      }
+    ],
+    "final": "direct",
+    "auto_detect_interface": true,
+    "default_domain_resolver": {
+      "server": "cloudflare"
+    }
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "path": "/etc/s-box/cache.db"
+    }
+  }
 }
 EOF
 [[ "$sbnh" == "1.10" ]] && num=10 || num=11
@@ -2553,14 +2798,15 @@ echo
 
 changeym(){
 [ -f /root/ygkkkca/ca.log ] && ymzs="$yellow切换为域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)$plain" || ymzs="$yellow未申请域名证书，无法切换$plain"
-vl_na="正在使用的域名：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.server_name')。$yellow更换符合reality要求的域名，不支持证书域名$plain"
-tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
+vl_na="正在使用的域名：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vless-sb") | .tls.server_name')。$yellow更换符合reality要求的域名，不支持证书域名$plain"
+tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .tls.enabled')
 [[ "$tls" = "false" ]] && vm_na="当前已关闭TLS。$ymzs ${yellow}将开启TLS，Argo隧道将不支持开启${plain}" || vm_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为关闭TLS，Argo隧道将可用$plain"
-hy2_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].tls.key_path')
+hy2_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="hy2-sb") | .tls.key_path')
 [[ "$hy2_sniname" = '/etc/s-box/private.key' ]] && hy2_na="正在使用自签bing证书。$ymzs" || hy2_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为自签bing证书$plain"
-tu5_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].tls.key_path')
+tu5_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="tuic5-sb") | .tls.key_path')
 [[ "$tu5_sniname" = '/etc/s-box/private.key' ]] && tu5_na="正在使用自签bing证书。$ymzs" || tu5_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为自签bing证书$plain"
-an_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[4].tls.key_path')
+an_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="anytls-sb") | .tls.key_path')
+an_sniname=${an_sniname:-/etc/s-box/private.key}
 [[ "$an_sniname" = '/etc/s-box/private.key' ]] && an_na="正在使用自签bing证书。$ymzs" || an_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为自签bing证书$plain"
 echo
 green "请选择要切换证书模式的协议"
@@ -2580,21 +2826,16 @@ readp "请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "请输入vless-reality域名 (回车使用apple.com)：" menu
 ym_vl_re=${menu:-apple.com}
-a=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.server_name')
-b=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.reality.handshake.server')
-c=$(cat /etc/s-box/vl_reality.txt | cut -d'=' -f5 | cut -d'&' -f1)
-echo $sbfiles | xargs -n1 sed -i "23s/$a/$ym_vl_re/"
-echo $sbfiles | xargs -n1 sed -i "27s/$b/$ym_vl_re/"
+sbjqall --arg d "$ym_vl_re" '(.inbounds[] | select(.tag=="vless-sb") | .tls.server_name) = $d | (.inbounds[] | select(.tag=="vless-sb") | .tls.reality.handshake.server) = $d'
 restartsb && sbshare > /dev/null 2>&1
 blue "Vless-reality域名证书更换完毕"
 elif [ "$menu" = "2" ]; then
 if [ -f /root/ygkkkca/ca.log ]; then
-a=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
+a=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .tls.enabled')
 [ "$a" = "true" ] && a_a=false || a_a=true
-b=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
-[ "$b" = "www.bing.com" ] && b_b=$(cat /root/ygkkkca/ca.log) || b_b=$(cat /root/ygkkkca/ca.log)
-c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.certificate_path')
-d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.key_path')
+b_b=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .tls.certificate_path')
+d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .tls.key_path')
 if [ "$d" = '/etc/s-box/private.key' ]; then
 c_c='/root/ygkkkca/cert.crt'
 d_d='/root/ygkkkca/private.key'
@@ -2602,15 +2843,12 @@ else
 c_c='/etc/s-box/cert.pem'
 d_d='/etc/s-box/private.key'
 fi
-echo $sbfiles | xargs -n1 sed -i "55s#$a#$a_a#"
-echo $sbfiles | xargs -n1 sed -i "56s#$b#$b_b#"
-echo $sbfiles | xargs -n1 sed -i "57s#$c#$c_c#"
-echo $sbfiles | xargs -n1 sed -i "58s#$d#$d_d#"
+sbjqall --argjson e "$a_a" --arg sn "$b_b" --arg c "$c_c" --arg k "$d_d" '(.inbounds[] | select(.tag=="vmess-sb") | .tls) |= (.enabled = $e | .server_name = $sn | .certificate_path = $c | .key_path = $k)'
 restartsb && sbshare > /dev/null 2>&1
 blue "vmess-ws协议域名证书更换完毕"
 echo
-tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
-vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
+tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .tls.enabled')
+vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .listen_port')
 blue "当前Vmess-ws(tls)的端口：$vm_port"
 [[ "$tls" = "false" ]] && blue "切记：可进入主菜单选项4-2，将Vmess-ws端口更改为任意7个80系端口(80、8080、8880、2052、2082、2086、2095)，可实现CDN优选IP" || blue "切记：可进入主菜单选项4-2，将Vmess-ws-tls端口更改为任意6个443系的端口(443、8443、2053、2083、2087、2096)，可实现CDN优选IP"
 echo
@@ -2619,8 +2857,8 @@ red "当前未申请域名证书，不可切换。主菜单选择12，执行Acme
 fi
 elif [ "$menu" = "3" ]; then
 if [ -f /root/ygkkkca/ca.log ]; then
-c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].tls.certificate_path')
-d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].tls.key_path')
+c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="hy2-sb") | .tls.certificate_path')
+d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="hy2-sb") | .tls.key_path')
 if [ "$d" = '/etc/s-box/private.key' ]; then
 c_c='/root/ygkkkca/cert.crt'
 d_d='/root/ygkkkca/private.key'
@@ -2628,8 +2866,7 @@ else
 c_c='/etc/s-box/cert.pem'
 d_d='/etc/s-box/private.key'
 fi
-echo $sbfiles | xargs -n1 sed -i "79s#$c#$c_c#"
-echo $sbfiles | xargs -n1 sed -i "80s#$d#$d_d#"
+sbjqall --arg c "$c_c" --arg k "$d_d" '(.inbounds[] | select(.tag=="hy2-sb") | .tls) |= (.certificate_path = $c | .key_path = $k)'
 restartsb && sbshare > /dev/null 2>&1
 blue "Hysteria2协议域名证书更换完毕"
 else
@@ -2637,8 +2874,8 @@ red "当前未申请域名证书，不可切换。主菜单选择12，执行Acme
 fi
 elif [ "$menu" = "4" ]; then
 if [ -f /root/ygkkkca/ca.log ]; then
-c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].tls.certificate_path')
-d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].tls.key_path')
+c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="tuic5-sb") | .tls.certificate_path')
+d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="tuic5-sb") | .tls.key_path')
 if [ "$d" = '/etc/s-box/private.key' ]; then
 c_c='/root/ygkkkca/cert.crt'
 d_d='/root/ygkkkca/private.key'
@@ -2646,8 +2883,7 @@ else
 c_c='/etc/s-box/cert.pem'
 d_d='/etc/s-box/private.key'
 fi
-echo $sbfiles | xargs -n1 sed -i "102s#$c#$c_c#"
-echo $sbfiles | xargs -n1 sed -i "103s#$d#$d_d#"
+sbjqall --arg c "$c_c" --arg k "$d_d" '(.inbounds[] | select(.tag=="tuic5-sb") | .tls) |= (.certificate_path = $c | .key_path = $k)'
 restartsb && sbshare > /dev/null 2>&1
 blue "Tuic5协议域名证书更换完毕"
 else
@@ -2655,8 +2891,8 @@ red "当前未申请域名证书，不可切换。主菜单选择12，执行Acme
 fi
 elif [ "$menu" = "5" ]; then
 if [ -f /root/ygkkkca/ca.log ]; then
-c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[4].tls.certificate_path')
-d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[4].tls.key_path')
+c=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="anytls-sb") | .tls.certificate_path')
+d=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="anytls-sb") | .tls.key_path')
 if [ "$d" = '/etc/s-box/private.key' ]; then
 c_c='/root/ygkkkca/cert.crt'
 d_d='/root/ygkkkca/private.key'
@@ -2664,8 +2900,8 @@ else
 c_c='/etc/s-box/cert.pem'
 d_d='/etc/s-box/private.key'
 fi
-echo $sbfiles | xargs -n1 sed -i "119s#$c#$c_c#"
-echo $sbfiles | xargs -n1 sed -i "120s#$d#$d_d#"
+sbjqw /etc/s-box/sb11.json --arg c "$c_c" --arg k "$d_d" '(.inbounds[] | select(.tag=="anytls-sb") | .tls) |= (.certificate_path = $c | .key_path = $k)'
+sbjqw /etc/s-box/sb.json --arg c "$c_c" --arg k "$d_d" '(.inbounds[] | select(.tag=="anytls-sb") | .tls) |= (.certificate_path = $c | .key_path = $k)'
 restartsb && sbshare > /dev/null 2>&1
 blue "Anytls协议域名证书更换完毕"
 else
@@ -2763,22 +2999,23 @@ green "0：返回上层"
 readp "请选择要变更端口的协议：" menu
 if [ "$menu" = "1" ]; then
 vlport
-echo $sbfiles | xargs -n1 sed -i "14s/$vl_port/$port_vl_re/"
+sbjqall --argjson p "$port_vl_re" '(.inbounds[] | select(.tag=="vless-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 blue "Vless-reality端口更改完成"
 echo
 elif [ "$menu" = "5" ]; then
 anport
-echo $sbfiles | xargs -n1 sed -i "110s/$an_port/$port_an/"
+sbjqw /etc/s-box/sb11.json --argjson p "$port_an" '(.inbounds[] | select(.tag=="anytls-sb") | .listen_port) = $p'
+sbjqw /etc/s-box/sb.json --argjson p "$port_an" '(.inbounds[] | select(.tag=="anytls-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 blue "Anytls端口更改完成"
 echo
 elif [ "$menu" = "2" ]; then
 vmport
-echo $sbfiles | xargs -n1 sed -i "41s/$vm_port/$port_vm_ws/"
+sbjqall --argjson p "$port_vm_ws" '(.inbounds[] | select(.tag=="vmess-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 blue "Vmess-ws端口更改完成"
-tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
+tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .tls.enabled')
 if [[ "$tls" = "false" ]]; then
 blue "切记：如果Argo使用中，临时隧道必须重置，固定隧道的CF设置界面端口必须修改为$port_vm_ws"
 else
@@ -2795,11 +3032,11 @@ if [ "$menu" = "1" ]; then
 if [ -n "$hy2_ports" ]; then
 hy2deports
 hy2port
-echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/"
+sbjqall --argjson p "$port_hy2" '(.inbounds[] | select(.tag=="hy2-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 else
 hy2port
-echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/"
+sbjqall --argjson p "$port_hy2" '(.inbounds[] | select(.tag=="hy2-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 fi
 blue "Hysteria2端口更改完成"
@@ -2808,7 +3045,7 @@ green "1：添加Hysteria2范围端口"
 green "2：添加Hysteria2单端口"
 green "0：返回上层"
 readp "请选择【0-2】：" menu
-port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].listen_port')
+port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="hy2-sb") | .listen_port')
 if [ "$menu" = "1" ]; then
 fports && sbshare > /dev/null 2>&1 && changeport
 elif [ "$menu" = "2" ]; then
@@ -2836,11 +3073,11 @@ if [ "$menu" = "1" ]; then
 if [ -n "$tu5_ports" ]; then
 tu5deports
 tu5port
-echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/"
+sbjqall --argjson p "$port_tu" '(.inbounds[] | select(.tag=="tuic5-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 else
 tu5port
-echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/"
+sbjqall --argjson p "$port_tu" '(.inbounds[] | select(.tag=="tuic5-sb") | .listen_port) = $p'
 restartsb && sbshare > /dev/null 2>&1
 fi
 blue "Tuic5端口更改完成"
@@ -2849,7 +3086,7 @@ green "1：添加Tuic5范围端口"
 green "2：添加Tuic5单端口"
 green "0：返回上层"
 readp "请选择【0-2】：" menu
-port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].listen_port')
+port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="tuic5-sb") | .listen_port')
 if [ "$menu" = "1" ]; then
 fports && sbshare > /dev/null 2>&1 && changeport
 elif [ "$menu" = "2" ]; then
@@ -2873,8 +3110,8 @@ fi
 
 changeuuid(){
 echo
-olduuid=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].users[0].uuid')
-oldvmpath=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].transport.path')
+olduuid=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vless-sb") | .users[0].uuid')
+oldvmpath=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .transport.path')
 green "全协议的uuid (密码)：$olduuid"
 green "Vmess的path路径：$oldvmpath"
 echo
@@ -2889,20 +3126,20 @@ uuid=$(/etc/s-box/sing-box generate uuid)
 else
 uuid=$menu
 fi
-echo $sbfiles | xargs -n1 sed -i "s/$olduuid/$uuid/g"
+sbjqall --arg u "$uuid" --arg o "$olduuid" '(.inbounds[] | select(.tag=="vless-sb") | .users[0].uuid) = $u | (.inbounds[] | select(.tag=="vmess-sb") | .users[0].uuid) = $u | (.inbounds[] | select(.tag=="tuic5-sb") | .users[0].uuid) = $u | (.inbounds[] | select(.tag=="tuic5-sb") | .users[0].password) = $u | (.inbounds[] | select(.tag=="hy2-sb") | .users[0].password) = $u | (.inbounds[] | select(.tag=="anytls-sb") | .users[0].password) = $u | (.inbounds[] | select(.tag=="vmess-sb") | .transport.path) |= gsub($o; $u)'
 restartsb && sbshare > /dev/null 2>&1
-blue "已确认uuid (密码)：${uuid}" 
-blue "已确认Vmess的path路径：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].transport.path')"
+blue "已确认uuid (密码)：${uuid}"
+blue "已确认Vmess的path路径：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .transport.path')"
 elif [ "$menu" = "2" ]; then
 readp "输入Vmess的path路径，回车表示不变：" menu
 if [ -z "$menu" ]; then
 echo
 else
 vmpath=$menu
-echo $sbfiles | xargs -n1 sed -i "50s#$oldvmpath#$vmpath#g"
+sbjqall --arg p "$vmpath" '(.inbounds[] | select(.tag=="vmess-sb") | .transport.path) = $p'
 restartsb && sbshare > /dev/null 2>&1
 fi
-blue "已确认Vmess的path路径：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].transport.path')"
+blue "已确认Vmess的path路径：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[] | select(.tag=="vmess-sb") | .transport.path')"
 else
 changeserv
 fi
@@ -2912,8 +3149,7 @@ changeip(){
 if [[ "$sbnh" == "1.10" ]]; then
 v4v6
 chip(){
-rpip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[0].domain_strategy')
-sed -i "111s/$rpip/$rrpip/g" /etc/s-box/sb10.json
+sbjqw /etc/s-box/sb10.json --arg v "$rrpip" '(.outbounds[] | select(.tag=="direct") | .domain_strategy) = $v'
 cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 }
@@ -3376,15 +3612,15 @@ changewg(){
 if [[ "$sbnh" == "1.10" ]]; then
 wgipv6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .local_address[1] | split("/")[0]')
 wgprkey=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .private_key')
-wgres=$(sed -n '165s/.*\[\(.*\)\].*/\1/p' /etc/s-box/sb.json)
+wgres=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .reserved | join(",")')
 wgip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .server')
 wgpo=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .server_port')
 else
-wgipv6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .address[1] | split("/")[0]')
-wgprkey=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .private_key')
-wgres=$(sed -n '142s/.*\[\(.*\)\].*/\1/p' /etc/s-box/sb.json)
-wgip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .peers[].address')
-wgpo=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .peers[].port')
+wgipv6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | select(.tag=="warp-out") | .address[1] | split("/")[0]')
+wgprkey=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | select(.tag=="warp-out") | .private_key')
+wgres=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | select(.tag=="warp-out") | .peers[0].reserved | join(",")')
+wgip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | select(.tag=="warp-out") | .peers[0].address')
+wgpo=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | select(.tag=="warp-out") | .peers[0].port')
 fi
 echo
 green "当前warp-wireguard可更换的参数如下："
@@ -3401,17 +3637,18 @@ green "最新随机生成普通warp-wireguard账户如下"
 warpwg
 echo
 readp "输入自定义Private_key：" menu
-sed -i "163s#$wgprkey#$menu#g" /etc/s-box/sb10.json
-sed -i "132s#$wgprkey#$menu#g" /etc/s-box/sb11.json
+sbjqw /etc/s-box/sb10.json --arg v "$menu" '(.outbounds[] | select(.type == "wireguard") | .private_key) = $v'
+sbjqw /etc/s-box/sb11.json --arg v "$menu" '(.endpoints[] | select(.tag=="warp-out") | .private_key) = $v'
 readp "输入自定义IPV6地址：" menu
-sed -i "161s/$wgipv6/$menu/g" /etc/s-box/sb10.json
-sed -i "130s/$wgipv6/$menu/g" /etc/s-box/sb11.json
+sbjqw /etc/s-box/sb10.json --arg v "$menu/128" '(.outbounds[] | select(.type == "wireguard") | .local_address[1]) = $v'
+sbjqw /etc/s-box/sb11.json --arg v "$menu/128" '(.endpoints[] | select(.tag=="warp-out") | .address[1]) = $v'
 readp "输入自定义Reserved值 (格式：数字,数字,数字)，如无值则回车跳过：" menu
+menu=$(echo "$menu" | tr -d ' ')
 if [ -z "$menu" ]; then
 menu=0,0,0
 fi
-sed -i "165s/$wgres/$menu/g" /etc/s-box/sb10.json
-sed -i "142s/$wgres/$menu/g" /etc/s-box/sb11.json
+sbjqw /etc/s-box/sb10.json --argjson v "[$menu]" '(.outbounds[] | select(.type == "wireguard") | .reserved) = $v'
+sbjqw /etc/s-box/sb11.json --argjson v "[$menu]" '(.endpoints[] | select(.tag=="warp-out") | .peers[0].reserved) = $v'
 rm -rf /etc/s-box/sb.json
 cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
 restartsb
@@ -3445,88 +3682,73 @@ vps_ipv4="当前IP：$v4"
 vps_ipv6='无本地IPV6，黑名单模式'
 fi
 unset swg4 swd4 swd6 swg6 ssd4 ssg4 ssd6 ssg6 sad4 sag4 sad6 sag6
-wd4=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[1].domain_suffix | join(" ")')
-wg4=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[1].geosite | join(" ")' 2>/dev/null)
+wfl4='暂不支持' sfl6='暂不支持' adfl4='暂不支持' adfl6='暂不支持'
+if [[ "$sbnh" == "1.10" ]]; then
+r=$(sbrfl warp-IPv4-out); wd4=${r%%|*}; wg4=${r##*|}
 if [[ "$wd4" == "yg_kkk" && ("$wg4" == "yg_kkk" || -z "$wg4") ]]; then
 wfl4="${yellow}【warp出站IPV4可用】未分流${plain}"
 else
-if [[ "$wd4" != "yg_kkk" ]]; then
-swd4="$wd4 "
-fi
-if [[ "$wg4" != "yg_kkk" ]]; then
-swg4=$wg4
-fi
+[[ -n "$wd4" && "$wd4" != "yg_kkk" ]] && swd4="$wd4 "
+[[ -n "$wg4" && "$wg4" != "yg_kkk" ]] && swg4=$wg4
 wfl4="${yellow}【warp出站IPV4可用】已分流：$swd4$swg4${plain} "
 fi
-
-wd6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[2].domain_suffix | join(" ")')
-wg6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[2].geosite | join(" ")' 2>/dev/null)
-if [[ "$wd6" == "yg_kkk" && ("$wg6" == "yg_kkk"|| -z "$wg6") ]]; then
+r=$(sbrfl warp-IPv6-out); wd6=${r%%|*}; wg6=${r##*|}
+if [[ "$wd6" == "yg_kkk" && ("$wg6" == "yg_kkk" || -z "$wg6") ]]; then
 wfl6="${yellow}【warp出站IPV6自测】未分流${plain}"
 else
-if [[ "$wd6" != "yg_kkk" ]]; then
-swd6="$wd6 "
-fi
-if [[ "$wg6" != "yg_kkk" ]]; then
-swg6=$wg6
-fi
+[[ -n "$wd6" && "$wd6" != "yg_kkk" ]] && swd6="$wd6 "
+[[ -n "$wg6" && "$wg6" != "yg_kkk" ]] && swg6=$wg6
 wfl6="${yellow}【warp出站IPV6自测】已分流：$swd6$swg6${plain} "
 fi
-
-sd4=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[3].domain_suffix | join(" ")')
-sg4=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[3].geosite | join(" ")' 2>/dev/null)
+r=$(sbrfl socks-IPv4-out); sd4=${r%%|*}; sg4=${r##*|}
 if [[ "$sd4" == "yg_kkk" && ("$sg4" == "yg_kkk" || -z "$sg4") ]]; then
 sfl4="${yellow}【$warp_s4_ip】未分流${plain}"
 else
-if [[ "$sd4" != "yg_kkk" ]]; then
-ssd4="$sd4 "
-fi
-if [[ "$sg4" != "yg_kkk" ]]; then
-ssg4=$sg4
-fi
+[[ -n "$sd4" && "$sd4" != "yg_kkk" ]] && ssd4="$sd4 "
+[[ -n "$sg4" && "$sg4" != "yg_kkk" ]] && ssg4=$sg4
 sfl4="${yellow}【$warp_s4_ip】已分流：$ssd4$ssg4${plain} "
 fi
-
-sd6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[4].domain_suffix | join(" ")')
-sg6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[4].geosite | join(" ")' 2>/dev/null)
+r=$(sbrfl socks-IPv6-out); sd6=${r%%|*}; sg6=${r##*|}
 if [[ "$sd6" == "yg_kkk" && ("$sg6" == "yg_kkk" || -z "$sg6") ]]; then
 sfl6="${yellow}【$warp_s6_ip】未分流${plain}"
 else
-if [[ "$sd6" != "yg_kkk" ]]; then
-ssd6="$sd6 "
-fi
-if [[ "$sg6" != "yg_kkk" ]]; then
-ssg6=$sg6
-fi
+[[ -n "$sd6" && "$sd6" != "yg_kkk" ]] && ssd6="$sd6 "
+[[ -n "$sg6" && "$sg6" != "yg_kkk" ]] && ssg6=$sg6
 sfl6="${yellow}【$warp_s6_ip】已分流：$ssd6$ssg6${plain} "
 fi
-
-ad4=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[5].domain_suffix | join(" ")' 2>/dev/null)
-ag4=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[5].geosite | join(" ")' 2>/dev/null)
+r=$(sbrfl vps-outbound-v4); ad4=${r%%|*}; ag4=${r##*|}
 if [[ ("$ad4" == "yg_kkk" || -z "$ad4") && ("$ag4" == "yg_kkk" || -z "$ag4") ]]; then
 adfl4="${yellow}【$vps_ipv4】未分流${plain}" 
 else
-if [[ "$ad4" != "yg_kkk" ]]; then
-sad4="$ad4 "
-fi
-if [[ "$ag4" != "yg_kkk" ]]; then
-sag4=$ag4
-fi
+[[ -n "$ad4" && "$ad4" != "yg_kkk" ]] && sad4="$ad4 "
+[[ -n "$ag4" && "$ag4" != "yg_kkk" ]] && sag4=$ag4
 adfl4="${yellow}【$vps_ipv4】已分流：$sad4$sag4${plain} "
 fi
-
-ad6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[6].domain_suffix | join(" ")' 2>/dev/null)
-ag6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.route.rules[6].geosite | join(" ")' 2>/dev/null)
+r=$(sbrfl vps-outbound-v6); ad6=${r%%|*}; ag6=${r##*|}
 if [[ ("$ad6" == "yg_kkk" || -z "$ad6") && ("$ag6" == "yg_kkk" || -z "$ag6") ]]; then
 adfl6="${yellow}【$vps_ipv6】未分流${plain}" 
 else
-if [[ "$ad6" != "yg_kkk" ]]; then
-sad6="$ad6 "
-fi
-if [[ "$ag6" != "yg_kkk" ]]; then
-sag6=$ag6
-fi
+[[ -n "$ad6" && "$ad6" != "yg_kkk" ]] && sad6="$ad6 "
+[[ -n "$ag6" && "$ag6" != "yg_kkk" ]] && sag6=$ag6
 adfl6="${yellow}【$vps_ipv6】已分流：$sad6$sag6${plain} "
+fi
+else
+r=$(sbrfl warp-out); wd6=${r%%|*}; wg6=${r##*|}
+if [[ "$wd6" == "yg_kkk" && ("$wg6" == "yg_kkk" || -z "$wg6") ]]; then
+wfl6="${yellow}【warp出站IPV6自测】未分流${plain}"
+else
+[[ -n "$wd6" && "$wd6" != "yg_kkk" ]] && swd6="$wd6 "
+[[ -n "$wg6" && "$wg6" != "yg_kkk" ]] && swg6=$wg6
+wfl6="${yellow}【warp出站IPV6自测】已分流：$swd6$swg6${plain} "
+fi
+r=$(sbrfl socks-out); sd4=${r%%|*}; sg4=${r##*|}
+if [[ "$sd4" == "yg_kkk" && ("$sg4" == "yg_kkk" || -z "$sg4") ]]; then
+sfl4="${yellow}【$warp_s4_ip】未分流${plain}"
+else
+[[ -n "$sd4" && "$sd4" != "yg_kkk" ]] && ssd4="$sd4 "
+[[ -n "$sg4" && "$sg4" != "yg_kkk" ]] && ssg4=$sg4
+sfl4="${yellow}【$warp_s4_ip】已分流：$ssd4$ssg4${plain} "
+fi
 fi
 }
 
@@ -3552,7 +3774,6 @@ changef(){
 [[ "$sbnh" == "1.10" ]] && num=10 || num=11
 sbymfl
 echo
-[[ "$sbnh" != "1.10" ]] && wfl4='暂不支持' sfl6='暂不支持' adfl4='暂不支持' adfl6='暂不支持'
 green "1：重置warp-wireguard-ipv4优先分流域名 $wfl4"
 green "2：重置warp-wireguard-ipv6优先分流域名 $wfl6"
 green "3：重置warp-socks5-ipv4优先分流域名 $sfl4"
@@ -3568,24 +3789,14 @@ if [[ "$sbnh" == "1.10" ]]; then
 readp "1：使用后缀域名方式\n2：使用geosite方式\n3：返回上层\n请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-wireguard-ipv4的后缀域名方式的分流通道)：" w4flym
-if [ -z "$w4flym" ]; then
-w4flym='"yg_kkk"'
-else
-w4flym="$(echo "$w4flym" | sed 's/ /","/g')"
-w4flym="\"$w4flym\""
-fi
-sed -i "184s/.*/$w4flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflsuf /etc/s-box/sb10.json warp-IPv4-out "$w4flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 elif [ "$menu" = "2" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-wireguard-ipv4的geosite方式的分流通道)：" w4flym
-if [ -z "$w4flym" ]; then
-w4flym='"yg_kkk"'
-else
-w4flym="$(echo "$w4flym" | sed 's/ /","/g')"
-w4flym="\"$w4flym\""
-fi
-sed -i "187s/.*/$w4flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflgeo /etc/s-box/sb10.json warp-IPv4-out "$w4flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 else
@@ -3599,28 +3810,20 @@ elif [ "$menu" = "2" ]; then
 readp "1：使用后缀域名方式\n2：使用geosite方式\n3：返回上层\n请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-wireguard-ipv6的后缀域名方式的分流通道：" w6flym
-if [ -z "$w6flym" ]; then
-w6flym='"yg_kkk"'
+if [[ "$sbnh" == "1.10" ]]; then
+sbflsuf /etc/s-box/sb10.json warp-IPv6-out "$w6flym"
 else
-w6flym="$(echo "$w6flym" | sed 's/ /","/g')"
-w6flym="\"$w6flym\""
+sbflsuf /etc/s-box/sb11.json warp-out "$w6flym"
+sbflres /etc/s-box/sb11.json prefer_ipv6 "$w6flym"
 fi
-sed -i "193s/.*/$w6flym/" /etc/s-box/sb10.json
-sed -i "184s/.*/$w6flym/" /etc/s-box/sb11.json
-sed -i "196s/.*/$w6flym/" /etc/s-box/sb11.json
 cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
 restartsb
 changef
 elif [ "$menu" = "2" ]; then
 if [[ "$sbnh" == "1.10" ]]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-wireguard-ipv6的geosite方式的分流通道：" w6flym
-if [ -z "$w6flym" ]; then
-w6flym='"yg_kkk"'
-else
-w6flym="$(echo "$w6flym" | sed 's/ /","/g')"
-w6flym="\"$w6flym\""
-fi
-sed -i "196s/.*/$w6flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflgeo /etc/s-box/sb10.json warp-IPv6-out "$w6flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 else
@@ -3634,28 +3837,20 @@ elif [ "$menu" = "3" ]; then
 readp "1：使用后缀域名方式\n2：使用geosite方式\n3：返回上层\n请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-socks5-ipv4的后缀域名方式的分流通道：" s4flym
-if [ -z "$s4flym" ]; then
-s4flym='"yg_kkk"'
+if [[ "$sbnh" == "1.10" ]]; then
+sbflsuf /etc/s-box/sb10.json socks-IPv4-out "$s4flym"
 else
-s4flym="$(echo "$s4flym" | sed 's/ /","/g')"
-s4flym="\"$s4flym\""
+sbflsuf /etc/s-box/sb11.json socks-out "$s4flym"
+sbflres /etc/s-box/sb11.json prefer_ipv4 "$s4flym"
 fi
-sed -i "202s/.*/$s4flym/" /etc/s-box/sb10.json
-sed -i "177s/.*/$s4flym/" /etc/s-box/sb11.json
-sed -i "190s/.*/$s4flym/" /etc/s-box/sb11.json
 cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
 restartsb
 changef
 elif [ "$menu" = "2" ]; then
 if [[ "$sbnh" == "1.10" ]]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-socks5-ipv4的geosite方式的分流通道：" s4flym
-if [ -z "$s4flym" ]; then
-s4flym='"yg_kkk"'
-else
-s4flym="$(echo "$s4flym" | sed 's/ /","/g')"
-s4flym="\"$s4flym\""
-fi
-sed -i "205s/.*/$s4flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflgeo /etc/s-box/sb10.json socks-IPv4-out "$s4flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 else
@@ -3670,24 +3865,14 @@ if [[ "$sbnh" == "1.10" ]]; then
 readp "1：使用后缀域名方式\n2：使用geosite方式\n3：返回上层\n请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-socks5-ipv6的后缀域名方式的分流通道：" s6flym
-if [ -z "$s6flym" ]; then
-s6flym='"yg_kkk"'
-else
-s6flym="$(echo "$s6flym" | sed 's/ /","/g')"
-s6flym="\"$s6flym\""
-fi
-sed -i "211s/.*/$s6flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflsuf /etc/s-box/sb10.json socks-IPv6-out "$s6flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 elif [ "$menu" = "2" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空warp-socks5-ipv6的geosite方式的分流通道：" s6flym
-if [ -z "$s6flym" ]; then
-s6flym='"yg_kkk"'
-else
-s6flym="$(echo "$s6flym" | sed 's/ /","/g')"
-s6flym="\"$s6flym\""
-fi
-sed -i "214s/.*/$s6flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflgeo /etc/s-box/sb10.json socks-IPv6-out "$s6flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 else
@@ -3702,30 +3887,16 @@ if [[ "$sbnh" == "1.10" ]]; then
 readp "1：使用后缀域名方式\n2：使用geosite方式\n3：返回上层\n请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空VPS本地ipv4的后缀域名方式的分流通道：" ad4flym
-if [ -z "$ad4flym" ]; then
-ad4flym='"yg_kkk"'
-else
-ad4flym="$(echo "$ad4flym" | sed 's/ /","/g')"
-ad4flym="\"$ad4flym\""
-fi
-sed -i "220s/.*/$ad4flym/" /etc/s-box/sb10.json /etc/s-box/sb.json
+sbflsuf /etc/s-box/sb10.json vps-outbound-v4 "$ad4flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 elif [ "$menu" = "2" ]; then
-if [[ "$sbnh" == "1.10" ]]; then
 readp "每个域名之间留空格，回车跳过表示重置清空VPS本地ipv4的geosite方式的分流通道：" ad4flym
-if [ -z "$ad4flym" ]; then
-ad4flym='"yg_kkk"'
-else
-ad4flym="$(echo "$ad4flym" | sed 's/ /","/g')"
-ad4flym="\"$ad4flym\""
-fi
-sed -i "223s/.*/$ad4flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflgeo /etc/s-box/sb10.json vps-outbound-v4 "$ad4flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
-else
-yellow "遗憾！当前Sing-box内核不支持geosite分流方式。如要支持，请切换1.10系列内核" && exit
-fi
 else
 changef
 fi
@@ -3738,30 +3909,16 @@ if [[ "$sbnh" == "1.10" ]]; then
 readp "1：使用后缀域名方式\n2：使用geosite方式\n3：返回上层\n请选择：" menu
 if [ "$menu" = "1" ]; then
 readp "每个域名之间留空格，回车跳过表示重置清空VPS本地ipv6的后缀域名方式的分流通道：" ad6flym
-if [ -z "$ad6flym" ]; then
-ad6flym='"yg_kkk"'
-else
-ad6flym="$(echo "$ad6flym" | sed 's/ /","/g')"
-ad6flym="\"$ad6flym\""
-fi
-sed -i "229s/.*/$ad6flym/" /etc/s-box/sb10.json /etc/s-box/sb.json
+sbflsuf /etc/s-box/sb10.json vps-outbound-v6 "$ad6flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
 elif [ "$menu" = "2" ]; then
-if [[ "$sbnh" == "1.10" ]]; then
 readp "每个域名之间留空格，回车跳过表示重置清空VPS本地ipv6的geosite方式的分流通道：" ad6flym
-if [ -z "$ad6flym" ]; then
-ad6flym='"yg_kkk"'
-else
-ad6flym="$(echo "$ad6flym" | sed 's/ /","/g')"
-ad6flym="\"$ad6flym\""
-fi
-sed -i "232s/.*/$ad6flym/" /etc/s-box/sb.json /etc/s-box/sb10.json
+sbflgeo /etc/s-box/sb10.json vps-outbound-v6 "$ad6flym"
+cp /etc/s-box/sb10.json /etc/s-box/sb.json
 restartsb
 changef
-else
-yellow "遗憾！当前Sing-box内核不支持geosite分流方式。如要支持，请切换1.10系列内核" && exit
-fi
 else
 changef
 fi
@@ -4179,8 +4336,8 @@ done
 fi
 s5port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "socks") | .server_port')
 [[ "$sbnh" == "1.10" ]] && num=10 || num=11
-sed -i "127s/$s5port/$port/g" /etc/s-box/sb10.json
-sed -i "165s/$s5port/$port/g" /etc/s-box/sb11.json
+sbjqw /etc/s-box/sb10.json --argjson p "$port" '(.outbounds[] | select(.type=="socks") | .server_port) = $p'
+sbjqw /etc/s-box/sb11.json --argjson p "$port" '(.outbounds[] | select(.type=="socks") | .server_port) = $p'
 cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
 restartsb
 }
