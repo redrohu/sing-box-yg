@@ -52,7 +52,7 @@ class Server14Test(unittest.TestCase):
         path.write_text(json.dumps(data), encoding="utf-8")
         return path
 
-    def call(self, *args, expected=0, extra="", env=None):
+    def call(self, *args, expected=0, extra="", env=None, stdin=None):
         # Test only: root is stubbed so transactional edits can be exercised on Windows.
         # Service helpers are tripwires; tests must not restart/replace any real service.
         code = f"source {shlex.quote(unix(ROOT / 'server14.sh'))}; "
@@ -60,7 +60,11 @@ class Server14Test(unittest.TestCase):
         code += "rc-service(){ echo UNEXPECTED_SERVICE >&2; return 98; }; "
         code += extra + "; " if extra else ""
         code += "sb14_main " + " ".join(shlex.quote(unix(x) if isinstance(x, Path) else str(x)) for x in args)
-        proc = subprocess.run([self.bash, "-c", code], env=env or self.env, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        # Keep piped LF bytes unchanged on Windows; text=True would turn them into CRLF.
+        proc = subprocess.run([self.bash, "-c", code], env=env or self.env,
+                              input=None if stdin is None else stdin.encode("utf-8"), capture_output=True)
+        proc.stdout = proc.stdout.decode("utf-8", errors="replace").replace("\r\n", "\n")
+        proc.stderr = proc.stderr.decode("utf-8", errors="replace").replace("\r\n", "\n")
         # Logs use only offline fixture credentials, never production server credentials.
         LOG.append({"command": [str(x) for x in args], "test": self.id(), "exit": proc.returncode, "stdout": proc.stdout, "stderr": proc.stderr})
         self.assertNotIn("UNEXPECTED_SERVICE", proc.stderr)
@@ -224,6 +228,69 @@ class Server14Test(unittest.TestCase):
         result = self.call("summary")
         self.assertIn("naive-in", result.stdout)
         self.assertNotIn("offline-only-token", result.stdout)
+
+    def test_original_menu_labels_and_numbering_are_preserved(self):
+        current = (ROOT / "sb.sh").read_text(encoding="utf-8")
+        # This is the actual function called by the default entry, not a mock UI.
+        header = re.search(r"(?ms)^sb_menu_header\(\)\{\n(.*?)^}\n", current).group(1)
+        old = subprocess.check_output(["git", "show", "b13f943:sb.sh"], cwd=ROOT).decode("utf-8")
+        labels = lambda s: re.findall(r'green "\s*(\d+\. [^"\n]+)"', s)
+        self.assertEqual(labels(header), labels(old))
+        result = self.call(extra='white(){ echo "$1"; }; green(){ echo "$1"; }; red(){ echo "$1"; }; sb14_main(){ ' + header + ' }')
+        self.assertIn("1. 一键安装 Sing-box", result.stdout)
+        self.assertIn("16. Sing-box-yg脚本使用说明书", result.stdout)
+        self.assertIn("0. 退出脚本", result.stdout)
+        self.assertIn("sb14_bind_legacy_menu\nfi\nclear\nsb_menu_header", current)
+        self.assertIn('if [[ $# -gt 0 && "$1" != menu ]]', current)
+
+    def test_original_port_menu_edits_by_tag(self):
+        config = self.apply()
+        before = json.loads(config.read_text())
+        # Bind over deliberate legacy tripwires: no old array/line-number handler may run.
+        extra = 'changeport(){ echo LEGACY_MUTATION >&2; return 97; }; sb14_bind_legacy_menu; sb14_main(){ changeport; }'
+        result = self.call(extra=extra, stdin="6\n18443\n")
+        self.assertNotIn("LEGACY_MUTATION", result.stderr)
+        after = json.loads(config.read_text())
+        before["inbounds"][6]["listen_port"] = 18443  # Selected external tag #6 = trojan-in.
+        self.assertEqual(before, after)
+        self.call("check")
+
+    def test_incompatible_menu_handlers_do_not_modify_config(self):
+        config = self.apply()
+        before = config.read_bytes()
+        names = ["changefl", "cfargo_ym", "changeip", "tgsbshow", "changewg", "gitlabsub", "ipsub", "vmesscfadd", "clash_sb_share", "cfwarp", "inssbwpph", "wgcfgo", "sbshare"]
+        for name in names:
+            with self.subTest(name=name):
+                result = self.call(expected=1, extra=f'sb14_bind_legacy_menu; sb14_main(){{ {name}; }}')
+                self.assertIn("未修改配置", result.stdout)
+                self.assertEqual(config.read_bytes(), before)
+
+    def test_original_config_submenu_reality_and_cancel_rotation(self):
+        config = self.apply()
+        self.call(extra='sb14_bind_legacy_menu; sb14_main(){ changeym; }', stdin="1\nwww.microsoft.com\n")
+        after = json.loads(config.read_text())
+        self.assertEqual(after["inbounds"][0]["tls"]["server_name"], "www.microsoft.com")
+        before = config.read_bytes()
+        self.call(expected=1, extra='sb14_bind_legacy_menu; sb14_main(){ changeuuid; }', stdin="cancel\n")
+        self.assertEqual(config.read_bytes(), before)
+
+    def test_cancel_migration_and_legacy_config_edit_protection(self):
+        old = self.write("sb.json", {"inbounds": [{"type": "vmess", "tag": "vmess-sb", "listen_port": 8880}]})
+        before = old.read_bytes()
+        self.call(expected=1, extra='sb14_bind_legacy_menu; sb14_main(){ instsllsingbox; }', stdin="cancel\n")
+        self.assertEqual(old.read_bytes(), before)
+        self.call(expected=1, extra='sb14_bind_legacy_menu; sb14_main(){ changeport; }', stdin="1\n8443\n")
+        self.assertEqual(old.read_bytes(), before)
+
+    def test_module_default_returns_to_original_ui(self):
+        entry = self.dir / "sb.sh"
+        entry.write_text('#!/bin/bash\nprintf "ORIGINAL_UI_ENTRY\\n"\n', encoding="utf-8")
+        env = dict(self.env, SB14_ENTRY_FILE=unix(entry))
+        result = self.call("menu", env=env)
+        self.assertEqual(result.stdout.strip(), "ORIGINAL_UI_ENTRY")
+        library = (ROOT / "server14.sh").read_text(encoding="utf-8")
+        self.assertIn('exec /bin/bash /etc/s-box/sb.sh', library)
+        self.assertNotIn('exec /bin/bash /etc/s-box/server14.sh', library)
 
 
 if __name__ == "__main__":

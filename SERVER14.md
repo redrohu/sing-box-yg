@@ -1,6 +1,6 @@
 # 严格使用指定的 1.14 服务端模板
 
-默认入口 `sb.sh` 现在使用独立的 `server14.sh`，不再调用五协议生成器。
+默认入口 `sb.sh` **保留原启动菜单、布局和 0–16 编号**，内部通过 `server14.sh` 按 tag 操作配置，不再调用五协议生成器。安装后的 `sb` 快捷入口也打开这个原菜单，不会跳转到另一套启动菜单。
 
 模板唯一来源：[qichiyuhub/rule/config/singbox/1.14X/VPS/server.json](https://github.com/qichiyuhub/rule/blob/main/config/singbox/1.14X/VPS/server.json)。
 已固定该文件版本 `b8923a7351ea516f87599a8889f99aaeb70e989f`；原始快照在 `tests/fixtures/server14.upstream.json`，也嵌入在 `server14.sh` 中。
@@ -60,8 +60,21 @@ bash sb.sh check /root/sb14.candidate.json
 bash sb.sh summary /root/sb14.candidate.json
 ```
 
-也可以 `bash sb.sh` 使用交互菜单。CF Token 隐藏输入，不会作为交互提示打印。
+也可以 `bash sb.sh` 使用原交互菜单。CF Token 隐藏输入，不会作为交互提示打印。
 生成文件及备份权限均为 0600；参数文件和配置包含秘密，不要提交到 Git 或公开粘贴。
+
+### 原菜单中的操作位置
+
+- **1**：新安装；已存在配置时必须输入 `MIGRATE` 才会重新生成/迁移，原配置备份且不自动重启。
+- **3 → 1**：Reality/ShadowTLS 域名、内置 ACME 参数及备份恢复；不提供自签回退或关闭模板 TLS。
+- **3 → 2**：凭据轮换，必须输入 `ROTATE` 确认；本模板没有 VMess Path。
+- **4**：列出新模板的外部入站，选择协议后按 tag 修改主端口；内部 detour 不分配外部端口。
+- **6**：校验后重启/关闭；**7**：更新此 fork 的菜单及模块；**8**：安装 >=1.14 内核（不覆盖配置、不自动重启）。
+- **10**：日志；**12**：更新模板内置 ACME 参数；**16**：使用说明。
+- **5、9、13–15** 以及配置子菜单中的 Argo、WARP、旧客户端订阅等不在模板范围内，只提示未修改，不调用旧数组/行号写入逻辑。
+- **2**：输入 `UNINSTALL` 后，先完整归档 `/etc/s-box`，再卸载 sing-box；不清空系统防火墙，不删除其他服务。
+
+命令行的 render/apply/check 等仍可直接使用；配置模块的高级菜单只在显式 `advanced-menu` 时显示，不是默认启动界面。
 
 ## 新安装
 
@@ -84,14 +97,14 @@ journalctl -u sing-box -n 80 --no-pager
 bash sb.sh apply parameters.json
 # apply 内部再次生成新随机凭据；如果之前 render 过，最终凭据以 /etc/s-box/sb.json 为准。
 # 自动备份旧配置和 SHA256，然后写入 sb.json；不重启服务。
-# 为避免旧菜单破坏新配置，会备份旧 /usr/bin/sb，并切换快捷入口到新流程。
+# 为避免旧逻辑破坏新配置，会备份旧快捷脚本，并将快捷入口指向保留原菜单的新适配版。
 bash sb.sh check
 # 确认端口、域名和客户端准备完毕后显式重启。
 bash sb.sh restart
 ```
 
 不再生成或从 `sb10.json` / `sb11.json` 拷贝覆盖 `sb.json`；旧文件保留但不再使用。
-五协议菜单仍可通过仓库中的 `bash sb.sh --legacy` 维护**旧配置**，但发现新模板的 tag 就拒绝运行，防止数组下标/行号操作损坏新配置。
+完全未适配的五协议旧逻辑仍可通过仓库中的 `bash sb.sh --legacy` 维护**旧配置**，但发现新模板的 tag 就拒绝运行。默认模式保留同一启动菜单，仅替换内部处理函数，防止数组下标/行号操作损坏新配置。
 `--legacy` 保持最初 fork 的旧行为及上游 URL，不用于新模板的安装或更新。
 
 ## 后续修改（均先校验、备份，不自动重启）
@@ -115,7 +128,7 @@ sb restore /etc/s-box/sb.json.bak.实际备份名
 
 先由当前内核校验，再恢复；另存恢复前副本，不自动重启。
 恢复成旧五协议配置后，使用原配置对应的内核、脚本及客户端；新模式 `restart` 只接受指定模板，旧配置可在再次 `check` 后手动 `systemctl restart sing-box`。
-旧快捷入口备份是 `/etc/s-box/sb.launcher.bak.*`，按需手动恢复；不要将其恢复到仍使用新模板的安装。
+菜单、模块及快捷入口备份位于 `/etc/s-box/scripts.bak.*/`（更早版本的快捷入口备份可能是 `sb.launcher.bak.*`）。按需恢复对应的一整套脚本，不要把未适配的旧快捷入口恢复到仍使用新模板的安装。
 
 仓库历史中的 `ceff58e`、`e42cdd7` 已分别回退此前错误的模板适配和自更新 URL 修改；`e42cdd7` 的文件树与最初 fork 的 `b13f943` 相同。
 

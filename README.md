@@ -3,6 +3,8 @@
 默认 `bash sb.sh` 严格使用指定的 [1.14X/VPS/server.json](https://github.com/qichiyuhub/rule/blob/main/config/singbox/1.14X/VPS/server.json) 模板：**10 入站 + 内置 ACME/Cloudflare DNS-01**。
 不再混入 1.12 的 DNS/AI/WARP 规则。需要真实证书域名、邮箱及 Cloudflare API Token；只改动态部署参数。
 
+启动界面保留原菜单、布局及 **0–16 编号**，配置操作在内部适配新模板；不兼容的旧功能只提示，不改写配置。
+
 **安装、旧配置迁移、备份恢复及限制请先阅读 [SERVER14.md](SERVER14.md)。旧客户端配置不能直接沿用。**
 
 下方为最初 fork 的旧版说明。旧五协议流程只能通过 `bash sb.sh --legacy` 操作旧配置，不能用于新模板。

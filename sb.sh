@@ -1,7 +1,16 @@
 #!/bin/bash
-# New default: exact 1.14 template workflow; legacy functions below are opt-in only.
-if [[ "${1:-}" != "--legacy" ]]; then
-    sb14_lib="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/server14.sh"
+# Preserve the original startup menu. Only explicit CLI commands bypass it.
+SB14_LEGACY=0
+if [[ "${1:-}" == "--legacy" ]]; then
+    SB14_LEGACY=1
+    shift
+    if [[ -f /etc/s-box/sb.json ]] && grep -q '"VLESS-Vision-Reality-in"' /etc/s-box/sb.json; then
+        printf '当前配置采用 1.14 模板，不能使用旧版行号/下标改写；请去掉 --legacy。\n' >&2
+        exit 1
+    fi
+else
+    export SB14_ENTRY_FILE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
+    sb14_lib="$(dirname -- "$SB14_ENTRY_FILE")/server14.sh"
     sb14_download=''
     if [[ ! -f "$sb14_lib" ]]; then
         sb14_lib=$(mktemp) || exit 1
@@ -9,17 +18,16 @@ if [[ "${1:-}" != "--legacy" ]]; then
         trap 'rm -f -- "$sb14_download"' EXIT
         curl -fLS --retry 2 -o "$sb14_lib" https://raw.githubusercontent.com/redrohu/sing-box-yg/main/server14.sh || exit 1
     fi
-    if ! printf '%s  %s\n' '97a3a642f722d7782171c520abff2e66495025264e8d6ffd4401d6b5446793d9' "$sb14_lib" | sha256sum -c - >/dev/null; then
+    if ! printf '%s  %s\n' '9600ebbaffcb51d9b7b6ad3e8d4aafb2172647f99be06b93fd059cfc2abe70ef' "$sb14_lib" | sha256sum -c - >/dev/null; then
         printf 'server14.sh 校验失败，请从同一版本重新获取 sb.sh 和 server14.sh。\n' >&2
         exit 1
     fi
-    bash "$sb14_lib" "$@"
-    exit $?
-fi
-shift
-if [[ -f /etc/s-box/sb.json ]] && grep -q '"VLESS-Vision-Reality-in"' /etc/s-box/sb.json; then
-    printf '当前配置采用 1.14 模板，禁止旧版五协议菜单改写；请去掉 --legacy。\n' >&2
-    exit 1
+    source "$sb14_lib"
+    if [[ $# -gt 0 && "$1" != menu ]]; then
+        sb14_main "$@"
+        exit $?
+    fi
+    [[ "${1:-}" != menu ]] || shift
 fi
 export LANG=en_US.UTF-8
 red='\033[0;31m'
@@ -4321,7 +4329,7 @@ blue "ArgoSBX项目地址：https://github.com/yonggekkk/argosbx"
 echo
 }
 
-clear
+sb_menu_header(){
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" 
 echo -e "${bblue} ░██     ░██      ░██ ██ ██         ░█${plain}█   ░██     ░██   ░██     ░█${red}█   ░██${plain}  "
 echo -e "${bblue}  ░██   ░██      ░██    ░░██${plain}        ░██  ░██      ░██  ░██${red}      ░██  ░██${plain}   "
@@ -4334,7 +4342,7 @@ white "甬哥Github项目  ：github.com/yonggekkk"
 white "甬哥Blogger博客 ：ygkkk.blogspot.com"
 white "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" 
-white "Vless-reality-vision、Vmess-ws(tls)+Argo、Hy2、Tuic、Anytls 五协议共存脚本"
+white "Sing-box 服务端脚本（指定 1.14 模板，保留原菜单）"
 white "脚本快捷方式：sb"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 green " 1. 一键安装 Sing-box" 
@@ -4359,6 +4367,18 @@ green "16. Sing-box-yg脚本使用说明书"
 white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+}
+
+if [[ $SB14_LEGACY == 0 ]]; then
+    sb14_bind_legacy_menu
+fi
+clear
+sb_menu_header
+if [[ $SB14_LEGACY == 0 ]]; then
+    echo '服务端生成模板：qichiyuhub/rule 1.14X/VPS/server.json'
+    echo '菜单编号保持原版；不适用的旧功能仅提示，不改写配置。'
+    [[ -f /etc/s-box/sb.json ]] || yellow '未安装！请先选择 1 安装'
+else
 insV=$(cat /etc/s-box/v 2>/dev/null)
 latestV=$(curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1)
 if [ -f /etc/s-box/v ]; then
@@ -4372,6 +4392,7 @@ fi
 else
 echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${latestV}${plain}"
 yellow "未安装 Sing-box-yg 脚本！请先选择 1 安装"
+fi
 fi
 
 lapre

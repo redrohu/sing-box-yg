@@ -371,19 +371,28 @@ sb14_register() (
     # Alternate directories are for offline rendering/testing, never system registration.
     [[ $(sb14_dir) == /etc/s-box ]] || return 0
     umask 077
-    local helper launcher backup
+    sb14_root || return 1
+    local helper launcher entry backup source_entry
     helper=$(mktemp /etc/s-box/.sb14-helper.XXXXXXXX) || return 1
     launcher=$(mktemp /usr/bin/.sb14-launcher.XXXXXXXX) || { rm -f -- "$helper"; return 1; }
-    trap 'rm -f -- "$helper" "$launcher"' EXIT
+    entry=$(mktemp /etc/s-box/.sb14-entry.XXXXXXXX) || { rm -f -- "$helper" "$launcher"; return 1; }
+    trap 'rm -f -- "$helper" "$launcher" "$entry"' EXIT
     cp -- "${BASH_SOURCE[0]}" "$helper" && chmod 700 "$helper" || return 1
-    printf '#!/bin/bash\nexec /bin/bash /etc/s-box/server14.sh "$@"\n' > "$launcher" || return 1
+    source_entry="${SB14_ENTRY_FILE:-$(dirname -- "${BASH_SOURCE[0]}")/sb.sh}"
+    if [[ -f "$source_entry" ]]; then cp -- "$source_entry" "$entry" || return 1
+    else curl -fLS --retry 2 -o "$entry" https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh || return 1; fi
+    bash -n "$entry" && grep -Fq "$(sha256sum "$helper" | cut -d' ' -f1)" "$entry" || { sb14_error '菜单入口与配置模块版本不匹配，未替换脚本'; return 1; }
+    chmod 700 "$entry" || return 1
+    printf '#!/bin/bash\nexec /bin/bash /etc/s-box/sb.sh "$@"\n' > "$launcher" || return 1
     chmod 700 "$launcher" || return 1
+    backup=$(mktemp -d /etc/s-box/scripts.bak.XXXXXXXX) || return 1
+    [[ ! -f /etc/s-box/sb.sh ]] || cp -- /etc/s-box/sb.sh "$backup/sb.sh" || return 1
+    [[ ! -f /etc/s-box/server14.sh ]] || cp -- /etc/s-box/server14.sh "$backup/server14.sh" || return 1
     if [[ -f /usr/bin/sb ]]; then
-        backup=$(mktemp /etc/s-box/sb.launcher.bak.XXXXXXXX) || return 1
-        cp -L -- /usr/bin/sb "$backup" && chmod 600 "$backup" || return 1
-        printf '旧快捷脚本备份：%s\n' "$backup"
+        cp -L -- /usr/bin/sb "$backup/launcher.sh" && chmod 600 "$backup/launcher.sh" || return 1
     fi
-    mv -f -- "$helper" /etc/s-box/server14.sh && mv -f -- "$launcher" /usr/bin/sb
+    printf '旧菜单/模块/快捷入口备份：%s\n' "$backup"
+    mv -f -- "$helper" /etc/s-box/server14.sh && mv -f -- "$entry" /etc/s-box/sb.sh && mv -f -- "$launcher" /usr/bin/sb
 )
 
 sb14_edit() (
@@ -526,7 +535,7 @@ sb14_prompt_parameters() (
     sb14_parameters "$file"
 )
 
-sb14_menu() (
+sb14_advanced_menu() (
     umask 077
     local action tmp tag port backup result
     sb14_jq || return 1
@@ -559,10 +568,176 @@ sb14_menu() (
     esac
 )
 
+sb14_open_menu() (
+    # Direct module/old shortcut invocation must lead back to the original numbered UI.
+    local entry="${SB14_ENTRY_FILE:-$(dirname -- "${BASH_SOURCE[0]}")/sb.sh}" tmp
+    if [[ -f "$entry" ]]; then bash "$entry"; return $?; fi
+    tmp=$(mktemp -d) || return 1
+    trap 'rm -rf -- "$tmp"' EXIT
+    cp -- "${BASH_SOURCE[0]}" "$tmp/server14.sh" || return 1
+    curl -fLS --retry 2 -o "$tmp/sb.sh" https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh || return 1
+    bash "$tmp/sb.sh"
+)
+
+sb14_unavailable() {
+    printf '%s\n' "${1:-此功能} 不适用于指定 1.14 模板；未修改配置。旧配置可用 bash sb.sh --legacy 维护。"
+    return 1
+}
+
+sb14_require_installed_template() {
+    sb14_jq && sb14_layout "$(sb14_dir)/sb.json" || { sb14_error '当前不是指定模板；如需迁移，请用主菜单 1，原配置会备份且不自动重启'; return 1; }
+}
+
+sb14_ui_parameters() (
+    umask 077
+    local action="$1" tmp confirm
+    sb14_root && sb14_jq || return 1
+    if [[ $action == certificate ]]; then sb14_require_installed_template || return 1; fi
+    if [[ $action == install && -e "$(sb14_dir)/sb.json" ]]; then
+        read -r -p '已安装。迁移为指定模板会更换协议、端口及全部凭据，须重新配置客户端。输入 MIGRATE 确认（不自动重启）: ' confirm
+        [[ $confirm == MIGRATE ]] || return 1
+        action=migrate
+    fi
+    tmp=$(mktemp -d) || return 1
+    trap 'rm -rf -- "$tmp"' EXIT
+    sb14_prompt_parameters "$tmp/parameters.json" || return 1
+    case $action in
+      install) sb14_install "$tmp/parameters.json";;
+      migrate) sb14_apply "$tmp/parameters.json";;
+      certificate) sb14_edit certificate "$tmp/parameters.json";;
+    esac
+)
+
+sb14_ui_certificate() {
+    local choice domain backup
+    sb14_require_installed_template || return 1
+    printf '1：更换 Reality/ShadowTLS 握手域名\n2：更新内置 ACME 域名/邮箱/Cloudflare Token\n3：从备份恢复配置（不重启）\n0：返回\n'
+    read -r -p '请选择: ' choice
+    case $choice in
+      1) read -r -p '握手域名: ' domain; sb14_edit reality "$domain";;
+      2) sb14_ui_parameters certificate;;
+      3) read -r -p '备份绝对路径: ' backup; sb14_restore "$backup";;
+      0) return 0;;
+      *) sb14_error '未知选项'; return 1;;
+    esac
+}
+
+sb14_ui_port() {
+    local choice port tag
+    local -a tags
+    sb14_require_installed_template || return 1
+    mapfile -t tags < <(jq -r '.inbounds[]|select(has("listen_port"))|.tag' "$(sb14_dir)/sb.json" | tr -d '\r')
+    printf '本模板按 tag 修改唯一监听端口；多端口跳跃/复用不由本模板管理。\n'
+    for ((choice=0; choice<${#tags[@]}; choice++)); do printf '%s：%s\n' "$((choice+1))" "${tags[$choice]}"; done
+    printf '0：返回\n'; read -r -p '请选择协议: ' choice
+    [[ $choice == 0 ]] && return 0
+    [[ $choice =~ ^[1-9]$ ]] && ((choice<=${#tags[@]})) || { sb14_error '未知选项'; return 1; }
+    tag=${tags[$((choice-1))]}
+    read -r -p '新端口: ' port
+    sb14_edit port "$tag" "$port"
+}
+
+sb14_ui_core() {
+    local choice version
+    printf '1：升级至最新正式版\n2：切换测试版（本模板暂不提供此入口）\n3：指定正式版（必须 >=1.14）\n0：返回\n'
+    read -r -p '请选择: ' choice
+    case $choice in
+      1) version=$(curl -fsSL --max-time 20 https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name|ltrimstr("v")') || return 1;;
+      2) sb14_unavailable '切换未经验证的测试内核'; return $?;;
+      3) read -r -p '正式版版本号: ' version;;
+      0) return 0;;
+      *) return 1;;
+    esac
+    sb14_install_core "$version"
+}
+
+sb14_update_scripts() (
+    umask 077
+    sb14_root || return 1
+    local tmp
+    tmp=$(mktemp -d) || return 1
+    trap 'rm -rf -- "$tmp"' EXIT
+    curl -fLS --retry 2 -o "$tmp/sb.sh" https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh &&
+      curl -fLS --retry 2 -o "$tmp/server14.sh" https://raw.githubusercontent.com/redrohu/sing-box-yg/main/server14.sh || return 1
+    bash -n "$tmp/sb.sh" && bash -n "$tmp/server14.sh" &&
+      grep -Fq "$(sha256sum "$tmp/server14.sh" | cut -d' ' -f1)" "$tmp/sb.sh" || return 1
+    mkdir -p /etc/s-box || return 1
+    SB14_ENTRY_FILE="$tmp/sb.sh" bash "$tmp/server14.sh" register || return 1
+    printf '菜单及配置模块已更新；未修改 sb.json、未重启服务。\n'
+)
+
+sb14_uninstall() (
+    umask 077
+    sb14_root || return 1
+    [[ $(sb14_dir) == /etc/s-box ]] || { sb14_error '卸载只允许标准路径'; return 1; }
+    local confirm backup
+    read -r -p '将备份并删除 /etc/s-box 和 sing-box 服务；不会清空防火墙。输入 UNINSTALL 确认: ' confirm
+    [[ $confirm == UNINSTALL ]] || return 1
+    backup=$(mktemp /root/s-box-before-uninstall.XXXXXXXX.tar.gz) || return 1
+    tar -czf "$backup" -C /etc s-box && chmod 600 "$backup" || return 1
+    printf '完整备份：%s\n' "$backup"
+    if command -v rc-service >/dev/null; then
+        rc-service sing-box stop && rc-update del sing-box default || return 1
+        rm -f /etc/init.d/sing-box
+    else
+        systemctl stop sing-box && systemctl disable sing-box || return 1
+        rm -f /etc/systemd/system/sing-box.service
+        systemctl daemon-reload || return 1
+    fi
+    # Explicit fixed target, never derived from input or an unverified variable.
+    rm -rf -- /etc/s-box
+    rm -f -- /usr/bin/sb
+    printf 'Sing-box 已卸载，备份保留于 %s；其他服务及防火墙未改动。\n' "$backup"
+)
+
+sb14_bind_legacy_menu() {
+    # Run after legacy function declarations, before rendering their original menu.
+    # Keep main-menu labels/numbering and the configuration submenu; replace unsafe handlers.
+    sb(){ bash "$SB14_ENTRY_FILE"; }
+    instsllsingbox(){ sb14_ui_parameters install; }
+    showprotocol(){
+        if [[ -f "$(sb14_dir)/sb.json" ]]; then
+            jq -r '.inbounds[]|[.tag,.type,(.listen_port // "内部 detour")]|@tsv' "$(sb14_dir)/sb.json"
+            printf '配置变更按 tag 执行；应用后须通过菜单 6 显式重启。\n'
+        fi
+    }
+    changeym(){ sb14_ui_certificate; }
+    changeuuid(){
+        local confirm
+        sb14_require_installed_template || return 1
+        read -r -p '本模板没有 VMess Path；轮换所有凭据后客户端须同步。输入 ROTATE 确认: ' confirm
+        [[ $confirm == ROTATE ]] && sb14_edit credentials
+    }
+    changeport(){ sb14_ui_port; }
+    restartsb(){
+        sb14_root && "$(sb14_bin)" check -c "$(sb14_dir)/sb.json" || return 1
+        if command -v rc-service >/dev/null; then rc-service sing-box restart; else systemctl restart sing-box; fi
+    }
+    upsbyg(){ sb14_update_scripts; }
+    upsbcroe(){ sb14_ui_core; }
+    acme(){ sb14_ui_parameters certificate; }
+    unins(){ sb14_uninstall; }
+    changefl(){ sb14_unavailable '三通道分流'; }
+    cfargo_ym(){ sb14_unavailable 'VMess/Argo'; }
+    changeip(){ sb14_unavailable '旧版 IP 出站优先级'; }
+    tgsbshow(){ sb14_unavailable '旧版客户端 Telegram 导出'; }
+    changewg(){ sb14_unavailable 'WARP 出站账户'; }
+    gitlabsub(){ sb14_unavailable '旧版 Gitlab 订阅'; }
+    ipsub(){ sb14_unavailable '旧版本地订阅'; }
+    vmesscfadd(){ sb14_unavailable 'VMess CDN'; }
+    clash_sb_share(){ sb14_unavailable '旧版五协议客户端/订阅生成'; }
+    cfwarp(){ sb14_unavailable '自动添加 WARP 网络模式'; }
+    inssbwpph(){ sb14_unavailable 'WARP-plus-Socks5 出站'; }
+    wgcfgo(){ sb14_unavailable '旧客户端 IP/订阅输出'; }
+    sbshare(){ sb14_unavailable '旧版五协议客户端导出'; }
+    sbsm(){ printf '原启动菜单及编号保留。新模板部署与限制：https://github.com/redrohu/sing-box-yg/blob/main/SERVER14.md\n'; }
+}
+
 sb14_usage() {
     cat <<'HELP'
 用法：bash sb.sh [命令]
-  menu                              新模板菜单（默认）
+  menu                              原启动菜单及 0..16 编号（默认）
+  advanced-menu                     配置模块的高级维护菜单（非默认）
   template                          输出未填参的原始参考模板
   render PARAMETERS.json OUTPUT     生成候选配置；不覆盖已有文件、不修改服务
   apply PARAMETERS.json             校验、备份、写入 /etc/s-box/sb.json；不重启
@@ -584,7 +759,9 @@ HELP
 sb14_main() {
     local cmd="${1:-menu}"; [[ $# -eq 0 ]] || shift
     case "$cmd:$#" in
-      menu:0) sb14_menu;;
+      menu:0) sb14_open_menu;;
+      advanced-menu:0) sb14_advanced_menu;;
+      register:0) sb14_register;;
       template:0) sb14_template;;
       render:2) sb14_render "$@";;
       apply:1) sb14_apply "$@";;
