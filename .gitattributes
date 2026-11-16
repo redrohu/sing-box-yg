@@ -1,4 +1,0 @@
-# The bootstrap authenticates server14.sh bytes, so checkouts must retain LF.
-sb.sh text eol=lf
-server14.sh text eol=lf
-tests/fixtures/server14.upstream.json text eol=lf
