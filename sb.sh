@@ -12,6 +12,39 @@ yellow(){ echo -e "\033[33m\033[01m$1\033[0m";}
 blue(){ echo -e "\033[36m\033[01m$1\033[0m";}
 white(){ echo -e "\033[37m\033[01m$1\033[0m";}
 readp(){ read -p "$(yellow "$1")" $2;}
+
+# Client core version is independent of the VPS core. Default: current stable syntax.
+# Keep this self-contained helper identical in sb.sh / serv00.sh / serv00keep.sh.
+sb_client_profile(){
+local source=$1 target=$2 version=${SB_CLIENT_VERSION:-1.14} minor tmp
+if [[ ! $version =~ ^1\.([0-9]+)(\.[0-9]+)?$ ]] || (( 10#${BASH_REMATCH[1]:-0} < 12 )); then
+echo "客户端配置要求 SB_CLIENT_VERSION=1.12、1.13 或 1.14（默认），不支持：$version" >&2
+return 1
+fi
+minor=$((10#${BASH_REMATCH[1]}))
+tmp=$(mktemp "${target}.tmp.XXXXXX") || return 1
+if ! jq --argjson minor "$minor" '
+  .experimental.cache_file.store_fakeip = true |
+  if $minor < 14 then
+    .http_clients[0].detour as $download |
+    .route.rule_set |= map(.download_detour = ($download // "direct") | del(.http_client)) |
+    del(.http_clients, .route.default_http_client, .dns.optimistic, .dns.timeout,
+        .experimental.cache_file.store_dns)
+  else . end
+' "$source" > "$tmp"; then
+rm -f "$tmp"
+return 1
+fi
+mv -f "$tmp" "$target"
+}
+
+sb_config_check(){
+/etc/s-box/sing-box check -c /etc/s-box/sb.json || {
+red "配置检查失败，未启动/重启服务。请根据上面的内核错误修正配置。"
+return 1
+}
+}
+
 [[ $EUID -ne 0 ]] && yellow "请以root模式运行脚本" && exit
 stty erase $'\b' 2>/dev/null || stty erase '^H' 2>/dev/null
 #[[ -e /etc/hosts ]] && grep -qE '^ *172.65.251.78 gitlab.com' /etc/hosts || echo -e '\n172.65.251.78 gitlab.com' >> /etc/hosts
@@ -420,6 +453,10 @@ blue "已确认Vmess的path路径：${uuid}-vm"
 }
 
 inssbjsonser(){
+if [[ "$sbnh" != "1.10" && ! "$sbnh" =~ ^1\.(1[2-9]|[2-9][0-9])$ ]]; then
+red "配置支持 1.10.x（旧版）或 1.12+（新版），不支持当前内核：$sbnh"
+return 1
+fi
 cat > /etc/s-box/sb10.json <<EOF
 {
 "log": {
@@ -868,8 +905,10 @@ cat > /etc/s-box/sb11.json <<EOF
 "outbound": "direct",
 "network": "udp,tcp"
 }
-]
-}
+],
+"default_domain_resolver": {"server": "dns-local", "strategy": "$ipv"}
+},
+"dns": {"servers": [{"type": "local", "tag": "dns-local"}]}
 }
 EOF
 [[ "$sbnh" == "1.10" ]] && num=10 || num=11
@@ -877,6 +916,7 @@ cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
 }
 
 sbservice(){
+sb_config_check || return 1
 if command -v apk >/dev/null 2>&1; then
 echo '#!/sbin/openrc-run
 description="sing-box service"
@@ -1204,6 +1244,8 @@ echo
 }
 
 sb_client(){
+local client_raw
+client_raw=$(mktemp /etc/s-box/sbox.raw.XXXXXX) || return 1
 
 sbhy2ports(){
 if [[ -n $hy2_ports ]]; then
@@ -1271,7 +1313,8 @@ cat <<EOF
   },
   "http_clients": [
     {
-      "tag": "rule-set-direct"
+      "tag": "rule-set-direct",
+      "domain_resolver": "dns-cn"
     }
   ],
   "dns": {
@@ -1297,6 +1340,16 @@ cat <<EOF
       }
     ],
     "rules": [
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "server": "dns-cn"
+      },
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "server": "dns-proxy"
+      },
       {
         "rule_set": [
           "geosite-cn"
@@ -1356,13 +1409,19 @@ cat <<EOF
     ],
     "rules": [
       {
-        "inbound": [
-          "tun-in"
-        ],
-        "protocol": [
-          "dns"
-        ],
+        "inbound": "tun-in",
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [{"protocol": "dns"}, {"port": 53}],
         "action": "hijack-dns"
+      },
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "outbound": "direct"
       },
       {
         "clash_mode": "Global",
@@ -1385,11 +1444,6 @@ cat <<EOF
         "rule_set": [
           "geoip-cn"
         ],
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "clash_mode": "Direct",
         "action": "route",
         "outbound": "direct"
       },
@@ -1604,7 +1658,7 @@ EOF
 
 tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
 if ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
-cat > /etc/s-box/sbox.json <<EOF
+cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
 {
@@ -1881,7 +1935,7 @@ rules:
 EOF
 
 elif ! ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
-cat > /etc/s-box/sbox.json <<EOF
+cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
 {
@@ -2070,7 +2124,7 @@ rules:
 EOF
 
 elif ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' && ! ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
-cat > /etc/s-box/sbox.json <<EOF
+cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
 {
@@ -2257,7 +2311,7 @@ rules:
 EOF
 
 else
-cat > /etc/s-box/sbox.json <<EOF
+cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
         {
@@ -2344,6 +2398,10 @@ rules:
   - MATCH,🌍选择代理节点
 EOF
 fi
+sb_client_profile "$client_raw" /etc/s-box/sbox.json
+local result=$?
+rm -f "$client_raw"
+return "$result"
 }
 
 cfargo_ym(){
@@ -2535,11 +2593,11 @@ wget -q -O /root/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 green "五、自动生成warp-wireguard出站账户" && sleep 2
 warpwg
-inssbjsonser
-sbservice
+inssbjsonser || return 1
+sbservice || return 1
 sbactive
 #curl -sL https://gitlab.com/rwkgyg/sing-box-yg/-/raw/main/version/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
-curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
+curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 lnsb && blue "Sing-box-yg脚本安装成功，脚本快捷方式：sb" && cronsb
 echo
@@ -3774,6 +3832,7 @@ fi
 }
 
 restartsb(){
+sb_config_check || return 1
 if command -v apk >/dev/null 2>&1; then
 rc-service sing-box restart
 else
@@ -3824,7 +3883,7 @@ rm /tmp/crontab.tmp
 
 lnsb(){
 rm -rf /usr/bin/sb
-curl -L -o /usr/bin/sb -# --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh
+curl -L -o /usr/bin/sb -# --retry 2 --insecure https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh
 chmod +x /usr/bin/sb
 }
 
@@ -3833,7 +3892,7 @@ if [[ ! -f '/usr/bin/sb' ]]; then
 red "未正常安装Sing-box-yg" && exit
 fi
 lnsb
-curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
+curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
 green "Sing-box-yg安装脚本升级成功" && sleep 5 && sb
 }
 
@@ -3924,7 +3983,7 @@ iptables -t nat -F PREROUTING >/dev/null 2>&1
 netfilter-persistent save >/dev/null 2>&1
 service iptables save >/dev/null 2>&1
 green "Sing-box卸载完成！"
-blue "欢迎继续使用Sing-box-yg脚本：bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)"
+blue "欢迎继续使用Sing-box-yg脚本：bash <(curl -Ls https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh)"
 echo
 }
 
@@ -4152,7 +4211,7 @@ case $(uname -m) in
 aarch64) cpu=arm64;;
 x86_64) cpu=amd64;;
 esac
-curl -L -o /etc/s-box/sbwpph -# --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sbwpph_$cpu
+curl -L -o /etc/s-box/sbwpph -# --retry 2 --insecure https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sbwpph_$cpu
 chmod +x /etc/s-box/sbwpph
 fi
 ps -ef | grep '[s]bwpph' | awk '{print $2}' | xargs kill 2>/dev/null
@@ -4338,14 +4397,14 @@ white "-------------------------------------------------------------------------
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 insV=$(cat /etc/s-box/v 2>/dev/null)
-latestV=$(curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1)
+latestV=$(curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1)
 if [ -f /etc/s-box/v ]; then
 if [ "$insV" = "$latestV" ]; then
 echo -e "当前 Sing-box-yg 脚本最新版：${bblue}${insV}${plain} (已安装)"
 else
 echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${insV}${plain}"
 echo -e "检测到最新 Sing-box-yg 脚本版本号：${yellow}${latestV}${plain} (可选择7进行更新)"
-echo -e "${yellow}$(curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/version)${plain}"
+echo -e "${yellow}$(curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version)${plain}"
 fi
 else
 echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${latestV}${plain}"

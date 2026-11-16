@@ -89,11 +89,12 @@ hyp=$(jq -r '.inbounds[0].listen_port' $WORKDIR/config.json)
 vlp=$(jq -r '.inbounds[3].listen_port' $WORKDIR/config.json)
 vmp=$(jq -r '.inbounds[4].listen_port' $WORKDIR/config.json)
 purple "检测到Serv00/Hostuno-sb-yg脚本已安装，执行端口替换，请稍等……"
-sed -i '' "12s/$hyp/$hy2_port/g" $WORKDIR/config.json
-sed -i '' "33s/$hyp/$hy2_port/g" $WORKDIR/config.json
-sed -i '' "54s/$hyp/$hy2_port/g" $WORKDIR/config.json
-sed -i '' "75s/$vlp/$vless_port/g" $WORKDIR/config.json
-sed -i '' "102s/$vmp/$vmess_port/g" $WORKDIR/config.json
+port_tmp=$(mktemp "$WORKDIR/config.ports.XXXXXX") || exit 1
+jq --argjson hy "$hy2_port" --argjson vl "$vless_port" --argjson vm "$vmess_port" '
+.inbounds |= map(if .type == "hysteria2" then .listen_port = $hy
+elif .type == "vless" then .listen_port = $vl
+elif .type == "vmess" then .listen_port = $vm else . end)
+' "$WORKDIR/config.json" > "$port_tmp" && mv -f "$port_tmp" "$WORKDIR/config.json" || { rm -f "$port_tmp"; exit 1; }
 if [ "$hona" = "serv00" ]; then
 sed -i '' -e "17s|'$vlp'|'$vless_port'|" serv00keep.sh
 sed -i '' -e "18s|'$vmp'|'$vmess_port'|" serv00keep.sh
@@ -244,7 +245,7 @@ uninstall_singbox() {
           source ~/.bashrc
           purple "************************************************************"
           purple "Serv00/Hostuno-sb-yg卸载完成！"
-          purple "欢迎继续使用脚本：bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh)"
+          purple "欢迎继续使用脚本：bash <(curl -Ls https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00.sh)"
           purple "************************************************************"
           ;;
         [Nn]) exit 0 ;;
@@ -262,7 +263,7 @@ reading "\n注意！！！清理所有进程并清空所有安装内容，将退
     source ~/.bashrc
     purple "************************************************************"
     purple "Serv00/Hostuno-sb-yg清理重置完成！"
-    purple "欢迎继续使用脚本：bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh)"
+    purple "欢迎继续使用脚本：bash <(curl -Ls https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00.sh)"
     purple "************************************************************"
     find ~ -type f -exec chmod 644 {} \; 2>/dev/null
     find ~ -type d -exec chmod 755 {} \; 2>/dev/null
@@ -298,6 +299,70 @@ argo_configure() {
     fi
     break
 done
+}
+
+sb_client_profile(){
+local source=$1 target=$2 version=${SB_CLIENT_VERSION:-1.14} minor tmp
+if [[ ! $version =~ ^1\.([0-9]+)(\.[0-9]+)?$ ]] || (( 10#${BASH_REMATCH[1]:-0} < 12 )); then
+echo "客户端配置要求 SB_CLIENT_VERSION=1.12、1.13 或 1.14（默认），不支持：$version" >&2
+return 1
+fi
+minor=$((10#${BASH_REMATCH[1]}))
+tmp=$(mktemp "${target}.tmp.XXXXXX") || return 1
+if ! jq --argjson minor "$minor" '
+  .experimental.cache_file.store_fakeip = true |
+  if $minor < 14 then
+    .http_clients[0].detour as $download |
+    .route.rule_set |= map(.download_detour = ($download // "direct") | del(.http_client)) |
+    del(.http_clients, .route.default_http_client, .dns.optimistic, .dns.timeout,
+        .experimental.cache_file.store_dns)
+  else . end
+' "$source" > "$tmp"; then
+rm -f "$tmp"
+return 1
+fi
+mv -f "$tmp" "$target"
+}
+
+# Convert the canonical endpoint/HTTP-client schema only for older installed cores.
+serv00_server_profile(){
+local source=$1 target=$2 core_bin=$3 version minor tmp
+version=$("$core_bin" version | awk '/version/{print $NF}')
+if [[ ! $version =~ ^1\.([0-9]+)\. ]]; then
+red "无法识别 Sing-box 内核版本：$version，未替换服务端配置"
+return 1
+fi
+minor=$((10#${BASH_REMATCH[1]}))
+if (( minor < 10 )); then
+red "仅支持 Sing-box 1.10+，未替换服务端配置"
+return 1
+fi
+tmp=$(mktemp "${target}.tmp.XXXXXX") || return 1
+if ! jq --argjson minor "$minor" '
+  if $minor < 11 then
+    .outbounds += [.endpoints[] | {
+      type: "wireguard", tag, server: .peers[0].address, server_port: .peers[0].port,
+      local_address: .address, private_key, peer_public_key: .peers[0].public_key,
+      reserved: .peers[0].reserved
+    }] | del(.endpoints)
+  else . end |
+  if $minor < 12 then del(.dns, .route.default_domain_resolver) else . end |
+  if $minor < 14 and .http_clients then
+    .route.rule_set |= map(.download_detour = "direct" | del(.http_client)) |
+    del(.http_clients, .route.default_http_client)
+  else . end
+' "$source" > "$tmp"; then
+rm -f "$tmp"
+return 1
+fi
+if ! "$core_bin" check -c "$tmp"; then
+rm -f "$tmp"
+return 1
+fi
+if [[ -f $target ]]; then
+cp -p "$target" "${target}.bak.$(date +%Y%m%d%H%M%S).$$" || { rm -f "$tmp"; return 1; }
+fi
+mv -f "$tmp" "$target"
 }
 
 download_and_run_singbox() {
@@ -364,7 +429,9 @@ private_key=$(<private_key.txt)
 public_key=$(<public_key.txt)
 openssl ecparam -genkey -name prime256v1 -out "private.key"
 openssl req -new -x509 -days 3650 -key "private.key" -out "cert.pem" -subj "/CN=$USERNAME.${address}"
-  cat > config.json << EOF
+local server_raw
+server_raw=$(mktemp ./config.raw.XXXXXX) || return 1
+  cat > "$server_raw" << EOF
 {
   "log": {
     "disabled": true,
@@ -479,33 +546,45 @@ openssl req -new -x509 -days 3650 -key "private.key" -out "cert.pem" -subj "/CN=
       }
     }
  ],
-     "outbounds": [
-     {
-        "type": "wireguard",
-        "tag": "wg",
-        "server": "162.159.192.200",
-        "server_port": 4500,
-        "local_address": [
-                "172.16.0.2/32",
-                "2606:4700:110:8f77:1ca9:f086:846c:5f9e/128"
+  "endpoints": [
+  {
+    "type": "wireguard",
+    "tag": "wg",
+    "address": [
+      "172.16.0.2/32",
+      "2606:4700:110:8f77:1ca9:f086:846c:5f9e/128"
+    ],
+    "private_key": "wIxszdR2nMdA7a2Ul3XQcniSfSZqdqjPb6w6opvf5AU=",
+    "peers": [
+      {
+        "address": "162.159.192.200",
+        "port": 4500,
+        "public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+        "allowed_ips": [
+          "0.0.0.0/0",
+          "::/0"
         ],
-        "private_key": "wIxszdR2nMdA7a2Ul3XQcniSfSZqdqjPb6w6opvf5AU=",
-        "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
         "reserved": [
-            126,
-            246,
-            173
+          126,
+          246,
+          173
         ]
-    },
+      }
+    ]
+  }
+],
+  "dns": {"servers": [{"type": "local", "tag": "dns-local"}]},
+  "outbounds": [
     {
       "type": "direct",
       "tag": "direct"
     }
   ],
    "route": {
+     "default_domain_resolver": "dns-local",
 EOF
 if [[ "$nb" =~ 14|15 ]]; then
-cat >> config.json <<EOF 
+cat >> "$server_raw" <<EOF
     "rules": [
     {
      "domain": [
@@ -519,12 +598,18 @@ cat >> config.json <<EOF
 }
 EOF
 else
-  cat >> config.json <<EOF
+  cat >> "$server_raw" <<EOF
     "final": "direct"
     }  
 }
 EOF
 fi
+
+core_bin=${FILE_MAP[web]:-}
+[[ -n $core_bin ]] || core_bin="./$(cat sb.txt)"
+[[ $core_bin == */* ]] || core_bin="./$core_bin"
+serv00_server_profile "$server_raw" config.json "$core_bin" || { rm -f "$server_raw"; return 1; }
+rm -f "$server_raw"
 
 if ! ps aux | grep '[r]un -c con' > /dev/null; then
 ps aux | grep '[r]un -c con' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
@@ -725,7 +810,9 @@ v2sub=$(cat jh.txt)
 echo "$v2sub" > ${FILE_PATH}/${UUID}_v2sub.txt
 baseurl=$(base64 -w 0 < jh.txt)
 
-cat > sing_box.json <<EOF
+local client_raw
+client_raw=$(mktemp ./sing_box.raw.XXXXXX) || return 1
+cat > "$client_raw" <<EOF
 {
   "log": {
     "disabled": false,
@@ -744,65 +831,71 @@ cat > sing_box.json <<EOF
       "cache_file": {
             "enabled": true,
             "path": "cache.db",
-            "store_fakeip": true
+            "store_fakeip": true,
+            "store_dns": true
         }
     },
-    "dns": {
-        "servers": [
-            {
-                "tag": "proxydns",
-                "address": "tls://8.8.8.8/dns-query",
-                "detour": "select"
-            },
-            {
-                "tag": "localdns",
-                "address": "h3://223.5.5.5/dns-query",
-                "detour": "direct"
-            },
-            {
-                "tag": "dns_fakeip",
-                "address": "fakeip"
-            }
-        ],
-        "rules": [
-            {
-                "outbound": "any",
-                "server": "localdns",
-                "disable_cache": true
-            },
-            {
-                "clash_mode": "Global",
-                "server": "proxydns"
-            },
-            {
-                "clash_mode": "Direct",
-                "server": "localdns"
-            },
-            {
-                "rule_set": "geosite-cn",
-                "server": "localdns"
-            },
-            {
-                 "rule_set": "geosite-geolocation-!cn",
-                 "server": "proxydns"
-            },
-             {
-                "rule_set": "geosite-geolocation-!cn",         
-                "query_type": [
-                    "A",
-                    "AAAA"
-                ],
-                "server": "dns_fakeip"
-            }
-          ],
-           "fakeip": {
-           "enabled": true,
-           "inet4_range": "198.18.0.0/15",
-           "inet6_range": "fc00::/18"
-         },
-          "independent_cache": true,
-          "final": "proxydns"
-        },
+  "http_clients": [{"tag": "rules-download", "detour": "select", "domain_resolver": "localdns"}],
+  "dns": {
+  "servers": [
+    {
+      "type": "tls",
+      "tag": "proxydns",
+      "server": "8.8.8.8",
+      "detour": "select"
+    },
+    {
+      "type": "https",
+      "tag": "localdns",
+      "server": "223.5.5.5"
+    },
+    {
+      "type": "fakeip",
+      "tag": "dns_fakeip",
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
+    }
+  ],
+  "rules": [
+    {
+      "clash_mode": "Direct",
+      "action": "route",
+      "server": "localdns"
+    },
+    {
+      "clash_mode": "Global",
+      "action": "route",
+      "server": "proxydns"
+    },
+    {
+      "rule_set": "geosite-cn",
+      "action": "route",
+      "server": "localdns"
+    },
+    {
+      "rule_set": "geosite-geolocation-!cn",
+      "query_type": [
+        "A",
+        "AAAA"
+      ],
+      "action": "route",
+      "server": "dns_fakeip"
+    },
+    {
+      "rule_set": "geosite-geolocation-!cn",
+      "action": "route",
+      "server": "proxydns"
+    }
+  ],
+  "final": "proxydns",
+  "strategy": "prefer_ipv4",
+  "cache_capacity": 8192,
+  "optimistic": {
+    "enabled": true,
+    "timeout": "1h"
+  },
+  "timeout": "10s"
+},
       "inbounds": [
     {
       "type": "tun",
@@ -812,10 +905,7 @@ cat > sing_box.json <<EOF
 	  "fd00::1/126"
       ],
       "auto_route": true,
-      "strict_route": true,
-      "sniff": true,
-      "sniff_override_destination": true,
-      "domain_strategy": "prefer_ipv4"
+      "strict_route": true
     }
   ],
   "outbounds": [
@@ -971,13 +1061,14 @@ cat > sing_box.json <<EOF
     }
   ],
   "route": {
+    "default_domain_resolver": "localdns",
+    "default_http_client": "rules-download",
       "rule_set": [
             {
                 "tag": "geosite-geolocation-!cn",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-!cn.srs",
-                "download_detour": "select",
                 "update_interval": "1d"
             },
             {
@@ -985,7 +1076,6 @@ cat > sing_box.json <<EOF
                 "type": "remote",
                 "format": "binary",
                 "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-cn.srs",
-                "download_detour": "select",
                 "update_interval": "1d"
             },
             {
@@ -993,7 +1083,6 @@ cat > sing_box.json <<EOF
                 "type": "remote",
                 "format": "binary",
                 "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
-                "download_detour": "select",
                 "update_interval": "1d"
             }
         ],
@@ -1005,7 +1094,9 @@ cat > sing_box.json <<EOF
       "action": "sniff"
       },
       {
-      "protocol": "dns",
+      "type": "logical",
+      "mode": "or",
+      "rules": [{"protocol": "dns"}, {"port": 53}],
       "action": "hijack-dns"
       },
       {
@@ -1022,11 +1113,11 @@ cat > sing_box.json <<EOF
         "outbound": "select"
       },
       {
-        "rule_set": "geoip-cn",
+        "rule_set": "geosite-cn",
         "outbound": "direct"
       },
       {
-        "rule_set": "geosite-cn",
+        "rule_set": "geoip-cn",
         "outbound": "direct"
       },
       {
@@ -1048,6 +1139,9 @@ cat > sing_box.json <<EOF
   }
 }
 EOF
+
+sb_client_profile "$client_raw" sing_box.json || { rm -f "$client_raw"; return 1; }
+rm -f "$client_raw"
 
 cat > clash_meta.yaml <<EOF
 port: 7890
@@ -1393,7 +1487,7 @@ if [[ -e $WORKDIR/config.json ]]; then
   COMMAND="sb"
   SCRIPT_PATH="$HOME/bin/$COMMAND"
   mkdir -p "$HOME/bin"
-  curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh > "$SCRIPT_PATH"
+  curl -Ls https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00.sh > "$SCRIPT_PATH"
   chmod +x "$SCRIPT_PATH"
 if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
     echo 'export PATH="$HOME/bin:$PATH"' >> "$HOME/.bashrc"
@@ -1401,15 +1495,15 @@ if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
     source ~/.bashrc
 fi
 if [ "$hona" = "serv00" ]; then
-curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/app.js -o "$keep_path"/app.js
+curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/app.js -o "$keep_path"/app.js
 sed -i '' "15s/name/$snb/g" "$keep_path"/app.js
 sed -i '' "59s/key/$UUID/g" "$keep_path"/app.js
 sed -i '' "90s/name/$USERNAME/g" "$keep_path"/app.js
 sed -i '' "90s/where/$snb/g" "$keep_path"/app.js
-curl -sSL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00keep.sh -o serv00keep.sh && chmod +x serv00keep.sh
+curl -sSL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00keep.sh -o serv00keep.sh && chmod +x serv00keep.sh
 fi
-curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/index.html -o "$FILE_PATH"/index.html
-curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sversion | awk -F "更新内容" '{print $1}' | head -n 1 > $WORKDIR/v
+curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/index.html -o "$FILE_PATH"/index.html
+curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sversion | awk -F "更新内容" '{print $1}' | head -n 1 > $WORKDIR/v
 else
 red "未安装脚本，请选择1进行安装" && exit
 fi
@@ -1573,14 +1667,14 @@ yellow "未设置端口"
 fi
 echo
 insV=$(cat $WORKDIR/v 2>/dev/null)
-latestV=$(curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sversion | awk -F "更新内容" '{print $1}' | head -n 1)
+latestV=$(curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sversion | awk -F "更新内容" '{print $1}' | head -n 1)
 if [ -f $WORKDIR/v ]; then
 if [ "$insV" = "$latestV" ]; then
 echo -e "当前 Serv00/Hostuno-sb-yg 脚本最新版：${purple}${insV}${re} (已安装)"
 else
 echo -e "当前 Serv00/Hostuno-sb-yg 脚本版本号：${purple}${insV}${re}"
 echo -e "检测到最新 Serv00/Hostuno-sb-yg 脚本版本号：${yellow}${latestV}${re} (可选择5进行更新)"
-echo -e "${yellow}$(curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sversion)${re}"
+echo -e "${yellow}$(curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sversion)${re}"
 fi
 echo -e "========================================================="
 sbb=$(cat $WORKDIR/sb.txt 2>/dev/null)

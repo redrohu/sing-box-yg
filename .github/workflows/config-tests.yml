@@ -1,0 +1,37 @@
+name: Generated sing-box configurations
+
+on:
+  push:
+    paths: ['*.sh', 'tests/**', '.github/workflows/config-tests.yml']
+  pull_request:
+    paths: ['*.sh', 'tests/**', '.github/workflows/config-tests.yml']
+  workflow_dispatch:
+
+jobs:
+  check-configurations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real sing-box test cores
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq openssl
+          mkdir -p "$RUNNER_TEMP/sbcheck"
+          for version in 1.10.7 1.12.25 1.13.21 1.14.4; do
+            name="sing-box-${version}-linux-amd64"
+            curl -fL --retry 3 "https://github.com/SagerNet/sing-box/releases/download/v${version}/${name}.tar.gz" -o "$RUNNER_TEMP/$name.tar.gz"
+            tar xzf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP/sbcheck"
+          done
+      - name: Generate and check server and client profiles
+        env:
+          SB_TEST_CORES: ${{ runner.temp }}/sbcheck
+          SB_TEST_OUTPUT: ${{ runner.temp }}/config-results
+        run: python -m unittest discover -s tests -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generated-config-validation
+          path: ${{ runner.temp }}/config-results
