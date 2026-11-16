@@ -102,12 +102,12 @@ cp key.pem private.key
 '''
 
 
-def generate_vps(source, directory, version="1.14", argo="none", client_version=None, hopping=False):
+def generate_vps(source, directory, version="1.14", argo="none", client_version=None, hopping=False, suffix=None):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     src = source.replace("/etc/s-box", bashpath(directory))
     functions = function(src, "inssbjsonser") + function(src, "sb_client")
-    for name in ["sb_client_profile", "sb_config_check"]:
+    for name in ["sb_client_profile", "sb_config_check", "node_suffix_valid", "node_suffix_load"]:
         if name + "(){" in src:
             functions = function(src, name) + functions
     ps = ""
@@ -119,8 +119,11 @@ def generate_vps(source, directory, version="1.14", argo="none", client_version=
 sbnh={version}
 SB_CLIENT_VERSION={client_version or '1.14'}
 red() {{ echo "$*" >&2; }}
+yellow() {{ echo "$*" >&2; }}
 inssbjsonser
 '''
+    if suffix is not None:
+        script += "printf '%s\\n' " + "'" + suffix.replace("'", "'\"'\"'") + "' > node_suffix.conf\n"
     if argo != "none":
         script += "jq '.inbounds[1].tls.enabled=false' sb.json > sb.tmp; mv sb.tmp sb.json\n"
     if hopping:

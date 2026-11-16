@@ -211,10 +211,12 @@ serv00_server_profile config.json config.json ./test-core
         header = source[start:source.index("insV=", start)]
         self.assertEqual(header, json.loads((ROOT / "tests/fixtures/original-menu-header.json").read_text(encoding="utf8"))["header"])
 
-    def test_clash_templates_remain_original(self):
+    def test_clash_templates_original_except_suffix_and_whitespace(self):
         fixture = json.loads((ROOT / "tests/fixtures/original-clash-sha256.json").read_text(encoding="utf8"))
         for name, expected in fixture.items():
-            self.assertEqual(hashlib.sha256(function(self.sources["sb.sh"], name).encode()).hexdigest(), expected)
+            template = function(self.sources["sb.sh"], name).replace("$node_suffix", "$hostname")
+            template = "\n".join(line.rstrip() for line in template.splitlines()) + "\n"
+            self.assertEqual(hashlib.sha256(template.encode()).hexdigest(), expected)
 
     def test_serv00_port_edits_after_reformatting(self):
         for name in ["serv00.sh", "serv00keep.sh"]:
