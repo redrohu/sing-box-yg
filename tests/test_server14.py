@@ -233,9 +233,9 @@ class Server14Test(unittest.TestCase):
         current = (ROOT / "sb.sh").read_text(encoding="utf-8")
         # This is the actual function called by the default entry, not a mock UI.
         header = re.search(r"(?ms)^sb_menu_header\(\)\{\n(.*?)^}\n", current).group(1)
-        old = subprocess.check_output(["git", "show", "b13f943:sb.sh"], cwd=ROOT).decode("utf-8")
+        original = json.loads((ROOT / "tests/fixtures/original-menu-labels.json").read_text(encoding="utf-8"))
         labels = lambda s: re.findall(r'green "\s*(\d+\. [^"\n]+)"', s)
-        self.assertEqual(labels(header), labels(old))
+        self.assertEqual(labels(header), original["labels"])
         result = self.call(extra='white(){ echo "$1"; }; green(){ echo "$1"; }; red(){ echo "$1"; }; sb14_main(){ ' + header + ' }')
         self.assertIn("1. 一键安装 Sing-box", result.stdout)
         self.assertIn("16. Sing-box-yg脚本使用说明书", result.stdout)
