@@ -211,11 +211,13 @@ serv00_server_profile config.json config.json ./test-core
         header = source[start:source.index("insV=", start)]
         self.assertEqual(header, json.loads((ROOT / "tests/fixtures/original-menu-header.json").read_text(encoding="utf8"))["header"])
 
-    def test_clash_templates_original_except_suffix_and_whitespace(self):
+    def test_clash_templates_original_except_names_quoting_and_whitespace(self):
         fixture = json.loads((ROOT / "tests/fixtures/original-clash-sha256.json").read_text(encoding="utf8"))
         for name, expected in fixture.items():
             template = function(self.sources["sb.sh"], name).replace("$node_suffix", "$hostname")
             template = template.replace("${node_prefix_label}", "")
+            template = re.sub(r'^(\s*- (?:name: )?)"([^"\n]*\$hostname)"$', r'\1\2', template, flags=re.M)
+            template = template.replace(r'\"anytls-$hostname\"', 'anytls-$hostname')
             template = "\n".join(line.rstrip() for line in template.splitlines()) + "\n"
             self.assertEqual(hashlib.sha256(template.encode()).hexdigest(), expected)
 

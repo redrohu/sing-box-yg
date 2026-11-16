@@ -41,8 +41,8 @@ class NodePrefix(unittest.TestCase):
         self.assertIn("auto", tags)
         self.assertIn("direct", tags)
         yaml = (d / "clmi.yaml").read_text(encoding="utf8")
-        self.assertIn("- name: " + label + "vless-reality-vision-" + suffix + "\n", yaml)
-        self.assertIn("    - " + label + "vless-reality-vision-" + suffix + "\n", yaml)
+        self.assertIn('- name: "' + label + 'vless-reality-vision-' + suffix + '"\n', yaml)
+        self.assertIn('    - "' + label + 'vless-reality-vision-' + suffix + '"\n', yaml)
         return cfg
 
     def test_prefix_all_argo_branches_and_unicode(self):
@@ -118,7 +118,7 @@ class NodePrefix(unittest.TestCase):
     def test_invalid_and_cancel_leave_prefix_suffix_and_exports_unchanged(self):
         d = generate_vps(self.source, self.output / "reject", prefix="existing-prefix", suffix="existing-suffix")
         before = {f: (d / f).read_bytes() for f in ["node_prefix.conf", "node_suffix.conf", "sbox.json", "clmi.yaml", "sb.json"]}
-        for value in ['bad name', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)', 'bad#uri', 'x:y', 'bad/name', 'x' * 49, '😃']:
+        for value in ['   ', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)', 'bad#uri', 'x:y', 'bad/name', 'x' * 49, '😃']:
             shell(self.share_helpers(d) + "if change_node_suffix <<'INPUT'\n3\n" + value + "\nINPUT\nthen exit 1; fi\n", d)
         shell(self.share_helpers(d) + "change_node_suffix <<'INPUT'\n3\n\nINPUT\n", d)
         self.assertEqual(list(d.glob("node-name.bak.*")), [])

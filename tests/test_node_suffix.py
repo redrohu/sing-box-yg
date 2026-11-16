@@ -32,8 +32,8 @@ class NodeSuffix(unittest.TestCase):
         for outbound in cfg["outbounds"]:
             self.assertTrue(set(outbound.get("outbounds", [])) <= tags)
         yaml = (d / "clmi.yaml").read_text(encoding="utf8")
-        self.assertIn("- name: anytls-" + suffix + "\n", yaml)
-        self.assertIn("- anytls-" + suffix + "\n", yaml)
+        self.assertIn('- name: "anytls-' + suffix + '"\n', yaml)
+        self.assertIn('- "anytls-' + suffix + '"\n', yaml)
         return cfg
 
     def share_helpers(self, d):
@@ -131,7 +131,7 @@ INPUT
     def test_invalid_and_cancel_dont_change_exports(self):
         d = generate_vps(self.source, self.output / "reject", suffix="existing")
         before = {f: (d / f).read_bytes() for f in ["node_suffix.conf", "sbox.json", "clmi.yaml", "sb.json"]}
-        for value in ['bad name', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)',
+        for value in ['   ', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)',
                       'bad#uri', 'x:y', 'bad/name', 'x' * 49, '😃', '\tbad']:
             script = self.share_helpers(d) + "if change_node_suffix <<'INPUT'\n1\n" + value + "\nINPUT\nthen exit 1; fi\n"
             shell(script, d)
