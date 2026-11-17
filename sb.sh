@@ -3972,6 +3972,78 @@ crontab /tmp/crontab.tmp >/dev/null 2>&1
 rm /tmp/crontab.tmp
 }
 
+# Read newest-first release sections; display only (installed, latest].
+sb_update_log(){
+awk -v installed="$1" -v latest="$2" '
+function clean(v) {
+    sub(/^[[:space:]]+/, "", v)
+    sub(/[[:space:]]+$/, "", v)
+    return v
+}
+function valid(v) {
+    return v ~ /^v[0-9]+\.[0-9]+\.[0-9]+(-fork\.[0-9]+)?$/
+}
+function newer(a, b, left, right, i) {
+    sub(/^v/, "", a); sub(/-fork\./, ".", a)
+    sub(/^v/, "", b); sub(/-fork\./, ".", b)
+    split(a, left, "."); split(b, right, ".")
+    for (i = 1; i <= 4; i++) {
+        if (left[i] + 0 != right[i] + 0) return left[i] + 0 > right[i] + 0
+    }
+    return 0
+}
+BEGIN {
+    installed = clean(installed); latest = clean(latest)
+    if (!valid(latest)) exit
+    known = valid(installed)
+    if (!known) {
+        print "无法识别当前脚本版本，仅显示最新版本更新日志。"
+        printed = 1; blank = 1
+    }
+}
+{
+    sub(/\r$/, "")
+    if ($0 ~ /^v[^[:space:]]+更新内容/) {
+        entry = $0; sub(/更新内容.*/, "", entry)
+        show = valid(entry) && !newer(entry, latest) && (known ? newer(entry, installed) : entry == latest)
+        if (show && printed) blank = 1
+    }
+    if (!show || $0 ~ /^历史版本[：:][[:space:]]*$/) next
+    if ($0 ~ /^[[:space:]]*$/) { if (printed) blank = 1; next }
+    if (printed && blank) print ""
+    print
+    printed = 1; blank = 0
+}'
+}
+
+sb_update_notice(){
+local insV=${1:-} latestV version_info updates
+# One response supplies both the version and its notes, avoiding mixed revisions.
+version_info=$(curl -fsSL --connect-timeout 5 --max-time 10 https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version 2>/dev/null) || version_info=
+latestV=
+if [[ $version_info =~ ^(v[0-9]+\.[0-9]+\.[0-9]+(-fork\.[0-9]+)?)更新内容 ]]; then
+latestV=${BASH_REMATCH[1]}
+fi
+if [[ ! -f /etc/s-box/v ]]; then
+echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${latestV:-（暂时无法获取）}${plain}"
+yellow "未安装 Sing-box-yg 脚本！请先选择 1 安装"
+elif [[ -z $latestV ]]; then
+echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${insV}${plain}"
+yellow "暂时无法检查脚本更新，请稍后重试。"
+elif [[ $insV == "$latestV" ]]; then
+echo -e "当前 Sing-box-yg 脚本最新版：${bblue}${insV}${plain} (已安装)"
+else
+updates=$(printf '%s\n' "$version_info" | sb_update_log "$insV" "$latestV")
+echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${insV}${plain}"
+if [[ -n $updates ]]; then
+echo -e "检测到最新 Sing-box-yg 脚本版本号：${yellow}${latestV}${plain} (可选择7进行更新)"
+printf '%b%s%b\n' "$yellow" "$updates" "$plain"
+else
+echo -e "线上最新 Sing-box-yg 脚本版本号：${bblue}${latestV}${plain} (当前版本不低于线上版本，无可用更新)"
+fi
+fi
+}
+
 lnsb(){
 rm -rf /usr/bin/sb
 curl -L -o /usr/bin/sb -# --retry 2 --insecure https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh
@@ -4489,19 +4561,7 @@ white "-------------------------------------------------------------------------
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 insV=$(cat /etc/s-box/v 2>/dev/null)
-latestV=$(curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1)
-if [ -f /etc/s-box/v ]; then
-if [ "$insV" = "$latestV" ]; then
-echo -e "当前 Sing-box-yg 脚本最新版：${bblue}${insV}${plain} (已安装)"
-else
-echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${insV}${plain}"
-echo -e "检测到最新 Sing-box-yg 脚本版本号：${yellow}${latestV}${plain} (可选择7进行更新)"
-echo -e "${yellow}$(curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version)${plain}"
-fi
-else
-echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${latestV}${plain}"
-yellow "未安装 Sing-box-yg 脚本！请先选择 1 安装"
-fi
+sb_update_notice "$insV"
 
 lapre
 if [ -f '/etc/s-box/sb.json' ]; then
