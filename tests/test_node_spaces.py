@@ -27,17 +27,17 @@ class NodeSpaces(unittest.TestCase):
 
     def assertNames(self, directory, prefix, suffix):
         cfg = json.loads((directory / "sbox.json").read_text(encoding="utf8"))
-        label = prefix + "-" if prefix else ""
+        label = prefix + " " if prefix else ""
         nodes = [x["tag"] for x in cfg["outbounds"] if x["type"] in ["vless", "vmess", "hysteria2", "tuic", "anytls"]]
-        self.assertTrue(all(n.startswith(label) and n.endswith("-" + suffix) for n in nodes))
-        self.assertIn(label + "anytls-" + suffix, nodes)
+        self.assertTrue(all(n.startswith(label) and n.endswith(" " + suffix) for n in nodes))
+        self.assertIn(label + "anytls " + suffix, nodes)
         tags = {x["tag"] for x in cfg["outbounds"]}
         for group in cfg["outbounds"]:
             self.assertTrue(set(group.get("outbounds", [])) <= tags)
         clash = yaml.safe_load((directory / "clmi.yaml").read_text(encoding="utf8"))
         names = {x["name"] for x in clash["proxies"]}
-        self.assertIn(label + "anytls-" + suffix, names)
-        self.assertTrue(all(n.startswith(label) and n.endswith("-" + suffix) for n in names))
+        self.assertIn(label + "anytls " + suffix, names)
+        self.assertTrue(all(n.startswith(label) and n.endswith(" " + suffix) for n in names))
         groups = {x["name"] for x in clash["proxy-groups"]}
         for group in clash["proxy-groups"]:
             self.assertTrue(set(group["proxies"]) <= names | groups | {"DIRECT"})
@@ -51,7 +51,7 @@ class NodeSpaces(unittest.TestCase):
             encoded = base64.b64encode(value.encode()).decode()
             script += f'value=$(printf "%s" "{encoded}" | base64 -d)\nnode_suffix_valid "$value"\n'
         for value in ["", " ", "   ", "\u00a0\u3000", "x" * 49, "x\ty", "x\ny", "x\ry", 'x"y',
-                      "x'y", "x\\y", "x#y", "x:y", "x/y", "Oracle-157-韩国\u200b", "$(touch pwned)"]:
+                      "x'y", "x\\y", "x@y", "x:y", "x/y", "Oracle-157-韩国\u200b", "$(touch pwned)"]:
             encoded = base64.b64encode(value.encode()).decode()
             script += f'value=$(printf "%s" "{encoded}" | base64 -d)\nif node_suffix_valid "$value"; then exit 1; fi\n'
         shell(script, self.output / "validation")
@@ -87,8 +87,8 @@ class NodeSpaces(unittest.TestCase):
                 self.assertNotIn("韩国", link)
                 self.assertIn("%20", link)
                 name = unquote(urlsplit(link).fragment)
-            self.assertTrue(name.startswith(prefix + "-"), repr(name))
-            self.assertTrue(name.endswith("-" + suffix), repr(name))
+            self.assertTrue(name.startswith(prefix + " "), repr(name))
+            self.assertTrue(name.endswith(" " + suffix), repr(name))
         for name, data in before.items():
             self.assertEqual((d / name).read_bytes(), data)
         self.assertFalse((d / "forbidden").exists())

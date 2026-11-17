@@ -29,11 +29,14 @@ class NodePrefix(unittest.TestCase):
 
     def assertNames(self, d, prefix, suffix):
         cfg = json.loads((d / "sbox.json").read_text(encoding="utf8"))
-        label = prefix + "-" if prefix else ""
+        label = prefix + " " if prefix else ""
         nodes = [x for x in cfg["outbounds"] if x["type"] in ["vless", "vmess", "hysteria2", "tuic", "anytls"]]
         for node in nodes:
-            self.assertTrue(node["tag"].startswith(label + node["type"].replace("hysteria2", "hy2").replace("tuic", "tuic5") + "-"), node)
-            self.assertTrue(node["tag"].endswith("-" + suffix), node)
+            name = label + node["type"].replace("hysteria2", "hy2").replace("tuic", "tuic5")
+            self.assertTrue(node["tag"].startswith(name), node)
+            rest = node["tag"][len(name):]
+            self.assertTrue(rest.startswith(" ") or rest.startswith("-"), node)
+            self.assertTrue(node["tag"].endswith(" " + suffix), node)
         tags = {x["tag"] for x in cfg["outbounds"]}
         for outbound in cfg["outbounds"]:
             self.assertTrue(set(outbound.get("outbounds", [])) <= tags)
@@ -41,8 +44,8 @@ class NodePrefix(unittest.TestCase):
         self.assertIn("auto", tags)
         self.assertIn("direct", tags)
         yaml = (d / "clmi.yaml").read_text(encoding="utf8")
-        self.assertIn('- name: "' + label + 'vless-reality-vision-' + suffix + '"\n', yaml)
-        self.assertIn('    - "' + label + 'vless-reality-vision-' + suffix + '"\n', yaml)
+        self.assertIn('- name: "' + label + 'vless-reality-vision ' + suffix + '"\n', yaml)
+        self.assertIn('    - "' + label + 'vless-reality-vision ' + suffix + '"\n', yaml)
         return cfg
 
     def test_prefix_all_argo_branches_and_unicode(self):
@@ -66,12 +69,12 @@ class NodePrefix(unittest.TestCase):
                 return {k: renamed(v) for k, v in obj.items()}
             if isinstance(obj, list):
                 return [renamed(v) for v in obj]
-            return "HK-" + obj if isinstance(obj, str) and obj in names else obj
+            return "HK " + obj if isinstance(obj, str) and obj in names else obj
 
         generate_vps(self.source, d, argo="both", suffix="oracle-US", prefix="HK")
         after = self.assertNames(d, "HK", "oracle-US")
         self.assertEqual(after, renamed(before))
-        self.assertEqual((d / "clmi.yaml").read_text(encoding="utf8").replace("HK-", ""), yaml)
+        self.assertEqual((d / "clmi.yaml").read_text(encoding="utf8").replace("HK ", ""), yaml)
         self.assertEqual((d / "sb.json").read_bytes(), server)
 
     def test_set_persist_suffix_independence_clear_and_backup(self):
@@ -91,8 +94,8 @@ class NodePrefix(unittest.TestCase):
             else:
                 name = unquote(urlsplit(link).fragment)
                 self.assertNotIn("香港", link)
-            self.assertTrue(name.startswith("香港1-"), name)
-            self.assertTrue(name.endswith("-oracle-US"), name)
+            self.assertTrue(name.startswith("香港1 "), name)
+            self.assertTrue(name.endswith(" oracle-US"), name)
         backups = list(d.glob("node-name.bak.*"))
         self.assertEqual(len(backups), 1)
         self.assertEqual((backups[0] / "sbox.json").read_bytes(), old_client)
@@ -118,7 +121,7 @@ class NodePrefix(unittest.TestCase):
     def test_invalid_and_cancel_leave_prefix_suffix_and_exports_unchanged(self):
         d = generate_vps(self.source, self.output / "reject", prefix="existing-prefix", suffix="existing-suffix")
         before = {f: (d / f).read_bytes() for f in ["node_prefix.conf", "node_suffix.conf", "sbox.json", "clmi.yaml", "sb.json"]}
-        for value in ['   ', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)', 'bad#uri', 'x:y', 'bad/name', 'x' * 49, '😃']:
+        for value in ['   ', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)', 'bad@uri', 'x:y', 'bad/name', 'x' * 49, '😃']:
             shell(self.share_helpers(d) + "if change_node_suffix <<'INPUT'\n3\n" + value + "\nINPUT\nthen exit 1; fi\n", d)
         shell(self.share_helpers(d) + "change_node_suffix <<'INPUT'\n3\n\nINPUT\n", d)
         self.assertEqual(list(d.glob("node-name.bak.*")), [])

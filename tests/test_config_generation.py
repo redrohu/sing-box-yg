@@ -217,7 +217,7 @@ serv00_server_profile config.json config.json ./test-core
             template = function(self.sources["sb.sh"], name).replace("$node_suffix", "$hostname")
             template = template.replace("${node_prefix_label}", "")
             template = re.sub(r'^(\s*- (?:name: )?)"([^"\n]*\$hostname)"$', r'\1\2', template, flags=re.M)
-            template = template.replace(r'\"anytls-$hostname\"', 'anytls-$hostname')
+            template = template.replace(r'\"anytls $hostname\"', 'anytls $hostname')
             template = "\n".join(line.rstrip() for line in template.splitlines()) + "\n"
             self.assertEqual(hashlib.sha256(template.encode()).hexdigest(), expected)
 

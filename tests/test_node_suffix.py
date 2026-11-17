@@ -27,13 +27,13 @@ class NodeSuffix(unittest.TestCase):
     def assertNames(self, d, suffix):
         cfg = json.loads((d / "sbox.json").read_text(encoding="utf8"))
         names = [x["tag"] for x in cfg["outbounds"] if x["type"] in ["vless", "vmess", "hysteria2", "tuic", "anytls"]]
-        self.assertTrue(all(x.endswith("-" + suffix) for x in names), names)
+        self.assertTrue(all(x.endswith(" " + suffix) for x in names), names)
         tags = {x["tag"] for x in cfg["outbounds"]}
         for outbound in cfg["outbounds"]:
             self.assertTrue(set(outbound.get("outbounds", [])) <= tags)
         yaml = (d / "clmi.yaml").read_text(encoding="utf8")
-        self.assertIn('- name: "anytls-' + suffix + '"\n', yaml)
-        self.assertIn('- "anytls-' + suffix + '"\n', yaml)
+        self.assertIn('- name: "anytls ' + suffix + '"\n', yaml)
+        self.assertIn('- "anytls ' + suffix + '"\n', yaml)
         return cfg
 
     def share_helpers(self, d):
@@ -73,8 +73,8 @@ printf '%s\\n' fixed.example.org > sbargoym.log
         server = (d / "sb.json").read_bytes()
         generate_vps(self.source, d, argo="both", suffix="oracle-new")
         after = json.loads((d / "sbox.json").read_text(encoding="utf8"))
-        self.assertEqual(after, json.loads(json.dumps(before).replace("-test-vps", "-oracle-new")))
-        self.assertEqual((d / "clmi.yaml").read_text(encoding="utf8"), yaml.replace("-test-vps", "-oracle-new"))
+        self.assertEqual(after, json.loads(json.dumps(before).replace(" test-vps", " oracle-new")))
+        self.assertEqual((d / "clmi.yaml").read_text(encoding="utf8"), yaml.replace(" test-vps", " oracle-new"))
         self.assertEqual((d / "sb.json").read_bytes(), server)
 
     def test_custom_suffix_all_argo_branches_and_unicode(self):
@@ -112,7 +112,7 @@ INPUT
             else:
                 name = unquote(urlsplit(link).fragment)
                 self.assertNotIn("甲骨文", link)  # URI fragment is percent-encoded.
-            self.assertTrue(name.endswith("-甲骨文-US_1"), name)
+            self.assertTrue(name.endswith(" 甲骨文-US_1"), name)
         # A fresh process reads the persisted value, rather than inheriting globals.
         # Production does not enable errexit; optional absent share files are normal.
         shell(self.share_helpers(d) + 'sbshare || exit $?\n', d)
@@ -132,7 +132,7 @@ INPUT
         d = generate_vps(self.source, self.output / "reject", suffix="existing")
         before = {f: (d / f).read_bytes() for f in ["node_suffix.conf", "sbox.json", "clmi.yaml", "sb.json"]}
         for value in ['   ', 'bad"quote', "bad'quote", 'bad\\slash', '$(touch pwned)',
-                      'bad#uri', 'x:y', 'bad/name', 'x' * 49, '😃', '\tbad']:
+                      'bad@uri', 'x:y', 'bad/name', 'x' * 49, '😃', '\tbad']:
             script = self.share_helpers(d) + "if change_node_suffix <<'INPUT'\n1\n" + value + "\nINPUT\nthen exit 1; fi\n"
             shell(script, d)
             for name, data in before.items():
