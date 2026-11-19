@@ -3320,13 +3320,46 @@ rm -rf /etc/s-box/xhttp || return 1
 rm -f /etc/s-box/xhttp.txt
 }
 
+xhttp_dependencies(){
+local tool manager package
+local -a missing=() packages=()
+for tool in curl jq unzip openssl sha256sum ss; do
+command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+done
+(( ${#missing[@]} )) || return 0
+for manager in apk apt-get dnf yum; do
+command -v "$manager" >/dev/null 2>&1 && break
+done
+if ! command -v "$manager" >/dev/null 2>&1; then
+red "缺少依赖：${missing[*]}；未找到支持的包管理器，请手动安装后重试。"
+return 1
+fi
+for tool in "${missing[@]}"; do
+case "$tool" in
+sha256sum) package=coreutils ;;
+ss) if [[ $manager == dnf || $manager == yum ]]; then package=iproute; else package=iproute2; fi ;;
+*) package=$tool ;;
+esac
+packages+=("$package")
+done
+yellow "正在安装XHTTP缺失依赖：${packages[*]}（$manager）"
+if [[ $manager == apt-get ]]; then
+apt-get update || { red "刷新软件源失败，尚未部署XHTTP；请修复软件源后重试。"; return 1; }
+fi
+case "$manager" in
+apk) apk add --no-cache "${packages[@]}" ;;
+*) "$manager" install -y "${packages[@]}" ;;
+esac || { red "依赖安装失败，尚未部署XHTTP；请检查上方包管理器错误后重试。"; return 1; }
+for tool in "${missing[@]}"; do
+command -v "$tool" >/dev/null 2>&1 || { red "安装后仍缺少依赖：$tool，尚未部署XHTTP。"; return 1; }
+done
+}
+
 xhttp_install(){
 [[ -f /etc/s-box/sb.json ]] || { red "请先安装 Sing-box。"; return 1; }
 [[ ! -e /etc/s-box/xhttp && ! -e /etc/systemd/system/sbox-xhttp.service && ! -e /etc/init.d/sbox-xhttp ]] || { red "XHTTP 已存在。请先备份并通过本菜单卸载，再重新部署。"; return 1; }
 local port sni arch
-for arch in curl jq unzip openssl sha256sum ss; do
-command -v "$arch" >/dev/null 2>&1 || { red "缺少依赖：$arch，请用系统包管理器安装后重试。"; return 1; }
-done
+xhttp_dependencies || return 1
 case $(uname -m) in
 x86_64) arch=64 ;;
 aarch64) arch=arm64-v8a ;;

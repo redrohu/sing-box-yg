@@ -11,7 +11,7 @@
 - 独立 TCP 端口默认 443；已占用则换端口，并在云安全组及系统防火墙放行。不要占用已有 Reality/HTTPS 端口。
 - 目标域名应从 VPS 可达、支持 TLS 1.3 和 H2；默认 `www.cloudflare.com` 不是可用性保证，部署后应实测。
 - 下载官方 Xray **v26.11.9**（固定版本），核对同一官方 release 的 SHA256 摘要，服务端和客户端配置均通过内核检查后启动；失败清理本次安装，不修改现有 Sing-box 入站。
-- 支持 Linux amd64、arm64、armv7，systemd/OpenRC；需要 `curl jq unzip openssl sha256sum ss`。Alpine 缺少 `ss` 时安装 `iproute2`，缺少 `sha256sum` 时安装 `coreutils`。
+- 支持 Linux amd64、arm64、armv7，systemd/OpenRC；部署时检查 `curl jq unzip openssl sha256sum ss`，仅通过 apt-get/apk/dnf/yum 安装缺失依赖。`ss` 对应 Debian/Alpine 的 `iproute2` 或 RPM 系的 `iproute`，`sha256sum` 对应 `coreutils`。软件源或安装失败时停止部署，不自动更改软件源，也不升级现有五协议。
 - 服务名 `sbox-xhttp`；配置和密钥在 `/etc/s-box/xhttp/`。`client.json` 是 Xray 客户端配置（本地 SOCKS5 `127.0.0.1:10808`），`share.txt` 是导入链接。请勿公开服务端配置、密钥或订阅链接。
 - 分享链接自动加入通用聚合订阅 `jhsub.txt`；已部署时也自动写入 **Mihomo `clmi.yaml`**，并加入负载均衡、自动选择和手动选择三个代理组。支持 XHTTP 的新版 Mihomo 可直接使用（验证版本 **v1.19.34**）。未部署或卸载后刷新，不生成该节点及组内引用。
 - 官方 sing-box 当前不支持 XHTTP，因此 **不会写入 `sbox.json`**。Mihomo 节点使用独立 Xray 服务的 UUID、端口、公钥、Short ID、路径及 REALITY SNI，支持 IPv4/IPv6 和节点名称前后缀，不使用 Vision `flow`，不导出私钥。

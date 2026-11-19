@@ -32,7 +32,7 @@ class XHTTP(unittest.TestCase):
         src = self.source.replace('/etc/s-box', bashpath(directory))
         return ''.join(function(src, n) for n in [
             'node_suffix_valid', 'node_suffix_load', 'xhttp_server_config',
-            'xhttp_client_config', 'xhttp_export'])
+            'xhttp_client_config', 'xhttp_export', 'xhttp_dependencies'])
 
     def generate(self, name, server='192.0.2.1'):
         d = self.output / name
@@ -199,6 +199,56 @@ if xhttp_install; then echo 'unexpected success'; exit 1; fi
         self.assertFalse((d / 'xhttp').exists())
         self.assertEqual(list(d.glob('.xhttp-install.*')), [])
 
+    def dependency_script(self, manager='apt-get', missing='unzip sha256sum ss', failure='none'):
+        return function(self.source, 'xhttp_dependencies') + r"""
+red() { echo "$*"; }; yellow() { echo "$*"; }
+installed=0
+command() {
+    [[ $1 == -v ]] || return 1
+    case "$2" in
+    curl|jq|unzip|openssl|sha256sum|ss)
+        if [[ ' __MISSING__ ' == *" $2 "* && $installed == 0 ]]; then return 1; fi
+        return 0 ;;
+    apk|apt-get|dnf|yum) [[ $2 == __MANAGER__ ]] ;;
+    *) builtin command "$@" ;;
+    esac
+}
+install_fake() {
+    printf '%s\n' "$*" >> packages.log
+    if [[ $1 == update ]]; then [[ __FAILURE__ != update ]]; return $?; fi
+    [[ __FAILURE__ != install ]] || return 33
+    [[ __FAILURE__ == ineffective ]] || installed=1
+}
+apt-get() { install_fake "$@"; }
+apk() { install_fake "$@"; }
+dnf() { install_fake "$@"; }
+yum() { install_fake "$@"; }
+""".replace('__MISSING__', missing).replace('__MANAGER__', manager).replace('__FAILURE__', failure)
+
+    def test_missing_dependencies_install_by_detected_package_manager(self):
+        for manager in ['apt-get', 'apk', 'dnf', 'yum']:
+            d = self.output / ('dependencies-' + manager)
+            shell(self.dependency_script(manager) + 'xhttp_dependencies\n', d)
+            calls = (d / 'packages.log').read_text().splitlines()
+            package = 'iproute' if manager in ['dnf', 'yum'] else 'iproute2'
+            expected = ('add --no-cache ' if manager == 'apk' else 'install -y ') + 'unzip coreutils ' + package
+            self.assertEqual(calls[-1], expected)
+            self.assertEqual(len(calls), 2 if manager == 'apt-get' else 1)
+            if manager == 'apt-get':
+                self.assertEqual(calls[0], 'update')
+
+    def test_complete_dependencies_never_run_package_manager(self):
+        d = self.output / 'dependencies-complete'
+        shell(self.dependency_script(missing='') + 'xhttp_dependencies\ntest ! -f packages.log\n', d)
+
+    def test_dependency_errors_are_reported_and_rechecked(self):
+        for manager, failure in [('apt-get', 'update'), ('apk', 'install'), ('yum', 'ineffective'), ('none', 'none')]:
+            d = self.output / ('dependencies-fail-' + failure)
+            shell(self.dependency_script(manager, failure=failure) + 'if xhttp_dependencies; then exit 1; fi\n', d)
+            self.assertFalse((d / 'xhttp').exists())
+            if failure == 'update':
+                self.assertEqual((d / 'packages.log').read_text().splitlines(), ['update'])
+
     def test_install_and_service_failure_rollback_with_stubs(self):
         if not self.binary:
             self.skipTest('Requires real Xray key generator and config checker')
@@ -216,6 +266,7 @@ if xhttp_install; then echo 'unexpected success'; exit 1; fi
             helpers = self.helpers(d) + ''.join(function(src, name) for name in ['xhttp_service', 'xhttp_remove', 'xhttp_install'])
             script = helpers + '''
 hostname=test-vps
+xhttp_dependencies() { :; }
 red() { echo "$*"; }; green() { echo "$*"; }; yellow() { :; }
 readp() { if [[ $2 == port ]]; then port=18443; else sni=www.apple.com; fi; }
 uname() { echo x86_64; }
