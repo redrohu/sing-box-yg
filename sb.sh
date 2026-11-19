@@ -3224,11 +3224,13 @@ xhttp_mihomo_load(){
 # JSON flow mappings and quoted scalars are valid YAML; jq escapes names/paths safely.
 # Called only when the sidecar exists. Do not emit privateKey or a Vision flow.
 # Xray v26.11.9 requires the hybrid key-share in ClientHello; Mihomo defaults it off.
-local dir=/etc/s-box/xhttp server
+local dir=/etc/s-box/xhttp server public
 server=$(cat /etc/s-box/server_ipcl.log) || return 1
 server=${server#[}; server=${server%]}
 [[ -n $server ]] || return 1
-xhttp_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --rawfile public "$dir/public.key" \
+public=$(cat "$dir/public.key") || return 1
+# --rawfile is not available in Debian 10's jq 1.5; --arg preserves the key as data.
+xhttp_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg public "$public" \
 --arg server "$server" --arg name "${node_prefix_label}vless-xhttp-reality $node_suffix" '
  $cfg[0].inbounds[0] as $in |
  ($public | rtrimstr("\n") | rtrimstr("\r")) as $key |
@@ -3305,6 +3307,10 @@ disable) rc-update del sbox-xhttp default ;;
 *) rc-service sbox-xhttp "$action" ;;
 esac
 else
+if [[ $action == status ]]; then
+systemctl --no-pager --full status sbox-xhttp
+return $?
+fi
 systemctl "$action" sbox-xhttp
 fi
 }

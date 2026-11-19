@@ -241,6 +241,20 @@ yum() { install_fake "$@"; }
         d = self.output / 'dependencies-complete'
         shell(self.dependency_script(missing='') + 'xhttp_dependencies\ntest ! -f packages.log\n', d)
 
+    def test_systemd_status_never_opens_pager(self):
+        d = self.output / 'status-no-pager'
+        shell(function(self.source, 'xhttp_service') + '''
+command() { if [[ $1 == -v && $2 == apk ]]; then return 1; fi; builtin command "$@"; }
+systemctl() { printf '%s\\n' "$*" >> calls; }
+xhttp_service status
+xhttp_service restart
+''', d)
+        self.assertEqual((d / 'calls').read_text().splitlines(),
+                         ['--no-pager --full status sbox-xhttp', 'restart sbox-xhttp'])
+
+    def test_mihomo_export_does_not_require_jq_rawfile(self):
+        self.assertNotIn('--rawfile', function(self.source, 'xhttp_mihomo_load').split('xhttp_cl_node=', 1)[1])
+
     def test_dependency_errors_are_reported_and_rechecked(self):
         for manager, failure in [('apt-get', 'update'), ('apk', 'install'), ('yum', 'ineffective'), ('none', 'none')]:
             d = self.output / ('dependencies-fail-' + failure)
