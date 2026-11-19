@@ -3222,16 +3222,20 @@ exit
 # Optional Xray sidecar. Kept in sb.sh so curl/bash installation stays self-contained.
 xhttp_mihomo_load(){
 # JSON flow mappings and quoted scalars are valid YAML; jq escapes names/paths safely.
-# Called only when the sidecar exists. Do not emit privateKey or a Vision flow.
+# Called only when the sidecar exists. Never emit privateKey/decryption secrets.
 # Xray v26.11.9 requires the hybrid key-share in ClientHello; Mihomo defaults it off.
-local dir=/etc/s-box/xhttp server public
+local dir=/etc/s-box/xhttp server public encryption=none
 server=$(cat /etc/s-box/server_ipcl.log) || return 1
 server=${server#[}; server=${server%]}
 [[ -n $server ]] || return 1
 public=$(cat "$dir/public.key") || return 1
+if [[ $(jq -r '.inbounds[0].settings.decryption // "none"' "$dir/config.json") != none ]]; then
+encryption=$(cat "$dir/encryption.key") || return 1
+[[ $encryption == mlkem768x25519plus.* ]] || return 1
+fi
 # --rawfile is not available in Debian 10's jq 1.5; --arg preserves the key as data.
 xhttp_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg public "$public" \
---arg server "$server" --arg name "${node_prefix_label}vless-xhttp-reality $node_suffix" '
+--arg encryption "$encryption" --arg server "$server" --arg name "${node_prefix_label}vless-xhttp-reality $node_suffix" '
  $cfg[0].inbounds[0] as $in |
  ($public | rtrimstr("\n") | rtrimstr("\r")) as $key |
  if $in.protocol != "vless" or $in.streamSettings.network != "xhttp" or $in.streamSettings.security != "reality"
@@ -3247,17 +3251,19 @@ xhttp_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg public "$public
     (."xhttp-opts".path|type) != "string" or
     (."reality-opts"."short-id"|type) != "string" or
     ($key|test("^[A-Za-z0-9_-]{43}$")|not)
- then error("missing/invalid XHTTP export fields") else . end
+ then error("missing/invalid XHTTP export fields") else . end |
+ if $encryption != "none" then .encryption=$encryption else . end |
+ if ($in.settings.clients[0].flow // "") != "" then .flow=$in.settings.clients[0].flow else . end
 ') || return 1
 xhttp_cl_name=$(jq -cr '.name|@json' <<< "$xhttp_cl_node")
 }
 
 xhttp_server_config(){
-local dir=$1 port=$2 sni=$3 id=$4 private=$5 sid=$6 path=$7
-jq -n --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$private" --arg sid "$sid" --arg path "$path" '{
+local dir=$1 port=$2 sni=$3 id=$4 private=$5 sid=$6 path=$7 flow=${8:-} decryption=${9:-none}
+jq -n --arg flow "$flow" --arg decryption "$decryption" --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$private" --arg sid "$sid" --arg path "$path" '{
  log:{loglevel:"warning"},
  inbounds:[{tag:"xhttp-reality",listen:"::",port:$port,protocol:"vless",
- settings:{clients:[{id:$id}],decryption:"none"},
+ settings:{clients:[({id:$id}|if $flow != "" then .flow=$flow else . end)],decryption:$decryption},
  streamSettings:{network:"xhttp",security:"reality",
  realitySettings:{show:false,target:($sni+":443"),xver:0,serverNames:[$sni],privateKey:$key,shortIds:[$sid]},
  xhttpSettings:{path:$path,mode:"auto"}}}],
@@ -3266,23 +3272,25 @@ jq -n --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$private
 }
 
 xhttp_client_config(){
-local dir=$1 server=$2 port=$3 sni=$4 id=$5 public=$6 sid=$7 path=$8 name=$9
-jq -n --arg server "$server" --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$public" --arg sid "$sid" --arg path "$path" --arg name "$name" '{
+local dir=$1 server=$2 port=$3 sni=$4 id=$5 public=$6 sid=$7 path=$8 name=$9 flow=${10:-} encryption=${11:-none}
+jq -n --arg flow "$flow" --arg encryption "$encryption" --arg server "$server" --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$public" --arg sid "$sid" --arg path "$path" --arg name "$name" '{
  log:{loglevel:"warning"},
  inbounds:[{listen:"127.0.0.1",port:10808,protocol:"socks",settings:{auth:"noauth",udp:true}}],
- outbounds:[{tag:$name,protocol:"vless",settings:{vnext:[{address:$server,port:$port,users:[{id:$id,encryption:"none"}]}]},
+ outbounds:[{tag:$name,protocol:"vless",settings:{vnext:[{address:$server,port:$port,users:[({id:$id,encryption:$encryption}|if $flow != "" then .flow=$flow else . end)]}]},
  streamSettings:{network:"xhttp",security:"reality",realitySettings:{fingerprint:"chrome",serverName:$sni,password:$key,shortId:$sid},
  xhttpSettings:{path:$path,mode:"auto"}}}]
 }' > "$dir/client.json" || return 1
-local authority=$server encoded_path encoded_name
+local authority=$server encoded_path encoded_name encoded_encryption flow_query=
 [[ $authority == *:* ]] && authority="[$authority]"
 encoded_path=$(jq -nr --arg v "$path" '$v|@uri') || return 1
 encoded_name=$(jq -nr --arg v "$name" '$v|@uri') || return 1
-printf 'vless://%s@%s:%s?encryption=none&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=xhttp&path=%s&mode=auto#%s\n' "$id" "$authority" "$port" "$sni" "$public" "$sid" "$encoded_path" "$encoded_name" > "$dir/share.txt"
+encoded_encryption=$(jq -nr --arg v "$encryption" '$v|@uri') || return 1
+[[ -z $flow ]] || flow_query="&flow=$flow"
+printf 'vless://%s@%s:%s?encryption=%s%s&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=xhttp&path=%s&mode=auto#%s\n' "$id" "$authority" "$port" "$encoded_encryption" "$flow_query" "$sni" "$public" "$sid" "$encoded_path" "$encoded_name" > "$dir/share.txt"
 }
 
 xhttp_export(){
-local dir=/etc/s-box/xhttp server port sni id public sid path
+local dir=/etc/s-box/xhttp server port sni id public sid path flow encryption=none
 [[ -f $dir/config.json && -f $dir/public.key ]] || return 0
 server=$(cat /etc/s-box/server_ipcl.log) || return 1
 server=${server#[}; server=${server%]}
@@ -3293,8 +3301,13 @@ id=$(jq -er '.inbounds[0].settings.clients[0].id' "$dir/config.json") || return 
 sid=$(jq -er '.inbounds[0].streamSettings.realitySettings.shortIds[0]' "$dir/config.json") || return 1
 path=$(jq -er '.inbounds[0].streamSettings.xhttpSettings.path' "$dir/config.json") || return 1
 public=$(cat "$dir/public.key") || return 1
+flow=$(jq -r '.inbounds[0].settings.clients[0].flow // ""' "$dir/config.json") || return 1
+if [[ $(jq -r '.inbounds[0].settings.decryption // "none"' "$dir/config.json") != none ]]; then
+encryption=$(cat "$dir/encryption.key") || return 1
+[[ $encryption == mlkem768x25519plus.* ]] || return 1
+fi
 node_suffix_load || return 1
-(umask 077; xhttp_client_config "$dir" "$server" "$port" "$sni" "$id" "$public" "$sid" "$path" "${node_prefix_label}vless-xhttp-reality $node_suffix") || return 1
+(umask 077; xhttp_client_config "$dir" "$server" "$port" "$sni" "$id" "$public" "$sid" "$path" "${node_prefix_label}vless-xhttp-reality $node_suffix" "$flow" "$encryption") || return 1
 cp "$dir/share.txt" /etc/s-box/xhttp.txt
 }
 
@@ -3361,10 +3374,56 @@ command -v "$tool" >/dev/null 2>&1 || { red "安装后仍缺少依赖：$tool，
 done
 }
 
+xhttp_encryption_pair(){
+local dir=$1 output decryption encryption
+output=$("$dir/xray" vlessenc) || return 1
+# First authentication block is X25519, matching the article. Never mix the PQ pair.
+decryption=$(printf '%s\n' "$output" | awk -F '"' '/^"decryption":/{print $4; exit}')
+encryption=$(printf '%s\n' "$output" | awk -F '"' '/^"encryption":/{print $4; exit}')
+[[ $decryption =~ ^mlkem768x25519plus\.native\.[0-9]+s\.[A-Za-z0-9_-]{43}$ && $encryption =~ ^mlkem768x25519plus\.native\.(0rtt|1rtt)\.[A-Za-z0-9_-]{43}$ ]] || return 1
+(umask 077; printf '%s\n' "$decryption" > "$dir/decryption.key" && printf '%s\n' "$encryption" > "$dir/encryption.key")
+}
+
+xhttp_article_enable(){
+local dir=/etc/s-box/xhttp backup file
+[[ -f $dir/config.json ]] || { red "请先部署XHTTP。"; return 1; }
+if [[ $(jq -r '.inbounds[0].settings.clients[0].flow // ""' "$dir/config.json") == xtls-rprx-vision && $(jq -r '.inbounds[0].settings.decryption' "$dir/config.json") != none ]]; then
+green "已启用Encryption + Vision，不重新生成密钥。"
+sbshare > /dev/null
+return $?
+fi
+backup=$(mktemp -d /etc/s-box/xhttp-article.bak.XXXXXX) || return 1
+chmod 700 "$backup" || return 1
+cp -a "$dir" "$backup/xhttp" || return 1
+for file in clmi.yaml sbox.json jhsub.txt jhdy.txt xhttp.txt; do
+[[ ! -f /etc/s-box/$file ]] || cp -p "/etc/s-box/$file" "$backup/$file" || return 1
+done
+if ! (
+umask 077
+local done=0
+trap 'if [[ $done == 0 ]]; then rm -f "$dir/encryption.key" "$dir/decryption.key" "$dir/config.new.json"; cp -a "$backup/xhttp/." "$dir/"; for file in clmi.yaml sbox.json jhsub.txt jhdy.txt xhttp.txt; do [[ ! -f $backup/$file ]] || cp -p "$backup/$file" "/etc/s-box/$file"; done; xhttp_service restart; fi' EXIT
+xhttp_encryption_pair "$dir" || exit 1
+jq --arg decryption "$(cat "$dir/decryption.key")" '.inbounds[0].settings.decryption=$decryption | .inbounds[0].settings.clients[0].flow="xtls-rprx-vision" | .inbounds[0].streamSettings.xhttpSettings.path="/"' "$dir/config.json" > "$dir/config.new.json" || exit 1
+"$dir/xray" run -test -config "$dir/config.new.json" || exit 1
+mv "$dir/config.new.json" "$dir/config.json" || exit 1
+xhttp_export || exit 1
+"$dir/xray" run -test -config "$dir/client.json" || exit 1
+xhttp_service restart || exit 1
+sleep 2
+xhttp_service status || exit 1
+sbshare > /dev/null || exit 1
+done=1
+); then
+red "升级失败，已尝试恢复原XHTTP；备份：$backup"
+return 1
+fi
+green "已启用文章同款XHTTP + REALITY + VLESS Encryption（X25519认证）+ Vision；更新客户端订阅后使用。备份：$backup"
+}
+
 xhttp_install(){
 [[ -f /etc/s-box/sb.json ]] || { red "请先安装 Sing-box。"; return 1; }
 [[ ! -e /etc/s-box/xhttp && ! -e /etc/systemd/system/sbox-xhttp.service && ! -e /etc/init.d/sbox-xhttp ]] || { red "XHTTP 已存在。请先备份并通过本菜单卸载，再重新部署。"; return 1; }
-local port sni arch
+local port sni arch profile
 xhttp_dependencies || return 1
 case $(uname -m) in
 x86_64) arch=64 ;;
@@ -3372,6 +3431,9 @@ aarch64) arch=arm64-v8a ;;
 armv7l) arch=arm32-v7a ;;
 *) red "XHTTP 暂不支持该架构。"; return 1 ;;
 esac
+readp "XHTTP方案：1=文章同款Encryption + Vision（默认）；2=普通XHTTP + REALITY：" profile
+profile=${profile:-1}
+[[ $profile == 1 || $profile == 2 ]] || { red "请选择1或2。"; return 1; }
 readp "XHTTP + REALITY 独立 TCP 端口（默认443，不能与现有服务重复）：" port
 port=${port:-443}
 if [[ ! $port =~ ^[0-9]{1,5}$ ]] || (( 10#$port < 1 || 10#$port > 65535 )); then
@@ -3387,7 +3449,7 @@ fi
 # All changes are confined to a new sidecar. Failure never restarts sing-box.
 if ! (
 umask 077
-local stage committed=0 keypair private public id sid path expected actual version=v26.11.9
+local stage committed=0 keypair private public id sid path expected actual version=v26.11.9 flow= decryption=none
 stage=$(mktemp -d /etc/s-box/.xhttp-install.XXXXXX) || exit 1
 trap 'rm -rf "$stage"; if [[ $committed == 1 ]]; then xhttp_remove; fi' EXIT
 curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip" -o "$stage/core.zip" || exit 1
@@ -3404,7 +3466,13 @@ public=$(printf '%s\n' "$keypair" | awk '/^Password \(PublicKey\):/{print $3} /^
 id=$("$stage/xray" uuid) || exit 1
 sid=$(openssl rand -hex 8) || exit 1
 path="/$(openssl rand -hex 16)" || exit 1
-xhttp_server_config "$stage" "$port" "$sni" "$id" "$private" "$sid" "$path" || exit 1
+if [[ $profile == 1 ]]; then
+xhttp_encryption_pair "$stage" || exit 1
+flow=xtls-rprx-vision
+decryption=$(cat "$stage/decryption.key") || exit 1
+path=/
+fi
+xhttp_server_config "$stage" "$port" "$sni" "$id" "$private" "$sid" "$path" "$flow" "$decryption" || exit 1
 printf '%s\n' "$public" > "$stage/public.key" || exit 1
 printf '%s\n' "$version" > "$stage/version" || exit 1
 "$stage/xray" run -test -config "$stage/config.json" || exit 1
@@ -3466,7 +3534,7 @@ sbshare > /dev/null || { red "节点已部署，但聚合订阅刷新失败，�
 xhttp_menu(){
 local action confirm
 yellow "XHTTP + REALITY（独立Xray，不影响现有五协议；不跟随Sing-box的启停/UUID/端口设置）"
-readp "1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：卸载XHTTP\n0：返回\n请选择【0-7】：" action
+readp "1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：卸载XHTTP\n8：已有节点启用文章同款Encryption + Vision（备份后升级）\n0：返回\n请选择【0-8】：" action
 case "$action" in
 1) xhttp_install ;;
 2) [[ -f /etc/s-box/xhttp/config.json ]] || { red "尚未部署XHTTP。"; return 1; }
@@ -3478,6 +3546,7 @@ xhttp_export && cat /etc/s-box/xhttp/share.txt && sbshare > /dev/null ;;
 7) readp "将删除XHTTP配置和密钥；输入 yes 确认：" confirm
 [[ $confirm == yes ]] || return 0
 xhttp_remove && sbshare > /dev/null ;;
+8) xhttp_article_enable ;;
 esac
 }
 

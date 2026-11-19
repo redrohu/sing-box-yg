@@ -8,13 +8,17 @@
 安装现有 Sing-box 后，运行本版本 `sb.sh`，选择 **3 → 11 → 1** 部署独立 Xray 服务。
 原五协议保持不变，XHTTP 不经过 Argo/CDN，不保证比现有节点更快。
 
+新部署可选两种模式，默认采用[文章](https://www.cunzhangblog.com/vlessxhttp)中的 **VLESS + XHTTP + REALITY + VLESS Encryption（X25519认证）+ Vision**，路径为 `/`、`mode: auto`；也可选普通 XHTTP + REALITY。文章中的 X25519 是 VLESS Encryption 的认证选项，与外层 REALITY 密钥是两套独立凭据，不应混用。
+
+已部署普通 XHTTP 的服务器可用 **3 → 11 → 8** 升级：先备份服务和导出，保留原端口、UUID及REALITY密钥，生成独立 Encryption 凭据、启用 `xtls-rprx-vision`，路径改为 `/`，配置检查后重启独立 Xray 并刷新订阅。旧客户端配置将不再兼容，必须更新订阅；失败尝试从提示的备份目录恢复。操作前请确认客户端足够新（已验证 Xray v26.11.9、Mihomo v1.19.34），原五协议无需更改。
+
 - 独立 TCP 端口默认 443；已占用则换端口，并在云安全组及系统防火墙放行。不要占用已有 Reality/HTTPS 端口。
 - 目标域名应从 VPS 可达、支持 TLS 1.3 和 H2；默认 `www.cloudflare.com` 不是可用性保证，部署后应实测。
 - 下载官方 Xray **v26.11.9**（固定版本），核对同一官方 release 的 SHA256 摘要，服务端和客户端配置均通过内核检查后启动；失败清理本次安装，不修改现有 Sing-box 入站。
 - 支持 Linux amd64、arm64、armv7，systemd/OpenRC；部署时检查 `curl jq unzip openssl sha256sum ss`，仅通过 apt-get/apk/dnf/yum 安装缺失依赖。`ss` 对应 Debian/Alpine 的 `iproute2` 或 RPM 系的 `iproute`，`sha256sum` 对应 `coreutils`。软件源或安装失败时停止部署，不自动更改软件源，也不升级现有五协议。
 - 服务名 `sbox-xhttp`；配置和密钥在 `/etc/s-box/xhttp/`。`client.json` 是 Xray 客户端配置（本地 SOCKS5 `127.0.0.1:10808`），`share.txt` 是导入链接。请勿公开服务端配置、密钥或订阅链接。
 - 分享链接自动加入通用聚合订阅 `jhsub.txt`；已部署时也自动写入 **Mihomo `clmi.yaml`**，并加入负载均衡、自动选择和手动选择三个代理组。支持 XHTTP 的新版 Mihomo 可直接使用（验证版本 **v1.19.34**）。未部署或卸载后刷新，不生成该节点及组内引用。
-- 官方 sing-box 当前不支持 XHTTP，因此 **不会写入 `sbox.json`**。Mihomo 节点使用独立 Xray 服务的 UUID、端口、公钥、Short ID、路径及 REALITY SNI，支持 IPv4/IPv6 和节点名称前后缀，不使用 Vision `flow`，不导出私钥。
+- 官方 sing-box 当前不支持 XHTTP，因此 **不会写入 `sbox.json`**。Mihomo 节点使用独立 Xray 服务的 UUID、端口、公钥、Short ID、路径及 REALITY SNI，支持 IPv4/IPv6 和节点名称前后缀；文章模式额外导出 `encryption` 与 Vision `flow`，普通模式不添加；不导出私钥或服务端 `decryption`。
 - 为兼容本脚本固定的 Xray v26.11.9，导出时显式启用 `reality-opts.support-x25519mlkem768: true`；否则 Mihomo 默认移除该密钥交换信息，可能导致 REALITY 握手失败。不要通过关闭证书校验来绕过。
 - 更新本版本脚本后，通过主菜单 **9** 刷新本地节点/订阅，再在客户端更新订阅；Gitlab 远端订阅需 **9→2** 刷新推送。
 - 通过 **3 → 11** 查看节点、重启、停止、状态、日志或卸载。独立 UUID、路径和密钥，不跟随原五协议的 UUID/端口/证书/启停菜单；使用独立直连出站，不继承 Sing-box 的 Warp/域名分流策略。主菜单2完整卸载时一并移除。

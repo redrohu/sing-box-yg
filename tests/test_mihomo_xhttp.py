@@ -153,12 +153,36 @@ INPUT
         self.assertNotIn('type=xhttp', (d / 'jhsub.txt').read_text())
 
     def test_real_mihomo_to_xray_transfer(self):
+        self.mihomo_to_xray_transfer(False)
+
+    def test_article_mihomo_to_xray_transfer(self):
+        self.mihomo_to_xray_transfer(True)
+
+    def mihomo_to_xray_transfer(self, article):
         openssl = shutil.which('openssl')
         curl = shutil.which('curl.exe' if os.name == 'nt' else 'curl')
         if not self.mihomo or not self.xray or not openssl or not curl:
             self.skipTest('Requires Mihomo, Xray, OpenSSL and curl')
-        d, cfg = self.generate('transport', server='127.0.0.1')
+        d, cfg = self.generate('article-transport' if article else 'transport', server='127.0.0.1')
         node = self.assertNode(d, cfg, '127.0.0.1', 'vless-xhttp-reality test-vps', '/xhttp-test')
+        if article:
+            pair = run([self.xray, 'vlessenc'])
+            self.assertEqual(pair.returncode, 0, RECORDS[-1])
+            fields = [json.loads('{' + line + '}') for line in pair.stdout.decode().splitlines() if line.startswith(('"decryption":', '"encryption":'))]
+            decryption, encryption = fields[0]['decryption'], fields[1]['encryption']
+            raw = json.loads((d / 'xhttp/config.json').read_text())
+            raw['inbounds'][0]['settings']['decryption'] = decryption
+            raw['inbounds'][0]['settings']['clients'][0]['flow'] = 'xtls-rprx-vision'
+            raw['inbounds'][0]['streamSettings']['xhttpSettings']['path'] = '/'
+            (d / 'xhttp/config.json').write_text(json.dumps(raw))
+            (d / 'xhttp/encryption.key').write_text(encryption + '\n')
+            generate_vps(self.source, d)
+            cfg = yaml.safe_load((d / 'clmi.yaml').read_text(encoding='utf8'))
+            node = next(n for n in cfg['proxies'] if n.get('network') == 'xhttp')
+            self.assertEqual(node['encryption'], encryption)
+            self.assertEqual(node['flow'], 'xtls-rprx-vision')
+            self.assertEqual(node['xhttp-opts']['path'], '/')
+            self.assertNotIn(decryption, (d / 'clmi.yaml').read_text(encoding='utf8'))
         sockets = [socket.socket() for _ in range(3)]
         for s in sockets:
             s.bind(('127.0.0.1', 0))

@@ -1,3 +1,10 @@
+v26.11.19-fork.11更新内容：
+1、XHTTP新增文章同款VLESS Encryption（X25519认证）+ Vision + REALITY组合，新部署默认启用，仍可选择普通模式
+2、已有普通XHTTP节点通过3→11→8备份后升级，保留端口、UUID和REALITY密钥；路径改为默认/，更新客户端订阅后使用
+3、Xray客户端JSON、通用分享URI、Mihomo YAML同步导出encryption和flow；不向官方sing-box写入XHTTP
+4、保留jq 1.5兼容与无分页状态检查；升级失败尝试恢复配置及导出，备份含私钥请妥善保管
+
+历史版本：
 v26.11.19-fork.10更新内容：
 1、修复XHTTP安装末尾systemctl status打开分页器，关闭终端可能触发安装回滚并删除已启动服务的问题
 2、XHTTP状态检查显式禁用分页；完成安装后关闭终端不应影响独立systemd服务

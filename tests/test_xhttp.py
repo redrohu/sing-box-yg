@@ -32,7 +32,7 @@ class XHTTP(unittest.TestCase):
         src = self.source.replace('/etc/s-box', bashpath(directory))
         return ''.join(function(src, n) for n in [
             'node_suffix_valid', 'node_suffix_load', 'xhttp_server_config',
-            'xhttp_client_config', 'xhttp_export', 'xhttp_dependencies'])
+            'xhttp_client_config', 'xhttp_export', 'xhttp_dependencies', 'xhttp_encryption_pair'])
 
     def generate(self, name, server='192.0.2.1'):
         d = self.output / name
@@ -73,6 +73,12 @@ xhttp_export
             self.assertEqual(client['outbounds'][0]['streamSettings']['realitySettings']['password'], query['pbk'][0])
 
     def test_transport_loopback(self):
+        self.transport_loopback(False)
+
+    def test_article_transport_loopback(self):
+        self.transport_loopback(True)
+
+    def transport_loopback(self, article):
         """Real TLS1.3/H2 target + Xray server/client + SOCKS + HTTP payload, no Internet."""
         openssl = shutil.which('openssl')
         if not openssl and os.name == 'nt':
@@ -80,7 +86,22 @@ xhttp_export
         curl = shutil.which('curl.exe' if os.name == 'nt' else 'curl')
         if not self.binary or not openssl or not curl:
             self.skipTest('Requires Xray, openssl and curl')
-        d = self.generate('transport', '127.0.0.1')
+        d = self.generate('article-transport' if article else 'transport', '127.0.0.1')
+        if article:
+            (d / 'xhttp/xray').write_text('#!/bin/bash\nexec "' + bashpath(self.binary) + '" "$@"\n')
+            shell(self.helpers(d) + '''
+chmod +x xhttp/xray
+xhttp_encryption_pair xhttp
+xhttp_server_config xhttp 18443 www.microsoft.com 11111111-2222-3333-4444-555555555555 eC9YOSPvhGUHAU1KLrr0X3GBiiYubH1zubnb_yxyylQ aabbccdd / xtls-rprx-vision "$(cat xhttp/decryption.key)"
+xhttp_export
+''', d)
+            uri = urlsplit((d / 'xhttp.txt').read_text().strip())
+            query = parse_qs(uri.query)
+            self.assertEqual(query['flow'], ['xtls-rprx-vision'])
+            self.assertTrue(query['encryption'][0].startswith('mlkem768x25519plus.native.'))
+            for name in ['config.json', 'client.json']:
+                result = run([self.binary, 'run', '-test', '-config', d / 'xhttp' / name])
+                self.assertEqual(result.returncode, 0, RECORDS[-1])
 
         def port():
             with socket.socket() as s:
@@ -306,6 +327,34 @@ test ! -e systemd/sbox-xhttp.service
             shell(script, d)
             self.assertEqual((d / 'sb.json').read_text(), '{"original":true}')
             self.assertEqual(list(d.glob('.xhttp-install.*')), [])
+
+    def test_article_upgrade_preserves_or_rolls_back_existing_node(self):
+        if not self.binary:
+            self.skipTest('Requires Xray')
+        for fail in [False, True]:
+            d = self.generate('article-upgrade-fail' if fail else 'article-upgrade')
+            before = (d / 'xhttp/config.json').read_bytes()
+            (d / 'xhttp/xray').write_text('#!/bin/bash\nexec "' + bashpath(self.binary) + '" "$@"\n')
+            src = self.source.replace('/etc/s-box', bashpath(d))
+            script = self.helpers(d) + function(src, 'xhttp_article_enable') + '''
+chmod +x xhttp/xray
+hostname=test-vps
+green() { :; }; red() { echo "$*"; }; sleep() { :; }
+xhttp_service() { echo "$*" >> services; return 0; }
+sbshare() { if [[ FAIL == yes ]]; then return 1; fi; xhttp_export; }
+if xhttp_article_enable; then test FAIL == no; else test FAIL == yes; fi
+'''.replace('FAIL', 'yes' if fail else 'no')
+            shell(script, d)
+            if fail:
+                self.assertEqual((d / 'xhttp/config.json').read_bytes(), before)
+                self.assertFalse((d / 'xhttp/encryption.key').exists())
+            else:
+                cfg = json.loads((d / 'xhttp/config.json').read_text())['inbounds'][0]
+                original = json.loads(before)['inbounds'][0]
+                self.assertEqual(cfg['port'], original['port'])
+                self.assertEqual(cfg['settings']['clients'][0]['id'], original['settings']['clients'][0]['id'])
+                self.assertEqual(cfg['streamSettings']['realitySettings'], original['streamSettings']['realitySettings'])
+                self.assertEqual(cfg['settings']['clients'][0]['flow'], 'xtls-rprx-vision')
 
 
 if __name__ == '__main__':

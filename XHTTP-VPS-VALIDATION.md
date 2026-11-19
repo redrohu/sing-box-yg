@@ -1,5 +1,7 @@
 # XHTTP 实机重新部署验证（2026-11-19）
 
+> 这是 fork.10 普通模式的历史记录。随后已按用户要求升级到 Encryption + Vision，当前验证见 [ARTICLE-XHTTP-VPS-VALIDATION.md](ARTICLE-XHTTP-VPS-VALIDATION.md)。
+
 ## 原因和修复
 
 1. 旧安装流程在回滚trap仍生效时调用`systemctl status`，交互终端下可能打开分页器。用户关闭终端时安装流程尚未提交，可能触发trap，停止服务并删除配置；此次远程日志中的停止/文件消失与该风险一致，但没有完整的用户终端进程审计，不能认定为唯一原因。
