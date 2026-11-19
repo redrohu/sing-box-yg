@@ -29,7 +29,21 @@ jobs:
         env:
           SB_TEST_CORES: ${{ runner.temp }}/sbcheck
           SB_TEST_OUTPUT: ${{ runner.temp }}/config-results
+          XRAY_TEST_BIN: ${{ runner.temp }}/xray/xray
+          MIHOMO_TEST_BIN: ${{ runner.temp }}/mihomo/mihomo
         run: |
+          mkdir -p "$RUNNER_TEMP/xray"
+          curl -fL --retry 3 https://github.com/XTLS/Xray-core/releases/download/v26.11.9/Xray-linux-64.zip -o "$RUNNER_TEMP/xray.zip"
+          curl -fL --retry 3 https://github.com/XTLS/Xray-core/releases/download/v26.11.9/Xray-linux-64.zip.dgst -o "$RUNNER_TEMP/xray.dgst"
+          expected=$(awk -F '= *' '/^SHA2-256=/{gsub(/\r/,"",$2); print $2}' "$RUNNER_TEMP/xray.dgst")
+          test "$expected" = "$(sha256sum "$RUNNER_TEMP/xray.zip" | cut -d ' ' -f1)"
+          unzip -q "$RUNNER_TEMP/xray.zip" xray -d "$RUNNER_TEMP/xray"
+          chmod +x "$XRAY_TEST_BIN"
+          mkdir -p "$RUNNER_TEMP/mihomo"
+          curl -fL --retry 3 https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-linux-amd64-compatible-v1.19.34.gz -o "$RUNNER_TEMP/mihomo.gz"
+          echo "2763f5b414527f7baf6dc57e3f82f3ab561eedf34bfd7c2f2cde1f7e592efe06  $RUNNER_TEMP/mihomo.gz" | sha256sum -c -
+          gzip -dc "$RUNNER_TEMP/mihomo.gz" > "$MIHOMO_TEST_BIN"
+          chmod +x "$MIHOMO_TEST_BIN"
           python -m pip install -r tests/requirements.txt
           python -m unittest discover -s tests -v
       - uses: actions/upload-artifact@v4

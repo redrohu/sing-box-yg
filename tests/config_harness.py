@@ -107,7 +107,7 @@ def generate_vps(source, directory, version="1.14", argo="none", client_version=
     directory.mkdir(parents=True, exist_ok=True)
     src = source.replace("/etc/s-box", bashpath(directory))
     functions = function(src, "inssbjsonser") + function(src, "sb_client")
-    for name in ["sb_client_profile", "sb_config_check", "node_suffix_valid", "node_suffix_load"]:
+    for name in ["sb_client_profile", "sb_config_check", "node_suffix_valid", "node_suffix_load", "xhttp_mihomo_load"]:
         if name + "(){" in src:
             functions = function(src, name) + functions
     ps = ""

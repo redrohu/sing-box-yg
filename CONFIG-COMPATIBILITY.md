@@ -5,10 +5,11 @@
 先恢复初始 fork `b13f943`（恢复提交 `fcdc532`，文件树完全相同），再修改配置生成逻辑。
 不再引用 qichiyuhub/rule 的模板，也不保留此前的十入站模块。
 
-- **启动菜单横幅、文字、0–16 编号及入口保持初始 fork 原样**。
+- **启动菜单横幅、文字、0–16 编号及入口保持初始 fork 原样**；可选 XHTTP + REALITY 增加在配置子菜单 **3→11**，由独立 Xray 承载，不注入 sing-box 配置。
 - VPS 保留 VLESS Reality、VMess WS/Argo、Hysteria2、TUIC、AnyTLS。旧版 1.10 服务端仍为四协议。
 - 修正范围包括 `sb.sh`、`serv00.sh`、`serv00keep.sh` 生成的 sing-box 服务端与客户端 JSON。
 - Mihomo YAML 模板和通用节点分享协议不按 sing-box schema 改写。
+- 可选 XHTTP + REALITY 节点从独立 Xray 配置生成到 Mihomo `clmi.yaml`，加入三个代理组；不写入不支持 XHTTP 的官方 sing-box `sbox.json`。Mihomo 验证版本为 v1.19.34，旧内核需先更新。
 - 本 fork 的脚本下载/自更新地址指向 `redrohu/sing-box-yg`，避免更新时重新取回未修正的上游脚本。
 
 ## 官方依据

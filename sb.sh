@@ -107,7 +107,7 @@ fi
 esac
 # Back up only the setting and generated exports, not the running server config.
 backup=$(mktemp -d /etc/s-box/node-name.bak.XXXXXX) || return 1
-for file in node_prefix.conf node_suffix.conf sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt; do
+for file in node_prefix.conf node_suffix.conf xhttp.txt sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt; do
 if [[ -f /etc/s-box/$file ]]; then
 cp -p "/etc/s-box/$file" "$backup/$file" || return 1
 fi
@@ -1333,6 +1333,10 @@ echo
 
 sb_client(){
 node_suffix_load || return 1
+local xhttp_cl_node= xhttp_cl_name=
+if [[ -f /etc/s-box/xhttp/config.json ]]; then
+xhttp_mihomo_load || return 1
+fi
 local client_raw
 client_raw=$(mktemp /etc/s-box/sbox.raw.XXXXXX) || return 1
 
@@ -1353,6 +1357,12 @@ clany1(){
   if [[ "$sbnh" != "1.10" ]]; then
     echo "- \"${node_prefix_label}anytls $node_suffix\""
   fi
+}
+clxhttp1(){
+[[ -z $xhttp_cl_name ]] || printf '\n    - %s' "$xhttp_cl_name"
+}
+clxhttp2(){
+[[ -z $xhttp_cl_node ]] || printf '\n- %s' "$xhttp_cl_node"
 }
 sbany2(){
   if [[ "$sbnh" != "1.10" ]]; then
@@ -1899,7 +1909,7 @@ $(sbany1)
 EOF
 
 cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)
+$(clall)$(clxhttp2)
 
 $(clany2)
 
@@ -1979,7 +1989,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-tls-argo临时 $node_suffix"
@@ -1995,7 +2005,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-tls-argo临时 $node_suffix"
@@ -2011,7 +2021,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-tls-argo临时 $node_suffix"
@@ -2120,7 +2130,7 @@ $(sbany1)
 EOF
 
 cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)
+$(clall)$(clxhttp2)
 
 
 
@@ -2174,7 +2184,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo临时 $node_suffix"
     - "${node_prefix_label}vmess-argo临时 $node_suffix"
 
@@ -2188,7 +2198,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo临时 $node_suffix"
     - "${node_prefix_label}vmess-argo临时 $node_suffix"
     
@@ -2202,7 +2212,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo临时 $node_suffix"
     - "${node_prefix_label}vmess-argo临时 $node_suffix"
 rules:
@@ -2309,7 +2319,7 @@ $(sbany1)
 EOF
 
 cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)
+$(clall)$(clxhttp2)
 
 
 
@@ -2361,7 +2371,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-argo固定 $node_suffix"
 
@@ -2375,7 +2385,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-argo固定 $node_suffix"
     
@@ -2389,7 +2399,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     - "${node_prefix_label}vmess-tls-argo固定 $node_suffix"
     - "${node_prefix_label}vmess-argo固定 $node_suffix"
 rules:
@@ -2440,7 +2450,7 @@ $(sbany1)
 EOF
 
 cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)
+$(clall)$(clxhttp2)
 
 $(clany2)
 
@@ -2455,7 +2465,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
 
 - name: 自动选择
   type: url-test
@@ -2467,7 +2477,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
     
 - name: 🌍选择代理节点
   type: select
@@ -2479,7 +2489,7 @@ proxy-groups:
     - "${node_prefix_label}vmess-ws $node_suffix"
     - "${node_prefix_label}hysteria2 $node_suffix"
     - "${node_prefix_label}tuic5 $node_suffix"
-    $(clany1)
+    $(clany1)$(clxhttp1)
 rules:
   - GEOIP,LAN,DIRECT
   - GEOSITE,CN,DIRECT
@@ -3209,11 +3219,235 @@ fi
 exit
 }
 
+# Optional Xray sidecar. Kept in sb.sh so curl/bash installation stays self-contained.
+xhttp_mihomo_load(){
+# JSON flow mappings and quoted scalars are valid YAML; jq escapes names/paths safely.
+# Called only when the sidecar exists. Do not emit privateKey or a Vision flow.
+# Xray v26.11.9 requires the hybrid key-share in ClientHello; Mihomo defaults it off.
+local dir=/etc/s-box/xhttp server
+server=$(cat /etc/s-box/server_ipcl.log) || return 1
+server=${server#[}; server=${server%]}
+[[ -n $server ]] || return 1
+xhttp_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --rawfile public "$dir/public.key" \
+--arg server "$server" --arg name "${node_prefix_label}vless-xhttp-reality $node_suffix" '
+ $cfg[0].inbounds[0] as $in |
+ ($public | rtrimstr("\n") | rtrimstr("\r")) as $key |
+ if $in.protocol != "vless" or $in.streamSettings.network != "xhttp" or $in.streamSettings.security != "reality"
+ then error("invalid XHTTP sidecar config") else . end |
+ {name:$name, type:"vless", server:$server, port:$in.port,
+  uuid:$in.settings.clients[0].id, network:"xhttp", udp:true, tls:true,
+  servername:$in.streamSettings.realitySettings.serverNames[0],
+  "client-fingerprint":"chrome", "skip-cert-verify":false,
+  "reality-opts":{"public-key":$key,"short-id":$in.streamSettings.realitySettings.shortIds[0],"support-x25519mlkem768":true},
+  "xhttp-opts":{path:$in.streamSettings.xhttpSettings.path,mode:"auto"}} |
+ if (.port|type) != "number" or .port < 1 or .port > 65535 or
+    (.uuid|type) != "string" or (.servername|type) != "string" or
+    (."xhttp-opts".path|type) != "string" or
+    (."reality-opts"."short-id"|type) != "string" or
+    ($key|test("^[A-Za-z0-9_-]{43}$")|not)
+ then error("missing/invalid XHTTP export fields") else . end
+') || return 1
+xhttp_cl_name=$(jq -cr '.name|@json' <<< "$xhttp_cl_node")
+}
+
+xhttp_server_config(){
+local dir=$1 port=$2 sni=$3 id=$4 private=$5 sid=$6 path=$7
+jq -n --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$private" --arg sid "$sid" --arg path "$path" '{
+ log:{loglevel:"warning"},
+ inbounds:[{tag:"xhttp-reality",listen:"::",port:$port,protocol:"vless",
+ settings:{clients:[{id:$id}],decryption:"none"},
+ streamSettings:{network:"xhttp",security:"reality",
+ realitySettings:{show:false,target:($sni+":443"),xver:0,serverNames:[$sni],privateKey:$key,shortIds:[$sid]},
+ xhttpSettings:{path:$path,mode:"auto"}}}],
+ outbounds:[{protocol:"freedom",tag:"direct"}]
+}' > "$dir/config.json"
+}
+
+xhttp_client_config(){
+local dir=$1 server=$2 port=$3 sni=$4 id=$5 public=$6 sid=$7 path=$8 name=$9
+jq -n --arg server "$server" --argjson port "$port" --arg sni "$sni" --arg id "$id" --arg key "$public" --arg sid "$sid" --arg path "$path" --arg name "$name" '{
+ log:{loglevel:"warning"},
+ inbounds:[{listen:"127.0.0.1",port:10808,protocol:"socks",settings:{auth:"noauth",udp:true}}],
+ outbounds:[{tag:$name,protocol:"vless",settings:{vnext:[{address:$server,port:$port,users:[{id:$id,encryption:"none"}]}]},
+ streamSettings:{network:"xhttp",security:"reality",realitySettings:{fingerprint:"chrome",serverName:$sni,password:$key,shortId:$sid},
+ xhttpSettings:{path:$path,mode:"auto"}}}]
+}' > "$dir/client.json" || return 1
+local authority=$server encoded_path encoded_name
+[[ $authority == *:* ]] && authority="[$authority]"
+encoded_path=$(jq -nr --arg v "$path" '$v|@uri') || return 1
+encoded_name=$(jq -nr --arg v "$name" '$v|@uri') || return 1
+printf 'vless://%s@%s:%s?encryption=none&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=xhttp&path=%s&mode=auto#%s\n' "$id" "$authority" "$port" "$sni" "$public" "$sid" "$encoded_path" "$encoded_name" > "$dir/share.txt"
+}
+
+xhttp_export(){
+local dir=/etc/s-box/xhttp server port sni id public sid path
+[[ -f $dir/config.json && -f $dir/public.key ]] || return 0
+server=$(cat /etc/s-box/server_ipcl.log) || return 1
+server=${server#[}; server=${server%]}
+[[ -n $server ]] || return 1
+port=$(jq -er '.inbounds[0].port' "$dir/config.json") || return 1
+sni=$(jq -er '.inbounds[0].streamSettings.realitySettings.serverNames[0]' "$dir/config.json") || return 1
+id=$(jq -er '.inbounds[0].settings.clients[0].id' "$dir/config.json") || return 1
+sid=$(jq -er '.inbounds[0].streamSettings.realitySettings.shortIds[0]' "$dir/config.json") || return 1
+path=$(jq -er '.inbounds[0].streamSettings.xhttpSettings.path' "$dir/config.json") || return 1
+public=$(cat "$dir/public.key") || return 1
+node_suffix_load || return 1
+(umask 077; xhttp_client_config "$dir" "$server" "$port" "$sni" "$id" "$public" "$sid" "$path" "${node_prefix_label}vless-xhttp-reality $node_suffix") || return 1
+cp "$dir/share.txt" /etc/s-box/xhttp.txt
+}
+
+xhttp_service(){
+local action=$1
+if command -v apk >/dev/null 2>&1; then
+case "$action" in
+enable) rc-update add sbox-xhttp default ;;
+disable) rc-update del sbox-xhttp default ;;
+*) rc-service sbox-xhttp "$action" ;;
+esac
+else
+systemctl "$action" sbox-xhttp
+fi
+}
+
+xhttp_remove(){
+if [[ -e /etc/init.d/sbox-xhttp || -e /etc/systemd/system/sbox-xhttp.service ]]; then
+xhttp_service stop || { red "停止XHTTP服务失败，保留配置以便排查。"; return 1; }
+xhttp_service disable || return 1
+fi
+rm -f /etc/init.d/sbox-xhttp /etc/systemd/system/sbox-xhttp.service || return 1
+if ! command -v apk >/dev/null 2>&1; then systemctl daemon-reload || return 1; fi
+rm -rf /etc/s-box/xhttp || return 1
+rm -f /etc/s-box/xhttp.txt
+}
+
+xhttp_install(){
+[[ -f /etc/s-box/sb.json ]] || { red "请先安装 Sing-box。"; return 1; }
+[[ ! -e /etc/s-box/xhttp && ! -e /etc/systemd/system/sbox-xhttp.service && ! -e /etc/init.d/sbox-xhttp ]] || { red "XHTTP 已存在。请先备份并通过本菜单卸载，再重新部署。"; return 1; }
+local port sni arch
+for arch in curl jq unzip openssl sha256sum ss; do
+command -v "$arch" >/dev/null 2>&1 || { red "缺少依赖：$arch，请用系统包管理器安装后重试。"; return 1; }
+done
+case $(uname -m) in
+x86_64) arch=64 ;;
+aarch64) arch=arm64-v8a ;;
+armv7l) arch=arm32-v7a ;;
+*) red "XHTTP 暂不支持该架构。"; return 1 ;;
+esac
+readp "XHTTP + REALITY 独立 TCP 端口（默认443，不能与现有服务重复）：" port
+port=${port:-443}
+if [[ ! $port =~ ^[0-9]{1,5}$ ]] || (( 10#$port < 1 || 10#$port > 65535 )); then
+red "端口必须为1–65535。"; return 1
+fi
+port=$((10#$port))
+if [[ -n $(ss -H -ltn "sport = :$port") ]]; then red "TCP 端口 $port 已被占用。"; return 1; fi
+readp "REALITY 目标域名（需支持TLS1.3/H2，默认www.cloudflare.com）：" sni
+sni=${sni:-www.cloudflare.com}
+if [[ ${#sni} -gt 253 || ! $sni =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}$ ]]; then
+red "请输入不带协议、端口、路径的有效域名。"; return 1
+fi
+# All changes are confined to a new sidecar. Failure never restarts sing-box.
+if ! (
+umask 077
+local stage committed=0 keypair private public id sid path expected actual version=v26.11.9
+stage=$(mktemp -d /etc/s-box/.xhttp-install.XXXXXX) || exit 1
+trap 'rm -rf "$stage"; if [[ $committed == 1 ]]; then xhttp_remove; fi' EXIT
+curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip" -o "$stage/core.zip" || exit 1
+curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip.dgst" -o "$stage/core.dgst" || exit 1
+expected=$(awk -F '= *' '/^SHA2-256=/{gsub(/\r/,"",$2); print $2}' "$stage/core.dgst") || exit 1
+actual=$(sha256sum "$stage/core.zip" | awk '{print $1}') || exit 1
+[[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || { echo "Xray SHA256校验失败" >&2; exit 1; }
+unzip -q "$stage/core.zip" xray -d "$stage" || exit 1
+chmod 700 "$stage/xray" || exit 1
+keypair=$("$stage/xray" x25519) || exit 1
+private=$(printf '%s\n' "$keypair" | awk '/^PrivateKey:/{print $2}') || exit 1
+public=$(printf '%s\n' "$keypair" | awk '/^Password \(PublicKey\):/{print $3} /^PublicKey:/{print $2}') || exit 1
+[[ $private =~ ^[A-Za-z0-9_-]{43}$ && $public =~ ^[A-Za-z0-9_-]{43}$ ]] || exit 1
+id=$("$stage/xray" uuid) || exit 1
+sid=$(openssl rand -hex 8) || exit 1
+path="/$(openssl rand -hex 16)" || exit 1
+xhttp_server_config "$stage" "$port" "$sni" "$id" "$private" "$sid" "$path" || exit 1
+printf '%s\n' "$public" > "$stage/public.key" || exit 1
+printf '%s\n' "$version" > "$stage/version" || exit 1
+"$stage/xray" run -test -config "$stage/config.json" || exit 1
+rm "$stage/core.zip" "$stage/core.dgst" || exit 1
+mv "$stage" /etc/s-box/xhttp || exit 1
+committed=1
+xhttp_export || exit 1
+/etc/s-box/xhttp/xray run -test -config /etc/s-box/xhttp/client.json || exit 1
+if command -v apk >/dev/null 2>&1; then
+cat > /etc/init.d/sbox-xhttp <<'XHTTP_OPENRC' || exit 1
+#!/sbin/openrc-run
+description="sing-box-yg XHTTP REALITY sidecar"
+command=/etc/s-box/xhttp/xray
+command_args="run -config /etc/s-box/xhttp/config.json"
+command_background=true
+pidfile=/run/sbox-xhttp.pid
+output_log=/etc/s-box/xhttp/service.log
+error_log=/etc/s-box/xhttp/service.log
+depend() { need net; }
+XHTTP_OPENRC
+chmod 755 /etc/init.d/sbox-xhttp || exit 1
+else
+cat > /etc/systemd/system/sbox-xhttp.service <<'XHTTP_SYSTEMD' || exit 1
+[Unit]
+Description=sing-box-yg XHTTP REALITY sidecar
+After=network-online.target
+Wants=network-online.target
+[Service]
+ExecStart=/etc/s-box/xhttp/xray run -config /etc/s-box/xhttp/config.json
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=1048576
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+PrivateTmp=true
+UMask=0077
+[Install]
+WantedBy=multi-user.target
+XHTTP_SYSTEMD
+systemctl daemon-reload || exit 1
+fi
+xhttp_service enable || exit 1
+xhttp_service start || exit 1
+sleep 2
+xhttp_service status || exit 1
+[[ -n $(ss -H -ltn "sport = :$port") ]] || exit 1
+committed=0
+); then
+red "XHTTP部署失败，已尝试清理本次部署；若上方提示停止失败，请先处理残留服务。现有Sing-box配置未修改。"
+return 1
+fi
+green "XHTTP + REALITY 已部署。请在云防火墙/安全组及系统防火墙放行 TCP $port。"
+yellow "此节点直连VPS，不经Argo/CDN；需要支持XHTTP的Xray客户端。"
+cat /etc/s-box/xhttp/share.txt
+sbshare > /dev/null || { red "节点已部署，但聚合订阅刷新失败，请通过菜单9重试。"; return 1; }
+}
+
+xhttp_menu(){
+local action confirm
+yellow "XHTTP + REALITY（独立Xray，不影响现有五协议；不跟随Sing-box的启停/UUID/端口设置）"
+readp "1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：卸载XHTTP\n0：返回\n请选择【0-7】：" action
+case "$action" in
+1) xhttp_install ;;
+2) [[ -f /etc/s-box/xhttp/config.json ]] || { red "尚未部署XHTTP。"; return 1; }
+xhttp_export && cat /etc/s-box/xhttp/share.txt && sbshare > /dev/null ;;
+3) /etc/s-box/xhttp/xray run -test -config /etc/s-box/xhttp/config.json && xhttp_service restart ;;
+4) xhttp_service stop ;;
+5) xhttp_service status ;;
+6) if command -v apk >/dev/null 2>&1; then tail -n 100 /etc/s-box/xhttp/service.log; else journalctl -u sbox-xhttp -n 100 --no-pager; fi ;;
+7) readp "将删除XHTTP配置和密钥；输入 yes 确认：" confirm
+[[ $confirm == yes ]] || return 0
+xhttp_remove && sbshare > /dev/null ;;
+esac
+}
+
+
 changeserv(){
 sbactive
 echo
 green "Sing-box配置变更选择如下:"
-readp "1：更换Reality域名伪装地址、切换自签证书与Acme域名证书、开关TLS\n2：更换全协议UUID(密码)、Vmess-Path路径\n3：设置Argo临时隧道、固定隧道\n4：切换IPV4或IPV6的代理优先级 (仅 1.10.7 内核可用)\n5：设置Telegram推送节点通知\n6：更换Warp-wireguard出站账户\n7：设置Gitlab订阅分享链接\n8：设置本地IP订阅分享链接\n9：设置所有Vmess节点的CDN优选地址\n10：设置节点名称前缀/后缀（默认无前缀、后缀为主机名）\n0：返回上层\n请选择【0-10】：" menu
+readp "1：更换Reality域名伪装地址、切换自签证书与Acme域名证书、开关TLS\n2：更换全协议UUID(密码)、Vmess-Path路径\n3：设置Argo临时隧道、固定隧道\n4：切换IPV4或IPV6的代理优先级 (仅 1.10.7 内核可用)\n5：设置Telegram推送节点通知\n6：更换Warp-wireguard出站账户\n7：设置Gitlab订阅分享链接\n8：设置本地IP订阅分享链接\n9：设置所有Vmess节点的CDN优选地址\n10：设置节点名称前缀/后缀（默认无前缀、后缀为主机名）\n11：部署/管理 XHTTP + REALITY（独立Xray）\n0：返回上层\n请选择【0-11】：" menu
 if [ "$menu" = "1" ];then
 changeym
 elif [ "$menu" = "2" ];then
@@ -3234,6 +3468,8 @@ elif [ "$menu" = "9" ];then
 vmesscfadd
 elif [ "$menu" = "10" ];then
 change_node_suffix
+elif [ "$menu" = "11" ];then
+xhttp_menu
 else 
 sb
 fi
@@ -4123,6 +4359,7 @@ fi
 }
 
 unins(){
+if [[ -d /etc/s-box/xhttp ]]; then xhttp_remove || return 1; fi
 if command -v apk >/dev/null 2>&1; then
 for svc in sing-box argo; do
 rc-service "$svc" stop >/dev/null 2>&1
@@ -4181,6 +4418,10 @@ cat /etc/s-box/vm_ws_tls.txt 2>/dev/null >> /etc/s-box/jhdy.txt
 cat /etc/s-box/hy2.txt 2>/dev/null >> /etc/s-box/jhdy.txt
 cat /etc/s-box/tuic5.txt 2>/dev/null >> /etc/s-box/jhdy.txt
 cat /etc/s-box/an.txt 2>/dev/null >> /etc/s-box/jhdy.txt
+if [[ -f /etc/s-box/xhttp/config.json ]]; then
+xhttp_export || return 1
+cat /etc/s-box/xhttp.txt >> /etc/s-box/jhdy.txt
+fi
 v2sub=$(cat /etc/s-box/jhdy.txt 2>/dev/null)
 echo "$v2sub" > /etc/s-box/jhsub.txt
 echo

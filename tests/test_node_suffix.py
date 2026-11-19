@@ -39,8 +39,9 @@ class NodeSuffix(unittest.TestCase):
     def share_helpers(self, d):
         source = self.source.replace("/etc/s-box", bashpath(d))
         helpers = "".join(function(source, name) for name in [
-            "node_suffix_valid", "node_suffix_load", "change_node_suffix", "sb_client_profile",
-            "sb_client", "resvless", "resvmess", "reshy2", "restu5", "resan", "sbshare", "readp"])
+            "node_suffix_valid", "node_suffix_load", "change_node_suffix", "sb_client_profile", "xhttp_mihomo_load",
+            "sb_client", "resvless", "resvmess", "reshy2", "restu5", "resan", "sbshare", "readp",
+            "xhttp_export", "xhttp_client_config"])
         # Suppress only external side effects; use real renderers and share assembly.
         return parameters(d) + helpers + '''
 red() { echo "$*" >&2; }
@@ -179,7 +180,7 @@ changeserv
 ''', d)
         self.assertEqual((d / "dispatched").read_text().strip(), "called")
         self.assertIn("10：设置节点名称前缀/后缀", (d / "prompt").read_text(encoding="utf8"))
-        self.assertIn("请选择【0-10】", (d / "prompt").read_text(encoding="utf8"))
+        self.assertIn("请选择【0-11】", (d / "prompt").read_text(encoding="utf8"))
 
 
 if __name__ == "__main__":
