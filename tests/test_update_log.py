@@ -93,6 +93,21 @@ curl() {
         headers = self.headings(text)
         self.assertEqual(self.headings(output), headers[:headers.index('v26.11.16-fork.4')])
 
+    def test_fork7_detects_xhttp_release_and_latest_is_installed(self):
+        history = (ROOT / 'version').read_text(encoding='utf8')
+        latest = self.headings(history)[0]
+        self.assertNotEqual(latest, 'v26.11.17-fork.7')
+        output = self.notice('v26.11.17-fork.7', history)
+        self.assertIn('可选择7进行更新', output)
+        self.assertEqual(self.headings(output), [latest])
+        self.assertIn('XHTTP', output)
+        self.assertIn('Mihomo', output)
+        self.assertIn('主菜单9', output)
+        self.assertNotIn('更新提示仅显示当前版本之后', output)
+        current = self.notice(latest, history, case='after-update')
+        self.assertIn('(已安装)', current)
+        self.assertNotIn('可选择7进行更新', current)
+
     def test_numeric_fork_comparison_and_latest_upper_bound(self):
         text = '\n历史版本：\n'.join(f'v26.11.17-fork.{n}更新内容：\n日志{n}' for n in [11, 10, 9, 8, 2])
         self.assertEqual(self.headings(self.filter('v26.11.17-fork.8', 'v26.11.17-fork.10', text)),
