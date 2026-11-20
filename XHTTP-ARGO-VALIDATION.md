@@ -68,3 +68,11 @@
 - 本次脚本原 SHA256：`cc2d165ca73c37c53e0c849b7ecce8e8d1d8768c37d3d37d7075dd883e4d0668`；新 SHA256：`e73056748098140b03ff98829f7ef22557bff46628269de3e1bbab5944f07221`，本地与 VPS 一致。
 - 本次验证记录和原件：`C:\Users\17289\AppData\Local\Temp\sbox-xhttp-argo-address-g9_l7ojd\`；配置备份含客户端凭据，不加入 Git。
 - 最终全量 **81 项测试通过**（约528秒），包括实际 Xray/Mihomo 传输、IPv4/IPv6/域名导出、独立设置、恢复默认及刷新失败回滚；Bash 语法及 Git whitespace 检查通过。这些结果不等于新优选地址的公网测速。
+
+## 后缀清除功能（fork.14）
+
+- 菜单 **3 → 10 → 5** 新增“清除后缀（不显示主机名）”。原 **1–4** 编号和含义保持不变；前缀仍可独立保留。
+- 通过 `/etc/s-box/node_suffix.disabled` 标记无后缀模式。设置自定义后缀（1）或恢复主机名（2）会自动退出该模式；原 `node_suffix.conf` 不会被误删。
+- 实际验证覆盖服务端版本 1.10/1.14、Argo none/fixed/temporary/both、Sing-box/Mihomo、两种 XHTTP 节点和分享 URI；确认无尾随空格、配置检查通过、服务端参数不变。新增专项 3 项及原有测试，最终测试记录在本机临时目录。
+- VPS 已部署 fork.14；四个现有服务均 active，原配置 SHA256 校验通过，PID 未变化。部署没有清除当前用户已有后缀；需要使用时进入菜单操作即可。
+- 原脚本/版本备份：`/root/sbox-clear-suffix-20261120/`；本地备份和命令记录：`C:\Users\17289\AppData\Local\Temp\sbox-clear-suffix-dyn1vtgh\`。备份含订阅/客户端凭据，不加入 Git。
