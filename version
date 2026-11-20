@@ -1,3 +1,10 @@
+v26.11.20-fork.13更新内容：
+1、XHTTP + 固定Argo新增独立优选域名/IP设置，入口3→11→9→8；与VMess优选互不关联
+2、支持域名/IPv4/IPv6及恢复默认，Mihomo server、Xray address、分享URI同步更新；SNI和Host保持原隧道域名
+3、变更前备份设置及导出，刷新失败尝试回滚；不修改服务端配置、不重启服务，不自动测速
+4、更新脚本后可直接设置已有节点；Gitlab用9→2推送，客户端刷新订阅。格式有效不等于连接可用或网速更快
+
+历史版本：
 v26.11.20-fork.12更新内容：
 1、新增XHTTP + 固定Cloudflare Tunnel独立节点，入口3→11→9；保留原五协议和直连REALITY节点
 2、回环HTTP源站默认18080，客户端TLS443 + packet-up，保留VLESS Encryption + Vision；CDN模式不使用REALITY

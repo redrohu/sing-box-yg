@@ -3548,12 +3548,41 @@ jq -n --argjson port "$port" --arg id "$id" --arg path "$path" --arg decryption 
 }' > "$dir/config.json"
 }
 
+xhttp_argo_address_valid(){
+# Syntax validation only: no DNS lookup, automatic scanning or speed guarantee.
+jq -en --arg address "$1" '
+ def ipv4:
+  split(".") as $p | ($p|length)==4 and
+  all($p[]; test("^(0|[1-9][0-9]{0,2})$") and (tonumber <= 255));
+ def groups: if .=="" then [] else split(":") end;
+ def ipv6:
+  test("^[0-9A-Fa-f:]+$") and
+  (if contains("::") then
+    split("::") as $p | ($p|length)==2 and
+    (($p[0]|groups)+($p[1]|groups)) as $g |
+    ($g|length)<8 and all($g[]; test("^[0-9A-Fa-f]{1,4}$"))
+   else split(":") as $g | ($g|length)==8 and all($g[]; test("^[0-9A-Fa-f]{1,4}$")) end);
+ $address | length>=1 and length<=253 and
+ (if contains(":") then
+   (if contains(".") then . as $original | split(":")[-1] as $last |
+     if ($last|ipv4) then $original|sub("[^:]+$";"0:0") else "" end
+    else . end) | ipv6
+  elif test("^[0-9.]+$") then ipv4
+  else split(".") as $labels | ($labels|length)>=2 and
+   all($labels[]; length>=1 and length<=63 and test("^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$")) end)
+' >/dev/null 2>&1
+}
+
 xhttp_argo_mihomo_load(){
-local dir=/etc/s-box/xhttp-argo domain encryption
+local dir=/etc/s-box/xhttp-argo domain encryption server
 domain=$(cat "$dir/domain") || return 1
 encryption=$(cat "$dir/encryption.key") || return 1
 [[ $domain =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}$ && $encryption =~ ^mlkem768x25519plus\.native\.(0rtt|1rtt)\.[A-Za-z0-9_-]{43}$ ]] || return 1
-xhttp_argo_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg domain "$domain" --arg encryption "$encryption" --arg name "${node_prefix_label}vless-xhttp-argo $node_suffix" '
+server=$domain
+if [[ -f $dir/server.conf ]]; then server=$(cat "$dir/server.conf") || return 1; fi
+if [[ $server == \[*\] && $server == *:* ]]; then server=${server:1:${#server}-2}; fi
+xhttp_argo_address_valid "$server" || { red "XHTTP Argo 优选地址无效，未生成配置。"; return 1; }
+xhttp_argo_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg domain "$domain" --arg server "$server" --arg encryption "$encryption" --arg name "${node_prefix_label}vless-xhttp-argo $node_suffix" '
  $cfg[0].inbounds[0] as $in |
  if $in.listen != "127.0.0.1" or $in.protocol != "vless" or $in.streamSettings.network != "xhttp" or $in.streamSettings.security != "none" or
  ($in.port|type) != "number" or $in.port < 1 or $in.port > 65535 or
@@ -3561,7 +3590,7 @@ xhttp_argo_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg domain "$d
  ($in.streamSettings.xhttpSettings.path|type) != "string" or
  (($in.settings.decryption // "")|test("^mlkem768x25519plus\\.native\\.[0-9]+s\\.[A-Za-z0-9_-]{43}$")|not)
  then error("invalid XHTTP Argo origin") else . end |
- {name:$name,type:"vless",server:$domain,port:443,uuid:$in.settings.clients[0].id,
+ {name:$name,type:"vless",server:$server,port:443,uuid:$in.settings.clients[0].id,
  encryption:$encryption,flow:$in.settings.clients[0].flow,network:"xhttp",udp:true,tls:true,
  servername:$domain,"client-fingerprint":"chrome","skip-cert-verify":false,
  "xhttp-opts":{host:$domain,path:$in.streamSettings.xhttpSettings.path,mode:"packet-up"}}
@@ -3579,11 +3608,66 @@ jq -n --argjson node "$xhttp_argo_cl_node" '{
  log:{loglevel:"warning"},inbounds:[{listen:"127.0.0.1",port:10808,protocol:"socks",settings:{auth:"noauth",udp:true}}],
  outbounds:[{tag:$node.name,protocol:"vless",settings:{vnext:[{address:$node.server,port:$node.port,users:[{id:$node.uuid,encryption:$node.encryption,flow:$node.flow}]}]},
  streamSettings:{network:"xhttp",security:"tls",tlsSettings:{serverName:$node.servername,fingerprint:"chrome",alpn:["h2","http/1.1"]},
- xhttpSettings:{host:$node.server,path:$node["xhttp-opts"].path,mode:"packet-up",noSSEHeader:false}}}]
+ xhttpSettings:{host:$node["xhttp-opts"].host,path:$node["xhttp-opts"].path,mode:"packet-up",noSSEHeader:false}}}]
 }' > "$dir/client.json" || exit 1
-jq -r '"vless://"+.uuid+"@"+.server+":443?encryption="+(.encryption|@uri)+"&flow="+.flow+"&security=tls&sni="+.servername+"&fp=chrome&alpn=h2%2Chttp%2F1.1&type=xhttp&host="+.server+"&path="+(."xhttp-opts".path|@uri)+"&mode=packet-up#"+(.name|@uri)' "$dir/mihomo.json" > "$dir/share.txt" || exit 1
+jq -r '"vless://"+.uuid+"@"+(if (.server|contains(":")) then "["+.server+"]" else .server end)+":443?encryption="+(.encryption|@uri)+"&flow="+.flow+"&security=tls&sni="+.servername+"&fp=chrome&alpn=h2%2Chttp%2F1.1&type=xhttp&host="+."xhttp-opts".host+"&path="+(."xhttp-opts".path|@uri)+"&mode=packet-up#"+(.name|@uri)' "$dir/mihomo.json" > "$dir/share.txt" || exit 1
 cp "$dir/share.txt" /etc/s-box/xhttp-argo.txt
 )
+}
+
+xhttp_argo_address_update(){
+local action=$1 server=${2-} dir=/etc/s-box/xhttp-argo backup file tmp result=0
+[[ -f $dir/config.json ]] || { red "请先部署 XHTTP + 固定Argo。"; return 1; }
+case "$action" in
+set)
+if [[ $server == \[*\] && $server == *:* ]]; then server=${server:1:${#server}-2}; fi
+xhttp_argo_address_valid "$server" || { red "请输入有效的域名、IPv4或IPv6；不含协议、端口、路径或空格。"; return 1; }
+;;
+reset) ;;
+*) return 1 ;;
+esac
+# Back up all affected generated exports. No origin config, token or service changes.
+local -a files=(xhttp-argo/server.conf xhttp-argo/mihomo.json xhttp-argo/client.json xhttp-argo/share.txt
+xhttp-argo.txt xhttp.txt clmi.yaml sbox.json jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt
+vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt vm_ws_argo.txt hy2.txt tuic5.txt an.txt SHA256.txt)
+backup=$(umask 077; mktemp -d /etc/s-box/xhttp-argo-address.bak.XXXXXX) || return 1
+for file in "${files[@]}"; do
+if [[ -f /etc/s-box/$file ]]; then
+(umask 077; mkdir -p "$backup/$(dirname "$file")" && cp -p "/etc/s-box/$file" "$backup/$file") || return 1
+fi
+done
+if [[ $action == set ]]; then
+tmp=$(umask 077; mktemp "$dir/.server.XXXXXX") || return 1
+printf '%s\n' "$server" > "$tmp" && mv -f "$tmp" "$dir/server.conf" || { rm -f "$tmp"; return 1; }
+else rm -f "$dir/server.conf" || return 1
+fi
+if ! (umask 077; sbshare > "$backup/refresh.private.log" 2>&1); then
+for file in "${files[@]}"; do
+if [[ -f $backup/$file ]]; then cp -p "$backup/$file" "/etc/s-box/$file" || result=1
+else rm -f "/etc/s-box/$file" || result=1
+fi
+done
+red "刷新失败，已尝试还原优选地址和原导出。备份及私有日志：$backup"
+[[ $result == 0 ]] || red "部分文件还原失败，请从备份手动恢复。"
+return 1
+fi
+green "XHTTP Argo 客户端连接地址已更新：${server:-$(cat "$dir/domain")}"
+green "旧设置及导出备份：$backup"
+yellow "仅修改本节点客户端地址；SNI/Host仍为隧道域名，未重启服务，不影响VMess。"
+yellow "这是手动指定优选地址，不自动测速；地址须能接入Cloudflare。Gitlab用9→2推送，客户端更新订阅。"
+}
+
+xhttp_argo_address_menu(){
+local action input
+[[ -f /etc/s-box/xhttp-argo/config.json ]] || { red "请先部署 XHTTP + 固定Argo。"; return 1; }
+green "当前XHTTP Argo连接地址：$(cat /etc/s-box/xhttp-argo/server.conf 2>/dev/null || cat /etc/s-box/xhttp-argo/domain)"
+readp "1：设置本节点优选域名/IP\n2：恢复默认隧道域名\n0：返回\n请选择【0-2】：" action
+case "$action" in
+1) IFS= read -r -p "$(yellow '输入优选域名、IPv4或IPv6（回车取消）：')" input || return 0
+[[ -n $input ]] || return 0
+xhttp_argo_address_update set "$input" ;;
+2) xhttp_argo_address_update reset ;;
+esac
 }
 
 xhttp_argo_service(){
@@ -3741,7 +3825,7 @@ sbshare > /dev/null || { red "节点已部署，但订阅刷新失败，请通�
 
 xhttp_argo_menu(){
 local action confirm
-readp "XHTTP + 固定Argo（独立节点，保留现有REALITY）\n1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：状态\n6：日志\n7：卸载固定Argo节点\n0：返回\n请选择【0-7】：" action
+readp "XHTTP + 固定Argo（独立节点，保留现有REALITY）\n1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：状态\n6：日志\n7：卸载固定Argo节点\n8：独立设置优选域名/IP、恢复默认\n0：返回\n请选择【0-8】：" action
 case "$action" in
 1) xhttp_argo_install ;;
 2) [[ -f /etc/s-box/xhttp-argo/config.json ]] || return 1
@@ -3753,6 +3837,7 @@ xhttp_argo_export && cat /etc/s-box/xhttp-argo/share.txt && sbshare > /dev/null 
 7) readp "会删除固定隧道节点配置和Token，输入 yes 确认：" confirm
 [[ $confirm == yes ]] || return 0
 xhttp_argo_remove && sbshare > /dev/null ;;
+8) xhttp_argo_address_menu ;;
 esac
 }
 

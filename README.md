@@ -39,6 +39,10 @@
 
 **3 → 11 → 9** 可查看节点、重启、停止、查看状态/日志、卸载新节点。完整卸载也会移除它，不会自动删除 Cloudflare 控制台的隧道或 DNS 路由。备份时保存 `/etc/s-box/xhttp-argo/` 和两个同名服务定义，均含敏感凭据；恢复前停服务、检查端口，然后恢复文件和服务、检查 Xray 配置并启动、刷新订阅。不要将备份或 Token 放入 Git。
 
+**优选连接地址：3 → 11 → 9 → 8**，可手动设置 XHTTP＋Argo 专用的域名、IPv4 或 IPv6，或恢复使用隧道域名。此设置与 **3 → 9** 的 VMess 优选设置相互独立，不自动跟随、不自动测速。域名使用 ASCII/punycode；不接受协议前缀、端口、路径、空格或 IPv6 zone ID。IPv6 可输入裸地址或完整方括号地址，内部统一保存为裸地址，分享 URI 自动加方括号。
+
+设置保存在 `/etc/s-box/xhttp-argo/server.conf`。仅修改 Mihomo `server`、Xray 客户端 `address`、分享链接连接地址；TLS SNI 和 XHTTP Host 始终保留原隧道域名，仍校验证书。自动刷新本地 YAML/JSON/聚合 URI，Gitlab 用 **9 → 2** 推送，客户端随后更新订阅。不会修改源站、Token、UUID、Encryption、端口或重启服务。变更前备份受影响导出，刷新失败尝试还原设置和原导出；备份中的客户端配置含凭据，须妥善保存。优选地址必须实际可接入 Cloudflare，格式通过不代表连通或提速。
+
 ### 注：本项目分享订阅节点都为本地化生成，不使用节点转换、订阅器等第三方外链引用，无需担心节点订阅被外链作者查看
 
 ### 交流平台：[甬哥博客地址](https://ygkkk.blogspot.com)、[甬哥YouTube频道](https://www.youtube.com/@ygkkk)、[甬哥TG电报群组](https://t.me/+jZHc6-A-1QQ5ZGVl)、[甬哥TG电报频道](https://t.me/+DkC9ZZUgEFQzMTZl)

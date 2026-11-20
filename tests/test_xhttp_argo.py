@@ -41,7 +41,7 @@ class XHTTPArgo(unittest.TestCase):
         origin = d / 'xhttp-argo'
         origin.mkdir(parents=True, exist_ok=True)
         src = self.source.replace('/etc/s-box', bashpath(d))
-        helpers = ''.join(function(src, n) for n in ['node_suffix_valid', 'node_suffix_load',
+        helpers = ''.join(function(src, n) for n in ['xhttp_argo_address_valid', 'node_suffix_valid', 'node_suffix_load',
             'xhttp_argo_server_config', 'xhttp_argo_mihomo_load', 'xhttp_argo_export'])
         shell(helpers + '''
 hostname=test-vps
@@ -80,6 +80,123 @@ xhttp_argo_export
                     p = run([self.xray, 'run', '-test', '-config', d / 'xhttp-argo' / name])
                     self.assertEqual(p.returncode, 0, RECORDS[-1])
 
+    def address_helpers(self, directory):
+        src = self.source.replace('/etc/s-box', bashpath(directory))
+        return ''.join(function(src, name) for name in ['xhttp_argo_address_valid',
+            'node_suffix_valid', 'node_suffix_load', 'xhttp_argo_mihomo_load',
+            'xhttp_argo_export', 'xhttp_argo_address_update']) + '''
+hostname=test-vps
+red() { echo "$*" >&2; }
+green() { echo "$*"; }
+yellow() { echo "$*"; }
+sbshare() { xhttp_argo_export; }
+'''
+
+    def test_address_syntax_validation(self):
+        d = self.output / 'validation'
+        helpers = function(self.source, 'xhttp_argo_address_valid')
+        valid = ['cf.example.org', 'a-b.example', 'XN--FSQU00A.example', '1.0.0.1',
+                 '0.0.0.0', '255.255.255.255', '2606:4700:4700::1111', '::1', '::',
+                 '2001:db8:0:0:0:0:0:1', '2001:db8::', '::ffff:abcd', '::ffff:192.0.2.1']
+        invalid = ['', 'a', '-a.example', 'a-.example', 'a..example', 'a.example.',
+                   'https://a.example', 'a.example:443', '1.2.3.256', '01.2.3.4',
+                   '1.2.3', 'a.example/path', 'a.example?query', 'a.example#x',
+                   'a.example\nx', 'a.example x', '$(touch injection)', '2001:::1',
+                   '2001::db8::1', ':1:2:3:4:5:6:7', '1:2:3:4:5:6:7:',
+                   '1:2:3:4:5:6:7:8:9', '1:2:3:4:5:6:7::8', '1:2:3:4:5:6:gg:8',
+                   '::1%eth0', '[::1]:443', '::ffff:192.0.2.999', 'a' * 64 + '.example']
+        quote = lambda x: "'" + x.replace("'", "'\"'\"'") + "'"
+        script = helpers
+        for value in valid:
+            script += 'xhttp_argo_address_valid ' + quote(value) + '\n'
+        for value in invalid:
+            script += 'if xhttp_argo_address_valid ' + quote(value) + '; then echo unexpected-valid >&2; exit 9; fi\n'
+        shell(script, d)
+        self.assertFalse((d / 'injection').exists())
+
+    def test_independent_preferred_addresses_all_exports_and_reset(self):
+        for argo in ['none', 'fixed', 'temporary', 'both']:
+            d = self.generate('preferred-' + argo)
+            (d / 'cfvmadd_argo.txt').write_text('vmess-only.example\n')
+            origin_before = (d / 'xhttp-argo/config.json').read_bytes()
+            generate_vps(self.source, d, argo=argo)
+            original_yaml = yaml.safe_load((d / 'clmi.yaml').read_text(encoding='utf8'))
+            original_other_nodes = [n for n in original_yaml['proxies'] if n.get('network') != 'xhttp']
+            for address in ['preferred.example.org', '104.21.41.139', '2606:4700:4700::1111', '[2001:db8::1]']:
+                with self.subTest(argo=argo, address=address):
+                    shell(self.address_helpers(d) + 'xhttp_argo_address_update set "' + address + '"\n', d)
+                    expected = address.strip('[]')
+                    self.assertEqual((d / 'xhttp-argo/server.conf').read_text().strip(), expected)
+                    generate_vps(self.source, d, argo=argo)
+                    cfg = yaml.safe_load((d / 'clmi.yaml').read_text(encoding='utf8'))
+                    node = next(n for n in cfg['proxies'] if n.get('network') == 'xhttp')
+                    self.assertEqual(node['server'], expected)
+                    self.assertEqual(node['servername'], 'xhttp.example.org')
+                    self.assertEqual(node['xhttp-opts']['host'], 'xhttp.example.org')
+                    self.assertEqual([n for n in cfg['proxies'] if n.get('network') != 'xhttp'], original_other_nodes)
+                    for group in cfg['proxy-groups']:
+                        self.assertEqual(group['proxies'].count(node['name']), 1)
+                    client = json.loads((d / 'xhttp-argo/client.json').read_text())['outbounds'][0]
+                    self.assertEqual(client['settings']['vnext'][0]['address'], expected)
+                    self.assertEqual(client['streamSettings']['tlsSettings']['serverName'], 'xhttp.example.org')
+                    self.assertEqual(client['streamSettings']['xhttpSettings']['host'], 'xhttp.example.org')
+                    uri = urlsplit((d / 'xhttp-argo.txt').read_text().strip())
+                    self.assertEqual(uri.hostname, expected)
+                    self.assertEqual(uri.port, 443)
+                    query = parse_qs(uri.query)
+                    self.assertEqual(query['host'], ['xhttp.example.org'])
+                    self.assertEqual(query['sni'], ['xhttp.example.org'])
+                    self.assertEqual((d / 'xhttp-argo/config.json').read_bytes(), origin_before)
+                    self.assertEqual((d / 'cfvmadd_argo.txt').read_text(), 'vmess-only.example\n')
+                    if self.xray:
+                        p = run([self.xray, 'run', '-test', '-config', d / 'xhttp-argo/client.json'])
+                        self.assertEqual(p.returncode, 0, RECORDS[-1])
+            shell(self.address_helpers(d) + 'xhttp_argo_address_update reset\n', d)
+            generate_vps(self.source, d, argo=argo)
+            self.assertFalse((d / 'xhttp-argo/server.conf').exists())
+            self.assertEqual(yaml.safe_load((d / 'clmi.yaml').read_text(encoding='utf8')), original_yaml)
+
+    def test_address_failure_rolls_back_exports_and_setting(self):
+        for initial in [None, 'previous.example.org']:
+            for action in ['set', 'reset']:
+                d = self.generate('rollback-' + str(initial) + '-' + action)
+                setting = d / 'xhttp-argo/server.conf'
+                if initial:
+                    setting.write_text(initial + '\n')
+                    shell(self.address_helpers(d) + 'xhttp_argo_export\n', d)
+                (d / 'clmi.yaml').write_text('previous yaml')
+                paths = ['xhttp-argo/server.conf', 'xhttp-argo/mihomo.json', 'xhttp-argo/client.json',
+                         'xhttp-argo/share.txt', 'xhttp-argo.txt', 'clmi.yaml', 'jhsub.txt', 'vm_ws.txt']
+                before = {p: (d / p).read_bytes() if (d / p).exists() else None for p in paths}
+                script = self.address_helpers(d) + '''
+sbshare() {
+xhttp_argo_export || return 1
+printf corrupted > clmi.yaml
+printf new-file > jhsub.txt
+printf new-vmess-file > vm_ws.txt
+return 1
+}
+if xhttp_argo_address_update ACTION preferred.example.org; then exit 9; fi
+'''.replace('ACTION', action)
+                shell(script, d)
+                for p, data in before.items():
+                    self.assertEqual((d / p).read_bytes() if (d / p).exists() else None, data, p)
+                self.assertTrue(list(d.glob('xhttp-argo-address.bak.*/refresh.private.log')))
+        d = self.generate('invalid-preference')
+        before = (d / 'xhttp-argo/client.json').read_bytes()
+        (d / 'xhttp-argo/server.conf').write_text('https://invalid.example/')
+        shell(self.address_helpers(d) + 'if xhttp_argo_export; then exit 9; fi\n', d)
+        self.assertEqual((d / 'xhttp-argo/client.json').read_bytes(), before)
+
+    def test_preferred_address_menu_is_separate_from_vmess(self):
+        menu = function(self.source, 'xhttp_argo_menu')
+        self.assertIn('8) xhttp_argo_address_menu ;;', menu)
+        self.assertIn('xhttp_argo_address_update set "$input"', function(self.source, 'xhttp_argo_address_menu'))
+        self.assertIn('xhttp_argo_address_update reset', function(self.source, 'xhttp_argo_address_menu'))
+        vmess = function(self.source, 'vmesscfadd')
+        self.assertNotIn('server.conf', vmess)
+        self.assertNotIn('xhttp_argo_address_update', vmess)
+
     def test_real_packet_up_encryption_vision(self):
         curl = shutil.which('curl.exe' if os.name == 'nt' else 'curl')
         if not self.xray or not self.mihomo or not curl:
@@ -89,7 +206,7 @@ xhttp_argo_export
         shutil.copy2(self.xray, origin / ('xray.exe' if os.name == 'nt' else 'xray'))
         src = self.source.replace('/etc/s-box', bashpath(d))
         helpers = ''.join(function(src, n) for n in ['xhttp_encryption_pair', 'xhttp_argo_server_config',
-            'node_suffix_valid', 'node_suffix_load', 'xhttp_argo_mihomo_load', 'xhttp_argo_export'])
+            'xhttp_argo_address_valid', 'node_suffix_valid', 'node_suffix_load', 'xhttp_argo_mihomo_load', 'xhttp_argo_export'])
         binary = bashpath(origin / ('xray.exe' if os.name == 'nt' else 'xray'))
         # The production helper uses the Linux executable name; a shell wrapper isolates that difference.
         if os.name == 'nt':

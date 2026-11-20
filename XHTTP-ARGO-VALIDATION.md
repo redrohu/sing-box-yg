@@ -56,3 +56,15 @@
 - 还原旧脚本：`install -m 755 /root/sbox-xhttp-argo-20261120/sb.original /usr/bin/sb`。不要直接覆盖整个 `/etc/s-box/`，以免抹去部署后的其他变更。
 - 原备份中的配置已解压到额外目录并逐字节验证，未覆盖运行配置。服务器还保留 `rollback-new-node.sh`，只撤销新节点并还原旧脚本/版本标记；已在本机额外副本中重定向路径及模拟服务管理验证，未对线上执行回滚。回滚后仍需 **9 → 2** 更新远端订阅。新节点完整备份 `xhttp-argo.final.private.tar.gz` 含 Token，权限受限。
 - 本地原件、逐条命令及原始 stdout/stderr/退出状态：`C:\Users\17289\AppData\Local\Temp\sbox-xhttp-argo-20261120-145657\`。该目录含敏感测试配置，仅供本机检查，未加入 Git。
+
+## 独立优选地址更新（fork.13）
+
+- 采用独立设置，不跟随 VMess 优选地址，入口 **3 → 11 → 9 → 8**；支持手动指定域名、IPv4、IPv6或恢复默认。设置文件 `/etc/s-box/xhttp-argo/server.conf`，不自动测速。
+- 仅更改客户端连接地址；Mihomo `servername` / `xhttp-opts.host`、Xray `tlsSettings.serverName` / `xhttpSettings.host`、URI `sni` / `host` 始终使用原隧道域名。IPv6 URI 使用方括号。
+- 本地生成器验证覆盖四个 VMess Argo 分支，逐项比较设置前后其他协议节点；同时验证新节点三个代理组引用、重复刷新、恢复默认、错误地址和刷新失败后的设置/导出回滚。
+- VPS 已使用实际菜单完成“设置为当前隧道域名 → 恢复默认”验证，没有试填未知优选 IP。前后客户端导出逐字节相同，原五协议、直连 XHTTP、Argo 源站配置及四个服务 PID 均不变。当前仍使用原隧道域名。
+- 本次没有更改 Cloudflare 路由、回源 HTTP 版本或客户端协议模式，不宣称解决此前公网抖动。
+- VPS 原脚本/版本标记和节点备份：`/root/sbox-xhttp-argo-address-20261120/`；变更菜单也会单独备份受影响设置及导出。仅撤销优选地址可在同一菜单选择 **2：恢复默认隧道域名**。需要回退脚本时，使用该目录的 `sb.original` 和 `v.original`，不要覆盖整套服务器配置。
+- 本次脚本原 SHA256：`cc2d165ca73c37c53e0c849b7ecce8e8d1d8768c37d3d37d7075dd883e4d0668`；新 SHA256：`e73056748098140b03ff98829f7ef22557bff46628269de3e1bbab5944f07221`，本地与 VPS 一致。
+- 本次验证记录和原件：`C:\Users\17289\AppData\Local\Temp\sbox-xhttp-argo-address-g9_l7ojd\`；配置备份含客户端凭据，不加入 Git。
+- 最终全量 **81 项测试通过**（约528秒），包括实际 Xray/Mihomo 传输、IPv4/IPv6/域名导出、独立设置、恢复默认及刷新失败回滚；Bash 语法及 Git whitespace 检查通过。这些结果不等于新优选地址的公网测速。
