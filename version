@@ -1,3 +1,11 @@
+v26.11.20-fork.12更新内容：
+1、新增XHTTP + 固定Cloudflare Tunnel独立节点，入口3→11→9；保留原五协议和直连REALITY节点
+2、回环HTTP源站默认18080，客户端TLS443 + packet-up，保留VLESS Encryption + Vision；CDN模式不使用REALITY
+3、Token以受限文件保存并用--token-file读取；独立双服务，Mihomo YAML/三个代理组/聚合订阅同步生成
+4、隔离原VMess Argo的进程检测与停止逻辑，固定XHTTP隧道不会被误判为VMess固定隧道
+5、更新后仍需部署新节点；Gitlab订阅用9→2推送，客户端刷新。启动成功不等于外网连通，需验证域名路由
+
+历史版本：
 v26.11.19-fork.11更新内容：
 1、XHTTP新增文章同款VLESS Encryption（X25519认证）+ Vision + REALITY组合，新部署默认启用，仍可选择普通模式
 2、已有普通XHTTP节点通过3→11→8备份后升级，保留端口、UUID和REALITY密钥；路径改为默认/，更新客户端订阅后使用

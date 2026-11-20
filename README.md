@@ -26,6 +26,19 @@
 
 配置依据：[Xray 传输配置](https://xtls.github.io/config/transport.html)、[XHTTP](https://xtls.github.io/config/transports/splithttp.html)。本功能仅接入 VPS `sb.sh`，未修改 Serv00 脚本。
 
+### 可选：XHTTP + 固定 Cloudflare Tunnel（VPS）
+
+入口 **3 → 11 → 9 → 1**，与上述直连 REALITY 节点并存，不修改原五协议。
+
+1. 在 Cloudflare 创建一个独立的 cloudflared 固定隧道，保存 Tunnel Token 到服务器上的受保护文件（例如 `/root/xhttp-token.txt`，权限 `600`）。不要发送或公开 Token。
+2. 为该隧道添加已发布应用：使用自己的完整子域名，路径留空，服务 **HTTP `127.0.0.1:18080`**。若修改回源端口，脚本与 Cloudflare 路由必须一致。该主机名不应启用需要浏览器交互的 Access 验证/挑战，不缓存 XHTTP 请求。
+3. 脚本输入完整域名、回源端口、**服务器上的 Token 文件路径**。Token 保存于独立目录、仅通过 `--token-file` 读取，不出现在服务命令行或订阅里。部署成功后可删除最初的 Token 临时文件，保留服务目录中的副本。
+4. 客户端为 **VLESS Encryption + Vision + XHTTP `packet-up` + TLS**，边缘端口 `443`；Cloudflare 终止外层 TLS，隧道回源为本机 HTTP，**不叠加 REALITY**。与直连节点使用不同的 UUID、Encryption 凭据和路径；这不是端到端的 REALITY。支持新版 Xray/Mihomo，不向官方 sing-box 导出 XHTTP。
+5. 两个服务为 `sbox-xhttp-argo` / `sbox-xhttp-argo-tunnel`，配置、Token、导出在 `/etc/s-box/xhttp-argo/`；HTTP 源站只监听回环地址，不需开放公网回源端口。已有 VMess Argo 使用自己的进程和目录，互不启停。
+6. 自动加入 `clmi.yaml` 三个代理组及 `jhsub.txt` 聚合订阅；Gitlab 远端订阅仍需 **9 → 2** 推送，客户端更新订阅后使用。源站保留 SSE 响应头（`noSSEHeader: false`）以避免 cloudflared 缓冲下载流。服务启动不等于域名路由可用，必须验证真实客户端传输。
+
+**3 → 11 → 9** 可查看节点、重启、停止、查看状态/日志、卸载新节点。完整卸载也会移除它，不会自动删除 Cloudflare 控制台的隧道或 DNS 路由。备份时保存 `/etc/s-box/xhttp-argo/` 和两个同名服务定义，均含敏感凭据；恢复前停服务、检查端口，然后恢复文件和服务、检查 Xray 配置并启动、刷新订阅。不要将备份或 Token 放入 Git。
+
 ### 注：本项目分享订阅节点都为本地化生成，不使用节点转换、订阅器等第三方外链引用，无需担心节点订阅被外链作者查看
 
 ### 交流平台：[甬哥博客地址](https://ygkkk.blogspot.com)、[甬哥YouTube频道](https://www.youtube.com/@ygkkk)、[甬哥TG电报群组](https://t.me/+jZHc6-A-1QQ5ZGVl)、[甬哥TG电报频道](https://t.me/+DkC9ZZUgEFQzMTZl)

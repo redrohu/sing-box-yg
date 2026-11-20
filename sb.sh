@@ -107,7 +107,7 @@ fi
 esac
 # Back up only the setting and generated exports, not the running server config.
 backup=$(mktemp -d /etc/s-box/node-name.bak.XXXXXX) || return 1
-for file in node_prefix.conf node_suffix.conf xhttp.txt sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt; do
+for file in node_prefix.conf node_suffix.conf xhttp.txt xhttp-argo.txt sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt; do
 if [[ -f /etc/s-box/$file ]]; then
 cp -p "/etc/s-box/$file" "$backup/$file" || return 1
 fi
@@ -1243,7 +1243,7 @@ echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo $node_suffix"'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argols.txt
 qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_argols.txt)"
 fi
-if ps -ef 2>/dev/null | grep -q '[c]loudflared.*run'; then
+if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run'; then
 argogd=$(cat /etc/s-box/sbargoym.log 2>/dev/null)
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1333,9 +1333,12 @@ echo
 
 sb_client(){
 node_suffix_load || return 1
-local xhttp_cl_node= xhttp_cl_name=
+local xhttp_cl_node= xhttp_cl_name= xhttp_argo_cl_node= xhttp_argo_cl_name=
 if [[ -f /etc/s-box/xhttp/config.json ]]; then
 xhttp_mihomo_load || return 1
+fi
+if [[ -f /etc/s-box/xhttp-argo/config.json ]]; then
+xhttp_argo_mihomo_load || return 1
 fi
 local client_raw
 client_raw=$(mktemp /etc/s-box/sbox.raw.XXXXXX) || return 1
@@ -1359,9 +1362,11 @@ clany1(){
   fi
 }
 clxhttp1(){
+[[ -z $xhttp_argo_cl_name ]] || printf '\n    - %s' "$xhttp_argo_cl_name"
 [[ -z $xhttp_cl_name ]] || printf '\n    - %s' "$xhttp_cl_name"
 }
 clxhttp2(){
+[[ -z $xhttp_argo_cl_node ]] || printf '\n- %s' "$xhttp_argo_cl_node"
 [[ -z $xhttp_cl_node ]] || printf '\n- %s' "$xhttp_cl_node"
 }
 sbany2(){
@@ -1756,7 +1761,7 @@ EOF
 }
 
 tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
-if ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
+if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
 cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
@@ -2033,7 +2038,7 @@ rules:
   - MATCH,🌍选择代理节点
 EOF
 
-elif ! ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
+elif ! ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
 cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
@@ -2222,7 +2227,7 @@ rules:
   - MATCH,🌍选择代理节点
 EOF
 
-elif ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' && ! ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
+elif ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && ! ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
 cat > "$client_raw" <<EOF
 $(sball)
 $(sbany2)
@@ -2556,7 +2561,7 @@ vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
 echo
 yellow "注意！Zero Trust设置固定隧道URL端口填写Vmess端口：localhost:$vm_port"
 echo
-pid=$(ps -ef 2>/dev/null | awk '/[c]loudflared.*run/ {print $2}')
+pid=$(ps -ef 2>/dev/null | awk '/[c]loudflared.*run/ && !/xhttp-argo\/cloudflared/ {print $2}')
 [ -n "$pid" ] && kill -9 "$pid" >/dev/null 2>&1
 echo
 if [[ -n "${argotoken}" && -n "${argoym}" ]]; then
@@ -3531,10 +3536,231 @@ cat /etc/s-box/xhttp/share.txt
 sbshare > /dev/null || { red "节点已部署，但聚合订阅刷新失败，请通过菜单9重试。"; return 1; }
 }
 
+# Independent HTTP origin: Cloudflare terminates TLS; VLESS Encryption protects the payload.
+# Keep the SSE response header: cloudflared otherwise buffers the streaming download.
+xhttp_argo_server_config(){
+local dir=$1 port=$2 id=$3 path=$4 decryption=$5
+jq -n --argjson port "$port" --arg id "$id" --arg path "$path" --arg decryption "$decryption" '{
+ log:{loglevel:"warning"},inbounds:[{tag:"xhttp-argo",listen:"127.0.0.1",port:$port,protocol:"vless",
+ settings:{clients:[{id:$id,flow:"xtls-rprx-vision"}],decryption:$decryption},
+ streamSettings:{network:"xhttp",security:"none",xhttpSettings:{path:$path,mode:"auto",noSSEHeader:false}}}],
+ outbounds:[{protocol:"freedom",tag:"direct"}]
+}' > "$dir/config.json"
+}
+
+xhttp_argo_mihomo_load(){
+local dir=/etc/s-box/xhttp-argo domain encryption
+domain=$(cat "$dir/domain") || return 1
+encryption=$(cat "$dir/encryption.key") || return 1
+[[ $domain =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}$ && $encryption =~ ^mlkem768x25519plus\.native\.(0rtt|1rtt)\.[A-Za-z0-9_-]{43}$ ]] || return 1
+xhttp_argo_cl_node=$(jq -ecn --slurpfile cfg "$dir/config.json" --arg domain "$domain" --arg encryption "$encryption" --arg name "${node_prefix_label}vless-xhttp-argo $node_suffix" '
+ $cfg[0].inbounds[0] as $in |
+ if $in.listen != "127.0.0.1" or $in.protocol != "vless" or $in.streamSettings.network != "xhttp" or $in.streamSettings.security != "none" or
+ ($in.port|type) != "number" or $in.port < 1 or $in.port > 65535 or
+ ($in.settings.clients[0].id|type) != "string" or $in.settings.clients[0].flow != "xtls-rprx-vision" or
+ ($in.streamSettings.xhttpSettings.path|type) != "string" or
+ (($in.settings.decryption // "")|test("^mlkem768x25519plus\\.native\\.[0-9]+s\\.[A-Za-z0-9_-]{43}$")|not)
+ then error("invalid XHTTP Argo origin") else . end |
+ {name:$name,type:"vless",server:$domain,port:443,uuid:$in.settings.clients[0].id,
+ encryption:$encryption,flow:$in.settings.clients[0].flow,network:"xhttp",udp:true,tls:true,
+ servername:$domain,"client-fingerprint":"chrome","skip-cert-verify":false,
+ "xhttp-opts":{host:$domain,path:$in.streamSettings.xhttpSettings.path,mode:"packet-up"}}
+') || return 1
+xhttp_argo_cl_name=$(jq -cr '.name|@json' <<< "$xhttp_argo_cl_node")
+}
+
+xhttp_argo_export(){
+local dir=/etc/s-box/xhttp-argo xhttp_argo_cl_node xhttp_argo_cl_name
+[[ -f $dir/config.json ]] || return 0
+node_suffix_load && xhttp_argo_mihomo_load || return 1
+(umask 077
+printf '%s\n' "$xhttp_argo_cl_node" > "$dir/mihomo.json" || exit 1
+jq -n --argjson node "$xhttp_argo_cl_node" '{
+ log:{loglevel:"warning"},inbounds:[{listen:"127.0.0.1",port:10808,protocol:"socks",settings:{auth:"noauth",udp:true}}],
+ outbounds:[{tag:$node.name,protocol:"vless",settings:{vnext:[{address:$node.server,port:$node.port,users:[{id:$node.uuid,encryption:$node.encryption,flow:$node.flow}]}]},
+ streamSettings:{network:"xhttp",security:"tls",tlsSettings:{serverName:$node.servername,fingerprint:"chrome",alpn:["h2","http/1.1"]},
+ xhttpSettings:{host:$node.server,path:$node["xhttp-opts"].path,mode:"packet-up",noSSEHeader:false}}}]
+}' > "$dir/client.json" || exit 1
+jq -r '"vless://"+.uuid+"@"+.server+":443?encryption="+(.encryption|@uri)+"&flow="+.flow+"&security=tls&sni="+.servername+"&fp=chrome&alpn=h2%2Chttp%2F1.1&type=xhttp&host="+.server+"&path="+(."xhttp-opts".path|@uri)+"&mode=packet-up#"+(.name|@uri)' "$dir/mihomo.json" > "$dir/share.txt" || exit 1
+cp "$dir/share.txt" /etc/s-box/xhttp-argo.txt
+)
+}
+
+xhttp_argo_service(){
+local action=$1 svc result=0
+for svc in sbox-xhttp-argo sbox-xhttp-argo-tunnel; do
+if command -v apk >/dev/null 2>&1; then
+case "$action" in
+enable) rc-update add "$svc" default ;;
+disable) rc-update del "$svc" default ;;
+*) rc-service "$svc" "$action" ;;
+esac
+elif [[ $action == status ]]; then systemctl --no-pager --full status "$svc"
+else systemctl "$action" "$svc"
+fi || result=1
+done
+return "$result"
+}
+
+xhttp_argo_remove(){
+local svc
+for svc in sbox-xhttp-argo-tunnel sbox-xhttp-argo; do
+if [[ -e /etc/init.d/$svc || -e /etc/systemd/system/$svc.service ]]; then
+if command -v apk >/dev/null 2>&1; then
+rc-service "$svc" stop && rc-update del "$svc" default || return 1
+else systemctl stop "$svc" && systemctl disable "$svc" || return 1
+fi
+fi
+rm -f "/etc/init.d/$svc" "/etc/systemd/system/$svc.service" || return 1
+done
+if ! command -v apk >/dev/null 2>&1; then systemctl daemon-reload || return 1; fi
+rm -rf /etc/s-box/xhttp-argo || return 1
+rm -f /etc/s-box/xhttp-argo.txt
+}
+
+xhttp_argo_units(){
+local svc binary args
+for svc in sbox-xhttp-argo sbox-xhttp-argo-tunnel; do
+if [[ $svc == sbox-xhttp-argo ]]; then
+binary=xray; args="run -config /etc/s-box/xhttp-argo/config.json"
+else
+binary=cloudflared; args="tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token-file /etc/s-box/xhttp-argo/tunnel.token"
+fi
+if command -v apk >/dev/null 2>&1; then
+cat > "/etc/init.d/$svc" <<XARGO_OPENRC || return 1
+#!/sbin/openrc-run
+description="sing-box-yg XHTTP fixed tunnel"
+command=/etc/s-box/xhttp-argo/$binary
+command_args="$args"
+command_background=true
+pidfile=/run/$svc.pid
+output_log=/etc/s-box/xhttp-argo/$svc.log
+error_log=/etc/s-box/xhttp-argo/$svc.log
+depend() { need net; }
+XARGO_OPENRC
+chmod 755 "/etc/init.d/$svc" || return 1
+else
+cat > "/etc/systemd/system/$svc.service" <<XARGO_SYSTEMD || return 1
+[Unit]
+Description=sing-box-yg XHTTP fixed tunnel ($binary)
+After=network-online.target
+Wants=network-online.target
+[Service]
+ExecStart=/etc/s-box/xhttp-argo/$binary $args
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=1048576
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+PrivateTmp=true
+UMask=0077
+[Install]
+WantedBy=multi-user.target
+XARGO_SYSTEMD
+fi
+done
+if ! command -v apk >/dev/null 2>&1; then systemctl daemon-reload || return 1; fi
+}
+
+xhttp_argo_install(){
+[[ -f /etc/s-box/sb.json ]] || { red "请先安装 Sing-box。"; return 1; }
+[[ ! -e /etc/s-box/xhttp-argo && ! -e /etc/init.d/sbox-xhttp-argo && ! -e /etc/systemd/system/sbox-xhttp-argo.service && ! -e /etc/init.d/sbox-xhttp-argo-tunnel && ! -e /etc/systemd/system/sbox-xhttp-argo-tunnel.service ]] || { red "固定隧道节点已存在，请先备份后卸载。"; return 1; }
+xhttp_dependencies || return 1
+local domain port tokenfile arch cfarch
+readp "固定隧道完整域名（例如 xhttp.example.com）：" domain
+[[ ${#domain} -le 253 && $domain =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}$ ]] || { red "域名格式错误。"; return 1; }
+readp "本机 HTTP 回源端口（默认18080；Cloudflare路由需一致）：" port
+port=${port:-18080}
+[[ $port =~ ^[0-9]{1,5}$ ]] && (( 10#$port >= 1 && 10#$port <= 65535 )) || { red "端口错误。"; return 1; }
+port=$((10#$port))
+[[ -z $(ss -H -ltn "sport = :$port") ]] || { red "端口已占用。"; return 1; }
+readp "Tunnel Token 文件的绝对路径（本服务器文件，不输入Token本身）：" tokenfile
+[[ $tokenfile == /* && -s $tokenfile && -f $tokenfile ]] || { red "Token文件不存在或为空。"; return 1; }
+# Parse as data only; neither print nor interpolate a token into a command line.
+local token
+token=$(tr -d '\r\n' < "$tokenfile") || return 1
+printf '%s' "$token" | base64 -d 2>/dev/null | jq -e 'type=="object" and (.a|type=="string") and (.t|type=="string") and (.s|type=="string")' >/dev/null 2>&1 || { red "Tunnel Token格式错误。"; return 1; }
+case $(uname -m) in
+x86_64) arch=64; cfarch=amd64 ;;
+aarch64) arch=arm64-v8a; cfarch=arm64 ;;
+armv7l) arch=arm32-v7a; cfarch=arm ;;
+*) red "不支持的架构。"; return 1 ;;
+esac
+if ! (
+umask 077
+local stage committed=0 expected actual id path version=v26.11.9
+stage=$(mktemp -d /etc/s-box/.xhttp-argo-install.XXXXXX) || exit 1
+trap 'rm -rf "$stage"; if [[ $committed == 1 ]]; then xhttp_argo_remove; fi' EXIT
+if [[ -x /etc/s-box/xhttp/xray ]] && /etc/s-box/xhttp/xray version | head -n 1 | grep -q '26.11.9'; then
+cp /etc/s-box/xhttp/xray "$stage/xray" || exit 1
+else
+curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip" -o "$stage/core.zip" || exit 1
+curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip.dgst" -o "$stage/core.dgst" || exit 1
+expected=$(awk -F '= *' '/^SHA2-256=/{gsub(/\r/,"",$2); print $2}' "$stage/core.dgst")
+actual=$(sha256sum "$stage/core.zip" | awk '{print $1}')
+[[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || exit 1
+unzip -q "$stage/core.zip" xray -d "$stage" || exit 1
+rm "$stage/core.zip" "$stage/core.dgst" || exit 1
+fi
+chmod 700 "$stage/xray" || exit 1
+if [[ -x /etc/s-box/cloudflared ]]; then cp /etc/s-box/cloudflared "$stage/cloudflared" || exit 1
+else
+curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-linux-$cfarch" -o "$stage/cloudflared" || exit 1
+curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/cloudflare/cloudflared/releases/tags/2026.11.1" -o "$stage/cloudflared.release.json" || exit 1
+expected=$(jq -er --arg name "cloudflared-linux-$cfarch" '.assets[]|select(.name==$name)|.digest|select(startswith("sha256:"))|ltrimstr("sha256:")' "$stage/cloudflared.release.json") || exit 1
+actual=$(sha256sum "$stage/cloudflared" | awk '{print $1}') || exit 1
+[[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || { echo "cloudflared SHA256校验失败" >&2; exit 1; }
+rm "$stage/cloudflared.release.json" || exit 1
+fi
+chmod 700 "$stage/cloudflared" || exit 1
+"$stage/cloudflared" tunnel run --help 2>&1 | grep -q -- '--token-file' || exit 1
+printf '%s\n' "$token" > "$stage/tunnel.token" || exit 1
+printf '%s\n' "$domain" > "$stage/domain" || exit 1
+printf '%s\n' "$version" > "$stage/version" || exit 1
+id=$("$stage/xray" uuid) || exit 1
+path="/xhttp/$(openssl rand -hex 16)/" || exit 1
+xhttp_encryption_pair "$stage" || exit 1
+xhttp_argo_server_config "$stage" "$port" "$id" "$path" "$(cat "$stage/decryption.key")" || exit 1
+"$stage/xray" run -test -config "$stage/config.json" || exit 1
+mv "$stage" /etc/s-box/xhttp-argo || exit 1
+committed=1
+xhttp_argo_export || exit 1
+/etc/s-box/xhttp-argo/xray run -test -config /etc/s-box/xhttp-argo/client.json || exit 1
+xhttp_argo_units && xhttp_argo_service enable && xhttp_argo_service start || exit 1
+sleep 3
+xhttp_argo_service status || exit 1
+[[ -n $(ss -H -ltn "sport = :$port") ]] || exit 1
+committed=0
+); then red "部署失败，已尝试回滚新节点。现有服务未修改。"; return 1; fi
+unset token
+green "固定隧道节点已启动。Cloudflare路由必须为 HTTP 127.0.0.1:$port，路径留空。"
+yellow "TLS由Cloudflare终止；内层为VLESS Encryption + Vision，不经过REALITY。启动成功不等于外网连通，请用客户端验证。"
+sbshare > /dev/null || { red "节点已部署，但订阅刷新失败，请通过菜单9重试。"; return 1; }
+}
+
+xhttp_argo_menu(){
+local action confirm
+readp "XHTTP + 固定Argo（独立节点，保留现有REALITY）\n1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：状态\n6：日志\n7：卸载固定Argo节点\n0：返回\n请选择【0-7】：" action
+case "$action" in
+1) xhttp_argo_install ;;
+2) [[ -f /etc/s-box/xhttp-argo/config.json ]] || return 1
+xhttp_argo_export && cat /etc/s-box/xhttp-argo/share.txt && sbshare > /dev/null ;;
+3) /etc/s-box/xhttp-argo/xray run -test -config /etc/s-box/xhttp-argo/config.json && xhttp_argo_service restart ;;
+4) xhttp_argo_service stop ;;
+5) xhttp_argo_service status ;;
+6) if command -v apk >/dev/null 2>&1; then tail -n 100 /etc/s-box/xhttp-argo/*.log; else journalctl -u sbox-xhttp-argo -u sbox-xhttp-argo-tunnel -n 100 --no-pager; fi ;;
+7) readp "会删除固定隧道节点配置和Token，输入 yes 确认：" confirm
+[[ $confirm == yes ]] || return 0
+xhttp_argo_remove && sbshare > /dev/null ;;
+esac
+}
+
+
 xhttp_menu(){
 local action confirm
 yellow "XHTTP + REALITY（独立Xray，不影响现有五协议；不跟随Sing-box的启停/UUID/端口设置）"
-readp "1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：卸载XHTTP\n8：已有节点启用文章同款Encryption + Vision（备份后升级）\n0：返回\n请选择【0-8】：" action
+readp "1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：卸载XHTTP\n8：已有节点启用文章同款Encryption + Vision（备份后升级）\n9：XHTTP + 固定Argo（独立隧道节点）\n0：返回\n请选择【0-9】：" action
 case "$action" in
 1) xhttp_install ;;
 2) [[ -f /etc/s-box/xhttp/config.json ]] || { red "尚未部署XHTTP。"; return 1; }
@@ -3547,6 +3773,7 @@ xhttp_export && cat /etc/s-box/xhttp/share.txt && sbshare > /dev/null ;;
 [[ $confirm == yes ]] || return 0
 xhttp_remove && sbshare > /dev/null ;;
 8) xhttp_article_enable ;;
+9) xhttp_argo_menu ;;
 esac
 }
 
@@ -4467,6 +4694,7 @@ fi
 }
 
 unins(){
+if [[ -d /etc/s-box/xhttp-argo ]]; then xhttp_argo_remove || return 1; fi
 if [[ -d /etc/s-box/xhttp ]]; then xhttp_remove || return 1; fi
 if command -v apk >/dev/null 2>&1; then
 for svc in sing-box argo; do
@@ -4529,6 +4757,10 @@ cat /etc/s-box/an.txt 2>/dev/null >> /etc/s-box/jhdy.txt
 if [[ -f /etc/s-box/xhttp/config.json ]]; then
 xhttp_export || return 1
 cat /etc/s-box/xhttp.txt >> /etc/s-box/jhdy.txt
+fi
+if [[ -f /etc/s-box/xhttp-argo/config.json ]]; then
+xhttp_argo_export || return 1
+cat /etc/s-box/xhttp-argo.txt >> /etc/s-box/jhdy.txt
 fi
 v2sub=$(cat /etc/s-box/jhdy.txt 2>/dev/null)
 echo "$v2sub" > /etc/s-box/jhsub.txt
@@ -4605,7 +4837,7 @@ allports
 sbymfl
 tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
 if [[ "$tls" = "false" ]]; then
-if ps -ef 2>/dev/null | grep -q '[c]loudflared.*run' || ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1; then
+if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' || ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1; then
 vm_zs="TLS关闭"
 argoym="已开启"
 else
@@ -4651,7 +4883,7 @@ if [ "$argoym" = "已开启" ]; then
 if ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1; then
 echo -e "Argo临时域名：${yellow}$(cat /etc/s-box/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')${plain}"
 fi
-if ps -ef 2>/dev/null | grep -q '[c]loudflared.*run'; then
+if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run'; then
 echo -e "Argo固定域名：${yellow}$(cat /etc/s-box/sbargoym.log 2>/dev/null)${plain}"
 fi
 fi
