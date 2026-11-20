@@ -76,3 +76,4 @@
 - 实际验证覆盖服务端版本 1.10/1.14、Argo none/fixed/temporary/both、Sing-box/Mihomo、两种 XHTTP 节点和分享 URI；确认无尾随空格、配置检查通过、服务端参数不变。新增专项 3 项及原有测试，最终测试记录在本机临时目录。
 - VPS 已部署 fork.14；四个现有服务均 active，原配置 SHA256 校验通过，PID 未变化。部署没有清除当前用户已有后缀；需要使用时进入菜单操作即可。
 - 原脚本/版本备份：`/root/sbox-clear-suffix-20261120/`；本地备份和命令记录：`C:\Users\17289\AppData\Local\Temp\sbox-clear-suffix-dyn1vtgh\`。备份含订阅/客户端凭据，不加入 Git。
+- 验证范围共84项：全量运行83项通过，另1项原模板文本快照因新增可选后缀变量而失败；更新该测试的变量归一化后单独复跑通过，未改原模板摘要。最初测试模块误导入 TestCase 导致重复收集和共用目录冲突，也已改为模块导入，最终全量没有这类失败。Bash语法及Git whitespace检查通过。

@@ -214,7 +214,7 @@ serv00_server_profile config.json config.json ./test-core
     def test_clash_templates_original_except_names_quoting_and_whitespace(self):
         fixture = json.loads((ROOT / "tests/fixtures/original-clash-sha256.json").read_text(encoding="utf8"))
         for name, expected in fixture.items():
-            template = function(self.sources["sb.sh"], name).replace("$node_suffix", "$hostname")
+            template = function(self.sources["sb.sh"], name).replace("${node_suffix_label}", " $hostname").replace("$node_suffix", "$hostname")
             template = template.replace("${node_prefix_label}", "")
             template = re.sub(r'^(\s*- (?:name: )?)"([^"\n]*\$hostname)"$', r'\1\2', template, flags=re.M)
             template = template.replace(r'\"anytls $hostname\"', 'anytls $hostname')
