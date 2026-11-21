@@ -21,6 +21,72 @@ export IP=${IP:-''}
 export reym=${reym:-''}
 export reset=${reset:-''}
 export resport=${resport:-''}
+
+# Management credentials are independent of subscription UUIDs and never embedded in app.js.
+serv00_management_setup() {
+    local token_file="$HOME/.serv00-management-token" token_tmp token
+    [ ! -L "$token_file" ] || { red "管理令牌文件不能是符号链接"; return 1; }
+    if [ ! -e "$token_file" ]; then
+        token_tmp=$(umask 077; mktemp "$HOME/.serv00-token.XXXXXX") || return 1
+        if ! openssl rand -hex 32 > "$token_tmp" || ! chmod 600 "$token_tmp"; then
+            rm -f "$token_tmp"; return 1
+        fi
+        # Hard-link creation is atomic and never overwrites a concurrently created credential.
+        ln "$token_tmp" "$token_file" 2>/dev/null || { [ -f "$token_file" ] || { rm -f "$token_tmp"; return 1; }; }
+        rm -f "$token_tmp"
+    fi
+    token=$(cat "$token_file")
+    [[ "$token" =~ ^[a-fA-F0-9]{64}$ ]] || { red "管理令牌无效；请在本机检查 $token_file"; return 1; }
+    chmod 600 "$token_file" || return 1
+}
+
+serv00_download_script() {
+    local url=$1 target=$2 tmp
+    tmp=$(mktemp "${target}.download.XXXXXX") || return 1
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 "$url" -o "$tmp" || ! bash -n "$tmp"; then
+        rm -f "$tmp"; return 1
+    fi
+    chmod 700 "$tmp" && mv -f "$tmp" "$target" || { rm -f "$tmp"; return 1; }
+}
+
+serv00_install_management_app() {
+    serv00_management_setup || return 1
+    local app_tmp node_bin
+    app_tmp=$(mktemp "$keep_path/.app.XXXXXX") || return 1
+    node_bin=$(command -v node 2>/dev/null) || node_bin=/usr/local/bin/node18
+    if ! curl -fsSL --connect-timeout 10 --max-time 120 \
+        https://raw.githubusercontent.com/redrohu/sing-box-yg/main/app.js -o "$app_tmp" ||
+       ! "$node_bin" --check < "$app_tmp"; then
+        rm -f "$app_tmp"; red "管理程序下载/语法检查失败，保留旧文件"; return 1
+    fi
+    chmod 600 "$app_tmp" && mv -f "$app_tmp" "$keep_path/app.js" || { rm -f "$app_tmp"; return 1; }
+    green "管理接口已改为 POST + Bearer；令牌仅保存在 ~/.serv00-management-token（请迁移旧保活链接）"
+}
+
+serv00_restart_core() {
+    local core
+    core=$(cat "$WORKDIR/sb.txt" 2>/dev/null)
+    [[ "$core" =~ ^[a-zA-Z0-9_.-]+$ && "$core" != -* ]] || return 1
+    pkill -x "$core" >/dev/null 2>&1 || :
+    (cd "$WORKDIR" && nohup "./$core" run -c config.json </dev/null >/dev/null 2>&1 &)
+    sleep 1
+    pgrep -x "$core" >/dev/null
+}
+
+serv00_argo_needs_restart() {
+    local agg domain checkhttp
+    agg=$(cat "$WORKDIR/ag.txt" 2>/dev/null)
+    [[ "$agg" =~ ^[a-zA-Z0-9_.-]+$ && "$agg" != -* ]] || return 0
+    pgrep -x "$agg" >/dev/null || return 0
+    # Fixed tunnels have no quick-tunnel boot.log. A live connector must not be restarted
+    # merely because a temporary-domain HTTP result is unset or an origin returns an error.
+    [ -z "$ARGO_DOMAIN" ] || return 1
+    domain=$(grep -aoE 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' "$WORKDIR/boot.log" 2>/dev/null | head -n 1)
+    [ -n "$domain" ] || return 0
+    checkhttp=$(curl --connect-timeout 5 --max-time 10 -o /dev/null -s -w '%{http_code}' "$domain") || return 0
+    [ "$checkhttp" != 404 ]
+}
+
 devil binexec on >/dev/null 2>&1
 USERNAME=$(whoami | tr '[:upper:]' '[:lower:]')
 HOSTNAME=$(hostname)
@@ -42,7 +108,8 @@ devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
 FILE_PATH="${HOME}/domains/${USERNAME}.serv00.net/public_html"
 WORKDIR="${HOME}/domains/${USERNAME}.serv00.net/logs"
 [ -d "$FILE_PATH" ] || mkdir -p "$FILE_PATH"
-[ -d "$WORKDIR" ] || (mkdir -p "$WORKDIR" && chmod 777 "$WORKDIR")
+[ -d "$WORKDIR" ] || (mkdir -p "$WORKDIR" && chmod 700 "$WORKDIR")
+if [ -z "$IP" ] && [ -s "$WORKDIR/ipone.txt" ]; then IP=$(cat "$WORKDIR/ipone.txt"); fi
 keep_path="${HOME}/domains/${snb}.${USERNAME}.serv00.net/public_nodejs"
 [ -d "$keep_path" ] || mkdir -p "$keep_path"
 
@@ -72,11 +139,13 @@ else
 echo "$UUID" > $WORKDIR/UUID.txt
 UUID=$(cat "$WORKDIR/UUID.txt" 2>/dev/null)
 fi
-curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/app.js -o "$keep_path"/app.js
-sed -i '' "15s/name/$snb/g" "$keep_path"/app.js
-sed -i '' "59s/key/$UUID/g" "$keep_path"/app.js
-sed -i '' "90s/name/$USERNAME/g" "$keep_path"/app.js
-sed -i '' "90s/where/$snb/g" "$keep_path"/app.js
+serv00_install_management_app || exit 1
+cat > "$HOME/webport.sh" <<'WEBPORT'
+#!/bin/bash
+export resport=y
+exec bash "$HOME/serv00keep.sh"
+WEBPORT
+chmod 700 "$HOME/webport.sh" || exit 1
 if [[ -z "$reym" ]] && [[ -f "$WORKDIR/reym.txt" ]]; then
 reym=$(cat "$WORKDIR/reym.txt" 2>/dev/null)
 elif [[ -z "$reym" ]] && [[ ! -f "$WORKDIR/reym.txt" ]]; then
@@ -109,13 +178,7 @@ jq --argjson hy "$hy2_port" --argjson vl "$vless_port" --argjson vm "$vmess_port
 elif .type == "vless" then .listen_port = $vl
 elif .type == "vmess" then .listen_port = $vm else . end)
 ' "$WORKDIR/config.json" > "$port_tmp" && mv -f "$port_tmp" "$WORKDIR/config.json" || { rm -f "$port_tmp"; exit 1; }
-sed -i '' -e "17s|'$vlp'|'$vless_port'|" serv00keep.sh
-sed -i '' -e "18s|'$vmp'|'$vmess_port'|" serv00keep.sh
-sed -i '' -e "19s|'$hyp'|'$hy2_port'|" serv00keep.sh
-ps aux | grep '[r]un -c con' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
-sleep 1
-curl -sk "http://${snb}.${USERNAME}.serv00.net/up" > /dev/null 2>&1
-sleep 5
+serv00_restart_core || return 1
 }
 
 okip(){
@@ -245,19 +308,12 @@ get_argodomain() {
 }
 
 if [ ! -f serv00keep.sh ]; then
-curl -sSL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00keep.sh -o serv00keep.sh && chmod +x serv00keep.sh
-echo '#!/bin/bash
-red() { echo -e "\e[1;91m$1\033[0m"; }
-green() { echo -e "\e[1;32m$1\033[0m"; }
-yellow() { echo -e "\e[1;33m$1\033[0m"; }
-purple() { echo -e "\e[1;35m$1\033[0m"; }
-USERNAME=$(whoami | tr '\''[:upper:]'\'' '\''[:lower:]'\'')
-WORKDIR="${HOME}/domains/${USERNAME}.serv00.net/logs"
-snb=$(hostname | cut -d. -f1)
-' > webport.sh
-declare -f resallport >> webport.sh
-declare -f check_port >> webport.sh
-echo 'resallport' >> webport.sh
+serv00_download_script https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00keep.sh "$HOME/serv00keep.sh" || exit 1
+cat > webport.sh <<'WEBPORT'
+#!/bin/bash
+export resport=y
+exec bash "$HOME/serv00keep.sh"
+WEBPORT
 chmod +x webport.sh
 green "开始安装多功能主页，请稍等……"
 devil www del ${snb}.${USERNAME}.serv00.net > /dev/null 2>&1
@@ -404,25 +460,21 @@ generate_random_name() {
 }
 
 download_with_fallback() {
-    local URL=$1
-    local NEW_FILENAME=$2
-
-    curl -L -sS --max-time 2 -o "$NEW_FILENAME" "$URL" &
-    CURL_PID=$!
-    CURL_START_SIZE=$(stat -c%s "$NEW_FILENAME" 2>/dev/null || echo 0)
-    
-    sleep 1
-    CURL_CURRENT_SIZE=$(stat -c%s "$NEW_FILENAME" 2>/dev/null || echo 0)
-    
-    if [ "$CURL_CURRENT_SIZE" -le "$CURL_START_SIZE" ]; then
-        kill $CURL_PID 2>/dev/null
-        wait $CURL_PID 2>/dev/null
-        wget -q -O "$NEW_FILENAME" "$URL"
-        echo -e "\e[1;32mDownloading $NEW_FILENAME by wget\e[0m"
-    else
-        wait $CURL_PID
-        echo -e "\e[1;32mDownloading $NEW_FILENAME by curl\e[0m"
+    local URL=$1 NEW_FILENAME=$2 tmp
+    tmp=$(mktemp "${NEW_FILENAME}.download.XXXXXX") || return 1
+    # A timeout/HTTP error must never promote a partial response to an executable.
+    if ! curl -fLsS --connect-timeout 10 --max-time 180 --retry 2 -o "$tmp" "$URL"; then
+        rm -f "$tmp"
+        tmp=$(mktemp "${NEW_FILENAME}.download.XXXXXX") || return 1
+        if ! wget -q -T 30 -t 2 -O "$tmp" "$URL"; then
+            rm -f "$tmp"; return 1
+        fi
     fi
+    # Both released cores are native ELF binaries; reject error pages and empty/truncated headers.
+    if [ ! -s "$tmp" ] || [ "$(od -An -tx1 -N4 "$tmp" | tr -d ' \n')" != 7f454c46 ]; then
+        rm -f "$tmp"; return 1
+    fi
+    chmod 700 "$tmp" && mv -f "$tmp" "$NEW_FILENAME" || { rm -f "$tmp"; return 1; }
 }
 
 for entry in "${FILE_INFO[@]}"; do
@@ -433,7 +485,7 @@ for entry in "${FILE_INFO[@]}"; do
     if [ -e "$NEW_FILENAME" ]; then
         echo -e "\e[1;32m$NEW_FILENAME already exists, Skipping download\e[0m"
     else
-        download_with_fallback "$URL" "$NEW_FILENAME"
+        download_with_fallback "$URL" "$NEW_FILENAME" || exit 1
     fi
     
     chmod +x "$NEW_FILENAME"
@@ -684,64 +736,32 @@ else
 green "主进程已启动"
 fi
 cfgo() {
-rm -rf boot.log
-if [ -e "$(basename "${FILE_MAP[bot]}")" ]; then
-   echo "$(basename "${FILE_MAP[bot]}")" > ag.txt
-   agg=$(cat ag.txt)
-    if [[ $ARGO_AUTH =~ ^[A-Z0-9a-z=]{120,250}$ ]]; then
-      #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token ${ARGO_AUTH}"
-      args="tunnel --no-autoupdate run --token ${ARGO_AUTH}"
-    else
-     #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile boot.log --loglevel info --url http://localhost:$vmess_port"
-     args="tunnel --url http://localhost:$vmess_port --no-autoupdate --logfile boot.log --loglevel info"
+    local agg attempt
+    local -a args
+    rm -f boot.log
+    if [ -n "${FILE_MAP[bot]:-}" ] && [ -e "${FILE_MAP[bot]}" ]; then
+        basename "${FILE_MAP[bot]}" > ag.txt || return 1
     fi
-    nohup ./"$agg" $args >/dev/null 2>&1 &
-    sleep 10
-if pgrep -x "$agg" > /dev/null; then
-    green "$agg Arog进程已启动"
-else
-    red "$agg Argo进程未启动, 重启中..."
-    pkill -x "$agg"
-    nohup ./"$agg" "${args}" >/dev/null 2>&1 &
-    sleep 5
-    purple "$agg Argo进程已重启"
-fi
-else
-   agg=$(cat ag.txt)
-    if [[ $ARGO_AUTH =~ ^[A-Z0-9a-z=]{120,250}$ ]]; then
-      #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token ${ARGO_AUTH}"
-      args="tunnel --no-autoupdate run --token ${ARGO_AUTH}"
+    agg=$(cat ag.txt 2>/dev/null)
+    [[ "$agg" =~ ^[a-zA-Z0-9_.-]+$ && "$agg" != -* && -x "./$agg" ]] || return 1
+    if [ -n "$ARGO_AUTH" ]; then
+        args=(tunnel --no-autoupdate run --token "$ARGO_AUTH")
     else
-     #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile boot.log --loglevel info --url http://localhost:$vmess_port"
-     args="tunnel --url http://localhost:$vmess_port --no-autoupdate --logfile boot.log --loglevel info"
+        args=(tunnel --url "http://localhost:$vmess_port" --no-autoupdate --logfile boot.log --loglevel info)
     fi
-    pkill -x "$agg"
-    nohup ./"$agg" $args >/dev/null 2>&1 &
-    sleep 10
-if pgrep -x "$agg" > /dev/null; then
-    green "$agg Arog进程已启动"
-else
-    red "$agg Argo进程未启动, 重启中..."
-    pkill -x "$agg"
-    nohup ./"$agg" "${args}" >/dev/null 2>&1 &
-    sleep 5
-    purple "$agg Argo进程已重启"
-fi
-fi
+    pkill -x "$agg" >/dev/null 2>&1 || :
+    for attempt in 1 2; do
+        nohup "./$agg" "${args[@]}" </dev/null >/dev/null 2>&1 &
+        sleep 5
+        if pgrep -x "$agg" >/dev/null; then green "Argo进程已启动"; return 0; fi
+    done
+    red "Argo进程启动失败"; return 1
 }
 
-if [ -f "$WORKDIR/boot.log" ]; then
-argosl=$(cat "$WORKDIR/boot.log" 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-checkhttp=$(curl -o /dev/null -s -w "%{http_code}\n" "https://$argosl")
-fi
-if ([ -z "$ARGO_DOMAIN" ] && ! ps aux | grep '[t]unnel --u' > /dev/null) || [[ "$checkhttp" != 404 ]]; then
-ps aux | grep '[t]unnel --u' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
-cfgo
-elif [ -n "$ARGO_DOMAIN" ] && ! ps aux | grep '[t]unnel --n' > /dev/null; then
-ps aux | grep '[t]unnel --n' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
-cfgo
+if serv00_argo_needs_restart; then
+    cfgo || exit 1
 else
-green "Arog进程已启动"
+    green "Argo进程已启动"
 fi
 sleep 2
 if ! pgrep -x "$(cat sb.txt)" > /dev/null; then

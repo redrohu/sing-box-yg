@@ -1,96 +1,113 @@
-require('dotenv').config();
-const express = require("express");
-const { spawn, exec } = require("child_process");
-const app = express();
-app.use(express.json());
-const commandToRun = "cd ~ && bash serv00keep.sh";
-function runCustomCommand() {
-    exec(commandToRun, (err, stdout, stderr) => {
-        if (err) console.error("执行错误:", err);
-        else console.log("执行成功:", stdout);
+// Keep LEGACY_SED_GUARD comments on lines 15, 59 and 90 for older auto-updating keepers.
+// New installers use local files/environment, never positional source replacement.
+// Management migration: POST + Bearer ~/.serv00-management-token replaces public GET actions.
+// Subscription UUIDs are not management credentials.
+const fsDefault = require('fs');
+const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
+const { execFile: execFileDefault } = require('child_process');
+
+function createApp(deps = {}) {
+    const express = deps.express || require('express');
+    const fs = deps.fs || fsDefault;
+    const execFile = deps.execFile || execFileDefault;
+    // LEGACY_SED_GUARD_15: name (old installer substitution is intentionally harmless).
+    const env = deps.env || process.env;
+    const home = deps.home || os.homedir();
+    const username = (deps.username || os.userInfo().username).toLowerCase();
+    const workDir = env.SERV00_WORKDIR || path.join(home, 'domains', `${username}.serv00.net`, 'logs');
+    const tokenFile = path.join(home, '.serv00-management-token');
+    const app = express();
+    const managementPaths = new Set(['/up', '/re', '/rp', '/jc']);
+    let busy = false;
+    function readText(file) {
+        try { return fs.readFileSync(file, 'utf8').trim(); } catch (_) { return ''; }
+    }
+    function equalSecret(actual, expected) {
+        const a = Buffer.from(actual), b = Buffer.from(expected);
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+    }
+    app.use((req, res, next) => {
+        // Express matches case-insensitively and accepts a trailing slash by default.
+        // Protect those aliases too; otherwise /UP or /up/ could bypass this middleware.
+        if (!managementPaths.has(req.path.replace(/\/+$/, '').toLowerCase())) return next();
+        res.set('Cache-Control', 'no-store');
+        const token = env.SERV00_MANAGEMENT_TOKEN || readText(tokenFile);
+        if (!/^[a-fA-F0-9]{64}$/.test(token)) return res.status(503).send('Management is not configured.');
+        const authorization = req.get('authorization') || '';
+        if (!authorization.startsWith('Bearer ') || !equalSecret(authorization.slice(7), token)) {
+            return res.status(401).send('Unauthorized.');
+        }
+        if (req.method !== 'POST') return res.set('Allow', 'POST').status(405).send('Use authenticated POST.');
+        next();
     });
+    function processName(file) {
+        const name = readText(path.join(workDir, file));
+        return /^[A-Za-z0-9_.-]+$/.test(name) && !name.startsWith('-') ? name : '';
+    }
+    function status(done) {
+        const state = {}, entries = [['sing_box', 'sb.txt'], ['argo', 'ag.txt']];
+        function next() {
+            const entry = entries.shift();
+            if (!entry) return done(state);
+            const [key, file] = entry, name = processName(file);
+            if (!name) { state[key] = 'not_configured'; return next(); }
+            execFile('pgrep', ['-x', name], { timeout: 5000 }, err => {
+                state[key] = err ? 'stopped' : 'running'; next();
+            });
+        // LEGACY_SED_GUARD_59: key (old installer substitution is intentionally harmless).
+        }
+        next();
+    }
+    function runAction(action, res) {
+        if (busy) { if (res) res.status(409).send('A management operation is already running.'); return; }
+        busy = true;
+        const script = path.join(home, action === 'rp' ? 'webport.sh' : 'serv00keep.sh');
+        const options = { cwd: home, timeout: 240000, maxBuffer: 8 * 1024 * 1024 };
+        function finish(err) {
+            if (err) {
+                busy = false;
+                // Child output can contain UUIDs, keys and subscription URLs: never expose it.
+                console.error('Serv00 management operation failed.');
+                if (res) res.status(500).send('Operation failed; inspect the local service configuration.');
+                return;
+            }
+            status(state => {
+                busy = false;
+                const healthy = state.sing_box === 'running' && state.argo !== 'stopped';
+                if (res) res.status(healthy ? 200 : 500).json({ ok: healthy, status: state });
+            });
+        }
+        function execute() { execFile('bash', [script], options, finish); }
+        if (action === 're') {
+            const name = processName('sb.txt');
+            if (!name) return finish(new Error('Main process is not configured.'));
+            // Exact binary name, not a broad pattern that can kill the invoking shell.
+            execFile('pkill', ['-x', name], { timeout: 5000 }, err => {
+                if (err && err.code !== 1) return finish(err);
+                execute();
+            // LEGACY_SED_GUARD_90: name where (old installer substitutions are harmless).
+            });
+        } else execute();
+    }
+    for (const action of ['up', 're', 'rp']) app.post(`/${action}`, (req, res) => runAction(action, res));
+    // Status labels only: never ps aux command lines or tunnel tokens.
+    app.post('/jc', (req, res) => status(state => res.json(state)));
+    app.get('/healthz', (req, res) => res.type('text').send('ok'));
+    app.get('/list/:key', (req, res) => {
+        const uuid = readText(path.join(workDir, 'UUID.txt'));
+        if (!uuid || !equalSecret(req.params.key, uuid)) return res.status(404).send('Not found.');
+        const content = readText(path.join(workDir, 'list.txt'));
+        if (!content) return res.status(404).send('Not found.');
+        res.set('Cache-Control', 'no-store').type('text').send(content);
+    });
+    app.use((req, res) => res.status(404).send('Not found.'));
+    return { app, runKeepalive: () => runAction('up') };
 }
-app.get("/up", (req, res) => {
-    runCustomCommand();
-    res.type("html").send("<pre>Serv00-name服务器网页保活启动：Serv00-name！UP！UP！UP！</pre>");
-});
-app.get("/re", (req, res) => {
-    const additionalCommands = `
-        USERNAME=$(whoami | tr '[:upper:]' '[:lower:]')
-        FULL_PATH="/home/\${USERNAME}/domains/\${USERNAME}.serv00.net/logs"
-        cd "\$FULL_PATH"
-        pkill -f 'run -c con' || echo "无进程可终止，准备执行重启……"
-        sbb="\$(cat sb.txt 2>/dev/null)"
-        nohup ./"\$sbb" run -c config.json >/dev/null 2>&1 &
-        sleep 2
-        (cd ~ && bash serv00keep.sh >/dev/null 2>&1) &  
-        echo '主程序重启成功，请检测三个主节点是否可用，如不可用，可再次刷新重启网页或者重置端口'
-    `;
-    exec(additionalCommands, (err, stdout, stderr) => {
-        console.log('stdout:', stdout);
-        console.error('stderr:', stderr);
-        if (err) {
-            return res.status(500).send(`错误：${stderr || stdout}`);
-        }
-        res.type('text').send(stdout);
-    });
-}); 
-
-const changeportCommands = "cd ~ && bash webport.sh"; 
-function runportCommand() {
-exec(changeportCommands, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
-        console.log('stdout:', stdout);
-        console.error('stderr:', stderr);
-        if (err) {
-            console.error('Execution error:', err);
-            return res.status(500).send(`错误：${stderr || stdout}`);
-        }
-        if (stderr) {
-            console.error('stderr output:', stderr);
-            return res.status(500).send(`stderr: ${stderr}`);
-        }
-        res.type('text').send(stdout);
-    });
+if (require.main === module || typeof PhusionPassenger !== 'undefined') {
+    const { app, runKeepalive } = createApp();
+    setInterval(runKeepalive, 135 * 60 * 1000);
+    app.listen(3000, () => { console.log('Serv00 management service started.'); runKeepalive(); });
 }
-app.get("/rp", (req, res) => {
-   runportCommand();  
-   res.type("html").send("<pre>重置三个节点端口完成！请立即关闭本网页并稍等20秒，将主页后缀改为  /list/你的uuid  可查看更新端口后的节点及订阅信息</pre>");
-});
-app.get("/list/key", (req, res) => {
-    const listCommands = `
-        USERNAME=$(whoami | tr '[:upper:]' '[:lower:]')
-        USERNAME1=$(whoami)
-        FULL_PATH="/home/\${USERNAME1}/domains/\${USERNAME}.serv00.net/logs/list.txt"
-        cat "\$FULL_PATH"
-    `;
-    exec(listCommands, (err, stdout, stderr) => {
-        if (err) {
-            console.error(`路径验证失败: ${stderr}`);
-            return res.status(404).send(stderr);
-        }
-        res.type('text').send(stdout);
-    });
-});
-
-app.get("/jc", (req, res) => {
-    const ps = spawn("ps", ["aux"]);
-    res.type("text");
-    ps.stdout.on("data", (data) => res.write(data));
-    ps.stderr.on("data", (data) => res.write(`Error: ${data}`));
-    ps.on("close", (code) => {
-        if (code !== 0) {
-            res.status(500).send(`ps aux 进程退出，错误码: ${code}`);
-        } else {
-            res.end();
-        }
-    });
-});
-
-app.use((req, res) => {
-    res.status(404).send('请在浏览器地址：http://where.name.serv00.net 后面加三种路径功能：/up是保活，/re是重启，/rp是重置节点端口，/jc是查看当前系统进程，/list/你的uuid 是节点及订阅信息');
-});
-setInterval(runCustomCommand, (2 * 60 + 15) * 60 * 1000);
-app.listen(3000, () => {
-    console.log("服务器运行在端口 3000");
-    runCustomCommand();
-});
+module.exports = { createApp };

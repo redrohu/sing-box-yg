@@ -306,7 +306,10 @@ xhttp_argo_remove
             for line in function(self.source, name).splitlines():
                 if "grep -q '[c]loudflared.*run'" in line:
                     self.assertIn("grep -v '[x]http-argo/cloudflared'", line)
-        self.assertIn("/[c]loudflared.*run/ && !/xhttp-argo\\/cloudflared/", self.source)
+        fixed = function(self.source, 'cfargoym')
+        self.assertIn('argo_fixed_apply', fixed)
+        self.assertNotIn('kill -9', fixed)
+        self.assertNotIn('ps -ef', fixed)
         d = self.output / 'process-isolation'
         shell('''
 printf '%s\\n' 'root 111 /etc/s-box/xhttp-argo/cloudflared tunnel run --token-file /safe/file' | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && exit 1

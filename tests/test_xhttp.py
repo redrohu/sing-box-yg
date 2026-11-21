@@ -32,7 +32,8 @@ class XHTTP(unittest.TestCase):
         src = self.source.replace('/etc/s-box', bashpath(directory))
         return ''.join(function(src, n) for n in [
             'node_suffix_valid', 'node_suffix_load', 'xhttp_server_config',
-            'xhttp_client_config', 'xhttp_export', 'xhttp_dependencies', 'xhttp_encryption_pair'])
+            'xhttp_client_config', 'xhttp_export', 'xhttp_dependencies', 'xhttp_encryption_pair',
+            'xhttp_core_profile', 'xhttp_core_prepare'])
 
     def generate(self, name, server='192.0.2.1'):
         d = self.output / name
@@ -196,7 +197,8 @@ xhttp_export
         self.assertIn('xhttp_menu', function(self.source, 'changeserv'))
         share = function(self.source, 'sbshare')
         self.assertIn('xhttp_export || return 1', share)
-        self.assertIn('cat /etc/s-box/xhttp.txt >> /etc/s-box/jhdy.txt', share)
+        self.assertIn('xhttp.txt xhttp-argo.txt', share)
+        self.assertIn('sb_exports_commit', share)
         self.assertIn('xhttp_remove', function(self.source, 'unins'))
         self.assertNotIn('\"type\": \"xhttp\"', function(self.source, 'sb_client'))
 

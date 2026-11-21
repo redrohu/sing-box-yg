@@ -214,7 +214,25 @@ serv00_server_profile config.json config.json ./test-core
     def test_clash_templates_original_except_names_quoting_and_whitespace(self):
         fixture = json.loads((ROOT / "tests/fixtures/original-clash-sha256.json").read_text(encoding="utf8"))
         for name, expected in fixture.items():
-            template = function(self.sources["sb.sh"], name).replace("${node_suffix_label}", " $hostname").replace("$node_suffix", "$hostname")
+            source = self.sources["sb.sh"]
+            if name == "clany1":
+                # Its one-line group insertion is now part of cl_node_refs().
+                # Preserve the historical snapshot and check the replacement's
+                # actual output, not a new hash that could hide changed fields.
+                self.assertNotIn('\nclany1(){', source)
+                d = self.output / 'unified-anytls-references'
+                shell(function(source, 'cl_node_refs') + '''
+node_prefix_label='RN '; node_suffix_label=' test-vps'
+xhttp_argo_cl_name=; xhttp_cl_name=; argo_labels=()
+sbnh=1.14; cl_node_refs > modern
+sbnh=1.10; cl_node_refs > legacy
+''', d)
+                base = ['vless-reality-vision', 'vmess-ws', 'hysteria2', 'tuic5']
+                for filename, labels in [('modern', base + ['anytls']), ('legacy', base)]:
+                    self.assertEqual((d / filename).read_text(encoding='utf8').splitlines(),
+                                     ['    - "RN ' + label + ' test-vps"' for label in labels])
+                source = (ROOT / 'review-artifacts/2026-11-21/refactor/before/sb.sh').read_text(encoding='utf8')
+            template = function(source, name).replace("${node_suffix_label}", " $hostname").replace("$node_suffix", "$hostname")
             template = template.replace("${node_prefix_label}", "")
             template = re.sub(r'^(\s*- (?:name: )?)"([^"\n]*\$hostname)"$', r'\1\2', template, flags=re.M)
             template = template.replace(r'\"anytls $hostname\"', 'anytls $hostname')

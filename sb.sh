@@ -45,6 +45,51 @@ return 1
 }
 }
 
+# Commit only a completed export set. Restore the snapshot on ordinary errors/signals.
+# Individual renames are not a filesystem-wide transaction; serialize our writers.
+sb_exports_commit(){
+(
+umask 077
+local stage=$1 backup file committed=0 changing=0 restore_failed=0 lock_dir=
+shift
+if command -v flock >/dev/null 2>&1; then
+exec 9>/etc/s-box/.exports.flock || exit 1
+flock -n 9 || { red "另一个导出正在提交；请稍后重试。" >&2; exit 1; }
+else
+lock_dir=/etc/s-box/.exports.lock
+mkdir "$lock_dir" 2>/dev/null || { red "另一个导出正在提交；请稍后重试。" >&2; exit 1; }
+fi
+backup=$(mktemp -d /etc/s-box/exports.bak.XXXXXX) || { [[ -z $lock_dir ]] || rmdir "$lock_dir"; exit 1; }
+local -a files=("$@")
+trap 'rc=$?; trap - EXIT; if [[ $changing == 1 && $committed == 0 ]]; then
+for file in "${files[@]}"; do
+if [[ -f $backup/$file ]]; then cp -p "$backup/$file" "/etc/s-box/$file" || restore_failed=1
+else rm -f "/etc/s-box/$file" || restore_failed=1; fi
+done
+fi
+if [[ $restore_failed == 0 ]]; then rm -rf "$backup"; else
+echo "导出回滚不完整，请从此目录恢复：$backup" >&2; fi
+[[ -z $lock_dir ]] || rmdir "$lock_dir"; exit "$rc"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+for file in "${files[@]}"; do
+[[ $file != /* && $file != *..* ]] || exit 1
+if [[ -e /etc/s-box/$file && ! -f /etc/s-box/$file ]]; then exit 1; fi
+if [[ -f /etc/s-box/$file ]]; then
+mkdir -p "$backup/$(dirname "$file")" && cp -p "/etc/s-box/$file" "$backup/$file" || exit 1
+fi
+done
+changing=1
+for file in "${files[@]}"; do
+if [[ -f $stage/$file ]]; then
+mkdir -p "/etc/s-box/$(dirname "$file")" && mv -f "$stage/$file" "/etc/s-box/$file" || exit 1
+else rm -f "/etc/s-box/$file" || exit 1; fi
+done
+committed=1
+)
+}
+
 node_suffix_valid(){
 # Accept Unicode letters, combining marks, numbers, dashes, horizontal spaces, # and |.
 # Reject all-space names, controls and quotes; URI names are encoded by node_suffix_load.
@@ -75,7 +120,6 @@ fi
 fi
 node_prefix_label="${node_prefix:+${node_prefix} }"
 node_prefix_uri_label=$(jq -nr --arg prefix "$node_prefix_label" '$prefix | @uri') || return 1
-node_suffix_uri=$(jq -nr --arg suffix "$node_suffix" '$suffix | @uri') || return 1
 node_suffix_uri_label=$(jq -nr --arg suffix "$node_suffix_label" '$suffix | @uri')
 }
 
@@ -188,11 +232,11 @@ bbr="Openvz/Lxc"
 fi
 hostname=$(hostname)
 
-if [ ! -f sbyg_update ]; then
+if [[ ! -f /etc/s-box/sbyg_update ]] || ! command -v jq >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
 green "首次安装Sing-box-yg脚本必要的依赖……"
 if command -v apk >/dev/null 2>&1; then
 apk update
-apk add bash libc6-compat jq openssl procps busybox-extras iproute2 iputils coreutils expect git socat iptables grep tar tzdata util-linux
+apk add bash libc6-compat curl wget jq openssl procps busybox-extras iproute2 iputils coreutils expect git socat iptables grep tar tzdata util-linux
 apk add virt-what
 else
 if [[ $release = Centos && ${vsid} =~ 8 ]]; then
@@ -242,7 +286,10 @@ fi
 fi
 done
 fi
-touch sbyg_update
+for required in bash curl jq openssl tar git iptables; do
+command -v "$required" >/dev/null 2>&1 || { red "依赖安装未完成：$required；未写入完成标记，请修复包管理器后重试。"; exit 1; }
+done
+mkdir -p /etc/s-box && touch /etc/s-box/sbyg_update || exit 1
 fi
 
 if [[ $vi = openvz ]]; then
@@ -260,12 +307,81 @@ green "TUN守护功能已启动"
 fi
 fi
 fi
+# Menu information only: never used to authenticate downloads or validate updates.
+# SB_MENU_REFRESH=1 bypasses all TTLs; actions that change networking force refresh.
+sb_info_valid(){
+jq -e --arg key "$1" '
+if $key == "network" then
+ type=="object" and ([.ipv4,.ipv6,.region4,.region6]|all(type=="string")) and
+ (.ipv4=="" or (.ipv4|test("^([0-9]{1,3}\\.){3}[0-9]{1,3}$") and (split(".")|all(tonumber<=255)))) and
+ (.ipv6=="" or (.ipv6|length<=45 and contains(":") and test("^[a-fA-F0-9:.]+$"))) and
+ ([.region4,.region6]|all(length<=200 and (test("[\\x00-\\x1f\\x7f]")|not)))
+elif $key == "cores" then
+ type=="object" and (.stable|type=="string" and test("^[0-9]+\\.[0-9]+\\.[0-9]+$")) and
+ (.preview|type=="string" and test("^[0-9]+\\.[0-9]+\\.[0-9]+-(alpha|beta|rc)\\.[0-9]+$"))
+elif $key == "script" then
+ type=="string" and length<524288 and test("^v[0-9]+\\.[0-9]+\\.[0-9]+(-fork\\.[0-9]+)?更新内容")
+else false end' >/dev/null
+}
+
+sb_info_cache_get(){
+local key=$1 ttl=$2 file=/etc/s-box/cache/menu-$1.json now data
+[[ ${SB_MENU_REFRESH:-0} != 1 && -f $file && ! -L $file ]] || return 1
+now=$(date +%s) || return 1
+[[ $now =~ ^[0-9]+$ ]] || return 1
+data=$(jq -ec --argjson now "$now" --argjson ttl "$ttl" '
+select(.saved|type=="number") | select(.saved <= $now and $now-.saved < $ttl) | .data' "$file" 2>/dev/null) || return 1
+printf '%s\n' "$data" | sb_info_valid "$key" || return 1
+printf '%s\n' "$data"
+}
+
+sb_info_cache_put(){
+local key=$1 dir=/etc/s-box/cache tmp now
+[[ $key == network || $key == cores || $key == script ]] || return 1
+[[ ! -L $dir ]] || return 1
+mkdir -p "$dir" && chmod 700 "$dir" || return 1
+now=$(date +%s) || return 1
+[[ $now =~ ^[0-9]+$ ]] || return 1
+tmp=$(umask 077; mktemp "$dir/.menu-$key.XXXXXX") || return 1
+if ! jq -c --argjson now "$now" '{saved:$now,data:.}' > "$tmp" ||
+ ! jq -c '.data' "$tmp" | sb_info_valid "$key" ||
+ ! mv -f "$tmp" "$dir/menu-$key.json"; then rm -f "$tmp"; return 1; fi
+}
+
+sb_script_version_info(){
+local data text
+if data=$(sb_info_cache_get script 300); then jq -r . <<< "$data"; return; fi
+text=$(curl -fsSL --connect-timeout 5 --max-time 10 https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version) || return 1
+data=$(printf '%s' "$text" | jq -Rs .) || return 1
+printf '%s\n' "$data" | sb_info_valid script || return 1
+printf '%s\n' "$data" | sb_info_cache_put script || :
+printf '%s\n' "$text"
+}
+
 v4v6(){
-v4=$(curl -s4m5 icanhazip.com -k)
-v6=$(curl -s6m5 icanhazip.com -k)
-#v4dq=$(curl -s4m5 -k https://myip.ipip.net | awk -F'来自于：' '{print $2}' 2>/dev/null)
-v4dq=$(curl -s4m5 -k https://ip.fm | sed -n 's/.*Location: //p' 2>/dev/null)
-v6dq=$(curl -s6m5 -k https://ip.fm | sed -n 's/.*Location: //p' 2>/dev/null)
+local data stage file failed=0 status=0 SB_MENU_REFRESH=${SB_MENU_REFRESH:-0}
+[[ ${1:-} != refresh ]] || SB_MENU_REFRESH=1
+if ! data=$(sb_info_cache_get network 60); then
+stage=$(umask 077; mktemp -d /etc/s-box/.network-info.XXXXXX) || return 1
+# Four independent requests are bounded and run in parallel (not 4x the timeout).
+(if curl -fsS4 --connect-timeout 2 --max-time 5 https://icanhazip.com > "$stage/ipv4"; then echo 0; else echo $?; fi > "$stage/status4") & local p4=$!
+(if curl -fsS6 --connect-timeout 2 --max-time 5 https://icanhazip.com > "$stage/ipv6"; then echo 0; else echo $?; fi > "$stage/status6") & local p6=$!
+(if curl -fsS4 --connect-timeout 2 --max-time 5 https://ip.fm > "$stage/geo4"; then echo 0; else echo $?; fi > "$stage/statusg4") & local g4=$!
+(if curl -fsS6 --connect-timeout 2 --max-time 5 https://ip.fm > "$stage/geo6"; then echo 0; else echo $?; fi > "$stage/statusg6") & local g6=$!
+wait "$p4" "$p6" "$g4" "$g6"
+for file in status4 status6 statusg4 statusg6; do [[ $(cat "$stage/$file") == 0 ]] || failed=1; done
+# On single-stack hosts do not cache partial failures; retry the missing family next time.
+data=$(jq -nc --arg ipv4 "$(tr -d '\r\n' < "$stage/ipv4")" --arg ipv6 "$(tr -d '\r\n' < "$stage/ipv6")" \
+ --arg region4 "$(sed -n 's/.*Location: //p' "$stage/geo4" | head -n1)" \
+ --arg region6 "$(sed -n 's/.*Location: //p' "$stage/geo6" | head -n1)" \
+ '{ipv4:$ipv4,ipv6:$ipv6,region4:$region4,region6:$region6}') || status=1
+rm -rf "$stage"
+if [[ $status != 0 ]] || ! printf '%s\n' "$data" | sb_info_valid network; then v4=; v6=; v4dq=; v6dq=; return 1; fi
+[[ $failed != 0 ]] || printf '%s\n' "$data" | sb_info_cache_put network || :
+fi
+local -a values
+mapfile -t values < <(jq -r '.ipv4,.ipv6,.region4,.region6' <<< "$data")
+v4=${values[0]}; v6=${values[1]}; v4dq=${values[2]}; v6dq=${values[3]}
 }
 warpcheck(){
 wgcfv6=$(curl -s6m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
@@ -348,23 +464,9 @@ sbcore=$(curl -Ls https://github.com/SagerNet/sing-box/releases/latest | grep -o
 else
 sbcore='1.10.7'
 fi
-sbname="sing-box-$sbcore-linux-$cpu"
-curl -L -o /etc/s-box/sing-box.tar.gz  -# --retry 2 https://github.com/SagerNet/sing-box/releases/download/v$sbcore/$sbname.tar.gz
-if [[ -f '/etc/s-box/sing-box.tar.gz' ]]; then
-tar xzf /etc/s-box/sing-box.tar.gz -C /etc/s-box
-mv /etc/s-box/$sbname/sing-box /etc/s-box
-rm -rf /etc/s-box/{sing-box.tar.gz,$sbname}
-if [[ -f '/etc/s-box/sing-box' ]]; then
-chown root:root /etc/s-box/sing-box
-chmod +x /etc/s-box/sing-box
-blue "成功安装 Sing-box 内核版本：$(/etc/s-box/sing-box version | awk '/version/{print $NF}')"
-sbnh=$(/etc/s-box/sing-box version 2>/dev/null | awk '/version/{print $NF}' 2>/dev/null | cut -d '.' -f 1,2)
-else
-red "下载 Sing-box 内核不完整，安装失败，请再运行安装一次" && exit
-fi
-else
-red "下载 Sing-box 内核失败，请再运行安装一次，并检测VPS的网络是否可以访问Github" && exit
-fi
+sb_update_core "$sbcore" install || return 1
+sbnh=$(printf '%s\n' "$sbcore" | cut -d '.' -f 1,2)
+blue "成功安装 Sing-box 内核版本：$sbcore"
 }
 
 inscertificate(){
@@ -1056,7 +1158,7 @@ status_cmd="systemctl is-active sing-box"
 status_pattern="active"
 fi
 if [[ -n $($status_cmd 2>/dev/null | grep -w "$status_pattern") && -f '/etc/s-box/sb.json' ]]; then
-v4v6
+v4v6 refresh
 if [[ -n $v4 && -n $v6 ]]; then
 green "调整IPv4/IPV6配置输出"
 yellow "1：刷新本地IP，使用IPV4配置输出 (回车默认) "
@@ -1109,28 +1211,45 @@ fi
 }
 
 result_vl_vm_hy_tu(){
+# One parse, stable tags (legacy index fallback), strict required fields.
+# @sh escapes scalar data; assignment names below are fixed, never user-provided.
+local parsed
+parsed=$(jq -er '
+def pick($tag; $i): ([.inbounds[] | select(.tag == $tag)][0] // .inbounds[$i]);
+def port: type == "number" and . >= 1 and . <= 65535 and . == floor;
+pick("vless-sb";0) as $v | pick("vmess-sb";1) as $w |
+pick("hy2-sb";2) as $h | pick("tuic5-sb";3) as $t | pick("anytls-sb";4) as $a |
+if $v.type != "vless" or $w.type != "vmess" or $h.type != "hysteria2" or $t.type != "tuic" or
+   ([$v.listen_port,$w.listen_port,$h.listen_port,$t.listen_port] | all(port) | not) or
+   ([$v.users[0].uuid,$v.tls.server_name,$v.tls.reality.short_id[0],$w.transport.path,$w.tls.server_name,$h.tls.key_path,$t.tls.key_path] | all(type == "string") | not) or
+   ($v.users[0].uuid | length == 0) or ($w.tls.enabled | type != "boolean") or
+   ($a != null and ($a.type != "anytls" or ($a.listen_port | port | not) or ($a.tls.key_path | type != "string")))
+then error("missing/invalid server fields; exports kept unchanged") else . end |
+{uuid:$v.users[0].uuid,vl_port:$v.listen_port,vl_name:$v.tls.server_name,short_id:$v.tls.reality.short_id[0],
+ ws_path:$w.transport.path,vm_port:$w.listen_port,tls:$w.tls.enabled,vm_name_default:$w.tls.server_name,
+ hy2_port:$h.listen_port,hy2_sniname:$h.tls.key_path,tu5_port:$t.listen_port,tu5_sniname:$t.tls.key_path,
+ an_port:($a.listen_port // ""),an_sniname:($a.tls.key_path // "")} |
+to_entries | map(.key + "=" + (.value | @sh)) | join("\n")
+' /etc/s-box/sb.json) || { red "服务端字段校验失败，未生成新订阅。" >&2; return 1; }
+eval "$parsed" || return 1
 if [[ -f /root/ygkkkca/cert.crt && -f /root/ygkkkca/private.key && -s /root/ygkkkca/cert.crt && -s /root/ygkkkca/private.key ]]; then
 ym=`bash ~/.acme.sh/acme.sh --list | tail -1 | awk '{print $1}'`
 echo $ym > /root/ygkkkca/ca.log
 fi
-rm -rf /etc/s-box/vm_ws_argo.txt /etc/s-box/vm_ws.txt /etc/s-box/vm_ws_tls.txt
-server_ip=$(cat /etc/s-box/server_ip.log)
-server_ipcl=$(cat /etc/s-box/server_ipcl.log)
-uuid=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].users[0].uuid')
-vl_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].listen_port')
-vl_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.server_name')
-public_key=$(cat /etc/s-box/public.key)
-short_id=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.reality.short_id[0]')
+rm -rf "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_argo.txt" "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws.txt" "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_tls.txt"
+server_ip=$(cat /etc/s-box/server_ip.log) || return 1
+[[ -n $server_ip ]] || return 1
+server_ipcl=$(cat /etc/s-box/server_ipcl.log) || return 1
+[[ -n $server_ipcl ]] || return 1
+public_key=$(cat /etc/s-box/public.key) || return 1
+[[ -n $public_key ]] || return 1
 argo=$(cat /etc/s-box/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-ws_path=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].transport.path')
-vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
-tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
-vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
+vm_name=$vm_name_default
 if [[ "$tls" = "false" ]]; then
 if [[ -f /etc/s-box/cfymjx.txt ]]; then
 vm_name=$(cat /etc/s-box/cfymjx.txt 2>/dev/null)
 else
-vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
+vm_name=$vm_name_default
 fi
 vmadd_local=$server_ipcl
 vmadd_are_local=$server_ip
@@ -1146,7 +1265,7 @@ if [[ "$tls" = "false" ]]; then
 if [[ -f /etc/s-box/cfymjx.txt ]]; then
 vm_name=$(cat /etc/s-box/cfymjx.txt 2>/dev/null)
 else
-vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
+vm_name=$vm_name_default
 fi
 vmadd_local=$server_ipcl
 vmadd_are_local=$server_ip
@@ -1160,8 +1279,7 @@ vmadd_argo=$(cat /etc/s-box/cfvmadd_argo.txt 2>/dev/null)
 else
 vmadd_argo=cloudflare-ech.com
 fi
-hy2_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].listen_port')
-hy2_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$hy2_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
+hy2_ports=$(sb_port_hop_manage list "$hy2_port" | paste -sd, -)
 if [[ -n $hy2_ports ]]; then
 cmhy2pt=$(echo $hy2_ports | tr ':' '-')
 hyps="&mport=$cmhy2pt"
@@ -1170,11 +1288,10 @@ else
 hyps=
 fi
 ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-hy2_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].tls.key_path')
 if [[ "$hy2_sniname" = '/etc/s-box/private.key' ]]; then
 SHA256=$(openssl x509 -in /etc/s-box/cert.pem -outform DER | sha256sum | awk '{print $1}')
-echo "$SHA256" > /etc/s-box/SHA256.txt
-SHA256=$(cat /etc/s-box/SHA256.txt)
+echo "$SHA256" > "${SB_EXPORT_DIR:-/etc/s-box}/SHA256.txt" || return 1
+SHA256=$(cat "${SB_EXPORT_DIR:-/etc/s-box}/SHA256.txt")
 hy2_name=www.bing.com
 sb_hy2_ip=$server_ip
 cl_hy2_ip=$server_ipcl
@@ -1187,9 +1304,7 @@ cl_hy2_ip=$ym
 ins_hy2=0
 hy2_ins=false
 fi
-tu5_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].listen_port')
 ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-tu5_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].tls.key_path')
 if [[ "$tu5_sniname" = '/etc/s-box/private.key' ]]; then
 tu5_name=www.bing.com
 sb_tu5_ip=$server_ip
@@ -1203,9 +1318,7 @@ cl_tu5_ip=$ym
 ins=0
 tu5_ins=false
 fi
-an_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[4].listen_port')
 ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-an_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[4].tls.key_path')
 if [[ "$an_sniname" = '/etc/s-box/private.key' ]]; then
 an_name=www.bing.com
 sb_an_ip=$server_ip
@@ -1225,14 +1338,14 @@ resvless(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#${node_prefix_uri_label}vl-reality${node_suffix_uri_label}"
-echo "$vl_link" > /etc/s-box/vl_reality.txt
+echo "$vl_link" > "${SB_EXPORT_DIR:-/etc/s-box}/vl_reality.txt" || return 1
 red "🚀【 vless-reality-vision 】节点信息如下：" && sleep 2
 echo
 echo "分享链接【v2ran(切换singbox内核)、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}$vl_link${plain}"
 echo
 echo "二维码【v2ran(切换singbox内核)、nekobox、小火箭shadowrocket】"
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vl_reality.txt)"
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vl_reality.txt")"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
 }
@@ -1248,8 +1361,8 @@ echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argols.txt
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_argols.txt)"
+echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_argols.txt" || return 1
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_argols.txt")"
 fi
 if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run'; then
 argogd=$(cat /etc/s-box/sbargoym.log 2>/dev/null)
@@ -1261,8 +1374,8 @@ echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_argogd.txt
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_argogd.txt)"
+echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_argogd.txt" || return 1
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_argogd.txt")"
 fi
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1272,8 +1385,8 @@ echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws${node_suffix_label}"'","tls":"","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws${node_suffix_label}"'","tls":"","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws.txt
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws.txt)"
+echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws${node_suffix_label}"'","tls":"","type":"none","v":"2"}' | base64 -w 0) > "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws.txt" || return 1
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws.txt")"
 else
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1283,8 +1396,8 @@ echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws-tls${node_suffix_label}"'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws-tls${node_suffix_label}"'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > /etc/s-box/vm_ws_tls.txt
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/vm_ws_tls.txt)"
+echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws-tls${node_suffix_label}"'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0) > "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_tls.txt" || return 1
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_tls.txt")"
 fi
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
@@ -1295,14 +1408,14 @@ echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=0&allowInsecure=0$hyps&sni=$hy2_name&pinSHA256=$SHA256#${node_prefix_uri_label}hy2${node_suffix_uri_label}"
 #hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&allowInsecure=$ins_hy2$hyps&sni=$hy2_name#${node_prefix_uri_label}hy2${node_suffix_uri_label}"
-echo "$hy2_link" > /etc/s-box/hy2.txt
+echo "$hy2_link" > "${SB_EXPORT_DIR:-/etc/s-box}/hy2.txt" || return 1
 red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}$hy2_link${plain}"
 echo
 echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/hy2.txt)"
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/hy2.txt")"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
 }
@@ -1311,14 +1424,14 @@ restu5(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 tuic5_link="tuic://$uuid:$uuid@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&insecure=$ins&allowInsecure=$ins&allow_insecure=$ins#${node_prefix_uri_label}tu5${node_suffix_uri_label}"
-echo "$tuic5_link" > /etc/s-box/tuic5.txt
+echo "$tuic5_link" > "${SB_EXPORT_DIR:-/etc/s-box}/tuic5.txt" || return 1
 red "🚀【 Tuic-v5 】节点信息如下：" && sleep 2
 echo
 echo "分享链接【v2rayn、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}$tuic5_link${plain}"
 echo
 echo "二维码【v2rayn、nekobox、小火箭shadowrocket】"
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/tuic5.txt)"
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/tuic5.txt")"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
 }
@@ -1327,19 +1440,21 @@ resan(){
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 an_link="anytls://$uuid@$sb_an_ip:$an_port?&sni=$an_name&allowInsecure=$ins_an&insecure=$ins_an#${node_prefix_uri_label}anytls${node_suffix_uri_label}"
-echo "$an_link" > /etc/s-box/an.txt
+echo "$an_link" > "${SB_EXPORT_DIR:-/etc/s-box}/an.txt" || return 1
 red "🚀【 Anytls】节点信息如下：" && sleep 2
 echo
 echo "分享链接【v2rayn、小火箭shadowrocket】"
 echo -e "${yellow}$an_link${plain}"
 echo
 echo "二维码【v2rayn、nekobox、小火箭shadowrocket】"
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/an.txt)"
+qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/an.txt")"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
 }
 
 sb_client(){
+(
+umask 077
 node_suffix_load || return 1
 local xhttp_cl_node= xhttp_cl_name= xhttp_argo_cl_node= xhttp_argo_cl_name=
 if [[ -f /etc/s-box/xhttp/config.json ]]; then
@@ -1348,8 +1463,13 @@ fi
 if [[ -f /etc/s-box/xhttp-argo/config.json ]]; then
 xhttp_argo_mihomo_load || return 1
 fi
-local client_raw
-client_raw=$(mktemp /etc/s-box/sbox.raw.XXXXXX) || return 1
+local client_stage client_raw
+client_stage=$(mktemp -d /etc/s-box/client-stage.XXXXXX) || return 1
+trap 'rm -rf "$client_stage"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+client_raw="$client_stage/raw.json"
 
 sbhy2ports(){
 if [[ -n $hy2_ports ]]; then
@@ -1359,20 +1479,6 @@ EOF
 fi
 }
 
-sbany1(){
-  if [[ "$sbnh" != "1.10" ]]; then
-    echo "\"${node_prefix_label}anytls${node_suffix_label}\","
-  fi
-}
-clany1(){
-  if [[ "$sbnh" != "1.10" ]]; then
-    echo "- \"${node_prefix_label}anytls${node_suffix_label}\""
-  fi
-}
-clxhttp1(){
-[[ -z $xhttp_argo_cl_name ]] || printf '\n    - %s' "$xhttp_argo_cl_name"
-[[ -z $xhttp_cl_name ]] || printf '\n    - %s' "$xhttp_cl_name"
-}
 clxhttp2(){
 [[ -z $xhttp_argo_cl_node ]] || printf '\n- %s' "$xhttp_argo_cl_node"
 [[ -z $xhttp_cl_node ]] || printf '\n- %s' "$xhttp_cl_node"
@@ -1768,752 +1874,179 @@ proxies:
 EOF
 }
 
+# A single ordered model drives both clients and every group reference.
+# Fixed precedes temporary, and TLS precedes plaintext, matching existing exports.
+local -a argo_labels=() argo_hosts=() argo_tls=() argo_ports=()
+local processes has_fixed=0 has_temporary=0 kind host label i
+processes=$(ps -ef 2>/dev/null)
 tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
-if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
-cat > "$client_raw" <<EOF
-$(sball)
-$(sbany2)
-{
-            "server": "$vmadd_argo",
-            "server_port": 443,
-            "tag": "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}",
-            "tls": {
-                "enabled": true,
-                "server_name": "$argogd",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argogd"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-{
-            "server": "$vmadd_argo",
-            "server_port": 8880,
-            "tag": "${node_prefix_label}vmess-argo固定${node_suffix_label}",
-            "tls": {
-                "enabled": false,
-                "server_name": "$argogd",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argogd"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-{
-            "server": "$vmadd_argo",
-            "server_port": 443,
-            "tag": "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}",
-            "tls": {
-                "enabled": true,
-                "server_name": "$argo",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argo"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-{
-            "server": "$vmadd_argo",
-            "server_port": 8880,
-            "tag": "${node_prefix_label}vmess-argo临时${node_suffix_label}",
-            "tls": {
-                "enabled": false,
-                "server_name": "$argo",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argo"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-        {
-            "tag": "proxy",
-            "type": "selector",
-			"default": "auto",
-            "outbounds": [
-        "auto",
-        "${node_prefix_label}vless${node_suffix_label}",
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}",
-        "${node_prefix_label}vmess-argo固定${node_suffix_label}",
-        "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}",
-        "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-            ]
-        },
-        {
-            "tag": "auto",
-            "type": "urltest",
-            "outbounds": [
-        "${node_prefix_label}vless${node_suffix_label}",
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}",
-        "${node_prefix_label}vmess-argo固定${node_suffix_label}",
-        "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}",
-        "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-            ],
-            "url": "http://www.gstatic.com/generate_204",
-            "interval": "10m",
-            "tolerance": 30,
-            "idle_timeout": "30m"
-        },
-        {
-            "type": "direct",
-            "tag": "direct"
-        }
-    ]
-}
-EOF
-
-cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)$(clxhttp2)
-
-$(clany2)
-
-- name: "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 443                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: true
-  network: ws
-  servername: $argogd                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argogd
-
-
-- name: "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 8880                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: false
-  network: ws
-  servername: $argogd                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argogd
-
-- name: "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 443                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: true
-  network: ws
-  servername: $argo                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argo
-
-- name: "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 8880                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: false
-  network: ws
-  servername: $argo                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argo 
-
-proxy-groups:
-- name: 负载均衡
-  type: load-balance
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  strategy: round-robin
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-
-- name: 自动选择
-  type: url-test
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  tolerance: 50
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-    
-- name: 🌍选择代理节点
-  type: select
-  proxies:
-    - 负载均衡                                         
-    - 自动选择
-    - DIRECT
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-rules:
-  - GEOIP,LAN,DIRECT
-  - GEOSITE,CN,DIRECT
-  - GEOIP,CN,DIRECT
-  - MATCH,🌍选择代理节点
-EOF
-
-elif ! ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
-cat > "$client_raw" <<EOF
-$(sball)
-$(sbany2)
-{
-            "server": "$vmadd_argo",
-            "server_port": 443,
-            "tag": "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}",
-            "tls": {
-                "enabled": true,
-                "server_name": "$argo",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argo"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-{
-            "server": "$vmadd_argo",
-            "server_port": 8880,
-            "tag": "${node_prefix_label}vmess-argo临时${node_suffix_label}",
-            "tls": {
-                "enabled": false,
-                "server_name": "$argo",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argo"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-        {
-            "tag": "proxy",
-            "type": "selector",
-			"default": "auto",
-            "outbounds": [
-        "auto",
-        "${node_prefix_label}vless${node_suffix_label}",
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}",
-        "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-            ]
-        },
-        {
-            "tag": "auto",
-            "type": "urltest",
-            "outbounds": [
-        "${node_prefix_label}vless${node_suffix_label}",
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}",
-        "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-            ],
-            "url": "http://www.gstatic.com/generate_204",
-            "interval": "10m",
-            "tolerance": 30,
-            "idle_timeout": "30m"
-        },
-        {
-            "type": "direct",
-            "tag": "direct"
-        }
-    ]
-}
-EOF
-
-cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)$(clxhttp2)
-
-
-
-
-
-
-
-
-$(clany2)
-
-- name: "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 443                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: true
-  network: ws
-  servername: $argo                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argo
-
-- name: "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 8880                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: false
-  network: ws
-  servername: $argo                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argo 
-
-proxy-groups:
-- name: 负载均衡
-  type: load-balance
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  strategy: round-robin
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-
-- name: 自动选择
-  type: url-test
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  tolerance: 50
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-    
-- name: 🌍选择代理节点
-  type: select
-  proxies:
-    - 负载均衡                                         
-    - 自动选择
-    - DIRECT
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo临时${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo临时${node_suffix_label}"
-rules:
-  - GEOIP,LAN,DIRECT
-  - GEOSITE,CN,DIRECT
-  - GEOIP,CN,DIRECT
-  - MATCH,🌍选择代理节点
-EOF
-
-elif ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run' && ! ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1 && [ "$tls" = "false" ]; then
-cat > "$client_raw" <<EOF
-$(sball)
-$(sbany2)
-{
-            "server": "$vmadd_argo",
-            "server_port": 443,
-            "tag": "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}",
-            "tls": {
-                "enabled": true,
-                "server_name": "$argogd",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argogd"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-{
-            "server": "$vmadd_argo",
-            "server_port": 8880,
-            "tag": "${node_prefix_label}vmess-argo固定${node_suffix_label}",
-            "tls": {
-                "enabled": false,
-                "server_name": "$argogd",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argogd"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-        {
-            "tag": "proxy",
-            "type": "selector",
-			"default": "auto",
-            "outbounds": [
-        "auto",
-        "${node_prefix_label}vless${node_suffix_label}",
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}",
-        "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-            ]
-        },
-        {
-            "tag": "auto",
-            "type": "urltest",
-            "outbounds": [
-        "${node_prefix_label}vless${node_suffix_label}",
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}",
-        "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-            ],
-            "url": "http://www.gstatic.com/generate_204",
-            "interval": "10m",
-            "tolerance": 30,
-            "idle_timeout": "30m"
-        },
-        {
-            "type": "direct",
-            "tag": "direct"
-        }
-    ]
-}
-EOF
-
-cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)$(clxhttp2)
-
-
-
-
-
-
-$(clany2)
-
-- name: "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 443                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: true
-  network: ws
-  servername: $argogd                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argogd
-
-- name: "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-  type: vmess
-  server: $vmadd_argo                        
-  port: 8880                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: false
-  network: ws
-  servername: $argogd                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $argogd
-
-proxy-groups:
-- name: 负载均衡
-  type: load-balance
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  strategy: round-robin
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-
-- name: 自动选择
-  type: url-test
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  tolerance: 50
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-    
-- name: 🌍选择代理节点
-  type: select
-  proxies:
-    - 负载均衡                                         
-    - 自动选择
-    - DIRECT
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    - "${node_prefix_label}vmess-tls-argo固定${node_suffix_label}"
-    - "${node_prefix_label}vmess-argo固定${node_suffix_label}"
-rules:
-  - GEOIP,LAN,DIRECT
-  - GEOSITE,CN,DIRECT
-  - GEOIP,CN,DIRECT
-  - MATCH,🌍选择代理节点
-EOF
-
-else
-cat > "$client_raw" <<EOF
-$(sball)
-$(sbany2)
-        {
-            "tag": "proxy",
-            "type": "selector",
-			"default": "auto",
-            "outbounds": [
-        "auto",
-        "${node_prefix_label}vless${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}"
-            ]
-        },
-        {
-            "tag": "auto",
-            "type": "urltest",
-            "outbounds": [
-        "${node_prefix_label}vless${node_suffix_label}",
-$(sbany1)
-        "${node_prefix_label}vmess${node_suffix_label}",
-        "${node_prefix_label}hy2${node_suffix_label}",
-        "${node_prefix_label}tuic5${node_suffix_label}"
-            ],
-            "url": "http://www.gstatic.com/generate_204",
-            "interval": "10m",
-            "tolerance": 30,
-            "idle_timeout": "30m"
-        },
-        {
-            "type": "direct",
-            "tag": "direct"
-        }
-    ]
-}
-EOF
-
-cat > /etc/s-box/clmi.yaml <<EOF
-$(clall)$(clxhttp2)
-
-$(clany2)
-
-proxy-groups:
-- name: 负载均衡
-  type: load-balance
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  strategy: round-robin
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-
-- name: 自动选择
-  type: url-test
-  url: https://www.gstatic.com/generate_204
-  interval: 300
-  tolerance: 50
-  proxies:
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-    
-- name: 🌍选择代理节点
-  type: select
-  proxies:
-    - 负载均衡                                         
-    - 自动选择
-    - DIRECT
-    - "${node_prefix_label}vless-reality-vision${node_suffix_label}"
-    - "${node_prefix_label}vmess-ws${node_suffix_label}"
-    - "${node_prefix_label}hysteria2${node_suffix_label}"
-    - "${node_prefix_label}tuic5${node_suffix_label}"
-    $(clany1)$(clxhttp1)
-rules:
-  - GEOIP,LAN,DIRECT
-  - GEOSITE,CN,DIRECT
-  - GEOIP,CN,DIRECT
-  - MATCH,🌍选择代理节点
-EOF
+if [[ $tls == false ]]; then
+if printf '%s\n' "$processes" | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudflared.*run'; then has_fixed=1; fi
+if printf '%s\n' "$processes" | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1; then has_temporary=1; fi
 fi
-sb_client_profile "$client_raw" /etc/s-box/sbox.json
-local result=$?
-rm -f "$client_raw"
-return "$result"
+for kind in fixed temporary; do
+if [[ $kind == fixed ]]; then
+[[ $has_fixed == 1 ]] || continue
+host=$argogd; label=固定
+else
+[[ $has_temporary == 1 ]] || continue
+host=$argo; label=临时
+fi
+argo_labels+=("vmess-tls-argo$label" "vmess-argo$label")
+argo_hosts+=("$host" "$host")
+argo_tls+=(true false)
+argo_ports+=(443 8880)
+done
+
+sb_argo_nodes(){
+local i
+for i in "${!argo_labels[@]}"; do
+cat <<EOF
+        {
+            "server": "$vmadd_argo",
+            "server_port": ${argo_ports[i]},
+            "tag": "${node_prefix_label}${argo_labels[i]}${node_suffix_label}",
+            "tls": {
+                "enabled": ${argo_tls[i]},
+                "server_name": "${argo_hosts[i]}",
+                "insecure": false,
+                "utls": {"enabled": true, "fingerprint": "chrome"}
+            },
+            "transport": {
+                "headers": {"Host": ["${argo_hosts[i]}"]},
+                "path": "$ws_path",
+                "type": "ws"
+            },
+            "type": "vmess",
+            "security": "auto",
+            "uuid": "$uuid"
+        },
+EOF
+done
+}
+
+cl_argo_nodes(){
+local i
+for i in "${!argo_labels[@]}"; do
+cat <<EOF
+- name: "${node_prefix_label}${argo_labels[i]}${node_suffix_label}"
+  type: vmess
+  server: $vmadd_argo
+  port: ${argo_ports[i]}
+  uuid: $uuid
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: ${argo_tls[i]}
+  network: ws
+  servername: ${argo_hosts[i]}
+  ws-opts:
+    path: "$ws_path"
+    headers:
+      Host: ${argo_hosts[i]}
+EOF
+done
+}
+
+sb_node_refs(){
+local label separator=
+if [[ ${1:-} == selector ]]; then printf '"auto"'; separator=,; fi
+local -a labels=(vless vmess hy2 tuic5)
+if [[ $sbnh != 1.10 ]]; then
+# Historical no-Argo selector puts AnyTLS immediately after VLESS.
+if (( ${#argo_labels[@]} == 0 )); then labels=(vless anytls vmess hy2 tuic5)
+else labels+=(anytls); fi
+fi
+labels+=("${argo_labels[@]}")
+for label in "${labels[@]}"; do
+printf '%s"%s%s%s"' "$separator" "$node_prefix_label" "$label" "$node_suffix_label"
+separator=,
+done
+}
+
+cl_node_refs(){
+local label
+local -a labels=(vless-reality-vision vmess-ws hysteria2 tuic5)
+[[ $sbnh == 1.10 ]] || labels+=(anytls)
+for label in "${labels[@]}"; do
+printf '    - "%s%s%s"\n' "$node_prefix_label" "$label" "$node_suffix_label"
+done
+# XHTTP is Mihomo-only; its ordering in groups differs from its node placement.
+[[ -z $xhttp_argo_cl_name ]] || printf '    - %s\n' "$xhttp_argo_cl_name"
+[[ -z $xhttp_cl_name ]] || printf '    - %s\n' "$xhttp_cl_name"
+for label in "${argo_labels[@]}"; do
+printf '    - "%s%s%s"\n' "$node_prefix_label" "$label" "$node_suffix_label"
+done
+}
+
+cat > "$client_raw" <<EOF || exit 1
+$(sball)
+$(sbany2)
+$(sb_argo_nodes)
+        {
+            "tag": "proxy",
+            "type": "selector",
+            "default": "auto",
+            "outbounds": [$(sb_node_refs selector)]
+        },
+        {
+            "tag": "auto",
+            "type": "urltest",
+            "outbounds": [$(sb_node_refs)],
+            "url": "http://www.gstatic.com/generate_204",
+            "interval": "10m",
+            "tolerance": 30,
+            "idle_timeout": "30m"
+        },
+        {"type": "direct", "tag": "direct"}
+    ]
+}
+EOF
+
+cat > "$client_stage/clmi.yaml" <<EOF || exit 1
+$(clall)$(clxhttp2)
+
+$(clany2)
+
+$(cl_argo_nodes)
+proxy-groups:
+- name: 负载均衡
+  type: load-balance
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  strategy: round-robin
+  proxies:
+$(cl_node_refs)
+
+- name: 自动选择
+  type: url-test
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 50
+  proxies:
+$(cl_node_refs)
+
+- name: 🌍选择代理节点
+  type: select
+  proxies:
+    - 负载均衡
+    - 自动选择
+    - DIRECT
+$(cl_node_refs)
+rules:
+  - GEOIP,LAN,DIRECT
+  - GEOSITE,CN,DIRECT
+  - GEOIP,CN,DIRECT
+  - MATCH,🌍选择代理节点
+EOF
+sb_client_profile "$client_raw" "$client_stage/sbox.json" || exit 1
+[[ -s $client_stage/clmi.yaml ]] || exit 1
+if [[ -n ${SB_EXPORT_DIR:-} ]]; then
+mv -f "$client_stage/sbox.json" "$SB_EXPORT_DIR/sbox.json" && mv -f "$client_stage/clmi.yaml" "$SB_EXPORT_DIR/clmi.yaml" || exit 1
+else
+sb_exports_commit "$client_stage" sbox.json clmi.yaml || exit 1
+fi
+)
 }
 
 cfargo_ym(){
@@ -2536,98 +2069,248 @@ yellow "因vmess开启了tls，Argo隧道功能不可用" && sleep 2
 fi
 }
 
-cloudflaredargo(){
-if [ ! -e /etc/s-box/cloudflared ]; then
-case $(uname -m) in
-aarch64) cpu=arm64;;
-x86_64) cpu=amd64;;
+# Only remove resources this script owns; old installations are recognized by
+# their complete command/rule signature, never by generic keywords.
+sb_cron_update(){
+local kind=$1 entry=${2-}
+case "$kind" in restart|argo|subscription|warp|all) ;; *) return 1 ;; esac
+(
+umask 077
+local raw filtered errors status
+raw=$(mktemp /tmp/sbox-cron.raw.XXXXXX) || exit 1
+filtered=$(mktemp /tmp/sbox-cron.new.XXXXXX) || { rm -f "$raw"; exit 1; }
+errors=$(mktemp /tmp/sbox-cron.err.XXXXXX) || { rm -f "$raw" "$filtered"; exit 1; }
+trap 'rm -f "$raw" "$filtered" "$errors"' EXIT
+crontab -l > "$raw" 2> "$errors"; status=$?
+if [[ $status != 0 ]]; then
+# Both Vixie cron and BusyBox return nonzero for an absent user crontab.
+if [[ $status == 1 && ! -s $raw ]] && grep -Eqi 'no crontab for|can.t open .*No such file or directory' "$errors"; then : > "$raw"
+else cat "$errors" >&2; exit 1
+fi
+fi
+awk -v kind="$kind" '
+function path_token(text) { pos=index($0,text); return pos && substr($0,pos+length(text),1) ~ /[ \t]/ }
+function owned(k) {
+ if ($0 ~ "# sing-box-yg:" k "[ \t]*$") return 1
+ if (k=="restart") return $0 ~ /^[ \t]*0[ \t]+1[ \t]+\*[ \t]+\*[ \t]+\*[ \t]+systemctl restart sing-box;rc-service sing-box restart[ \t]*$/
+ if ($0 !~ /^[ \t]*@reboot[ \t]/) return 0
+ if (k=="argo") return index($0,"nohup /etc/s-box/cloudflared tunnel --url http://localhost:") && index($0,"> /etc/s-box/argo.log")
+ if (k=="subscription") return index($0,"busybox httpd -f -p $(cat /etc/s-box/subport.log 2>/dev/null)") && path_token("-h /root/websbox")
+ if (k=="warp") return index($0,"nohup $(cat /etc/s-box/sbwpph.log 2>/dev/null)")
+ return 0
+}
+{ if (kind=="all") { if (!owned("restart") && !owned("argo") && !owned("subscription") && !owned("warp")) print }
+  else if (!owned(kind)) print }
+' "$raw" > "$filtered" || exit 1
+[[ -z $entry ]] || printf '%s # sing-box-yg:%s\n' "$entry" "$kind" >> "$filtered" || exit 1
+cmp -s "$raw" "$filtered" || crontab "$filtered" || exit 1
+)
+}
+
+argo_fixed_backend(){
+if pidof systemd >/dev/null 2>&1; then printf '%s\n' systemd
+elif command -v rc-service >/dev/null 2>&1; then printf '%s\n' openrc
+else red "未找到受支持的服务管理器。" >&2; return 1
+fi
+}
+
+argo_fixed_apply(){
+local token=$1 domain=$2 backend unit backup file active=0 enabled=0
+[[ -n $token && $token =~ ^[A-Za-z0-9+/=_-]+$ && -n $domain && $domain != *$'\n'* && $domain != *$'\r'* ]] || { red "Token或域名为空/格式无效。"; return 1; }
+backend=$(argo_fixed_backend) || return 1
+if [[ $backend == systemd ]]; then
+unit=/etc/systemd/system/argo.service
+systemctl is-active --quiet argo && active=1
+systemctl is-enabled --quiet argo && enabled=1
+else
+unit=/etc/init.d/argo
+rc-service argo status >/dev/null 2>&1 && active=1
+rc-update show default 2>/dev/null | grep -Eq '(^|[[:space:]])argo([[:space:]]|$)' && enabled=1
+fi
+backup=$(umask 077; mktemp -d /etc/s-box/argo-fixed.bak.XXXXXX) || return 1
+for file in "$unit" /etc/s-box/sbargotoken.log /etc/s-box/sbargoym.log; do
+[[ ! -f $file ]] || cp -p "$file" "$backup/$(basename "$file")" || return 1
+done
+if ! (
+umask 077
+local done=0
+trap 'if [[ $done == 0 ]]; then
+ for file in "$unit" /etc/s-box/sbargotoken.log /etc/s-box/sbargoym.log; do
+  if [[ -f $backup/$(basename "$file") ]]; then cp -p "$backup/$(basename "$file")" "$file"; else rm -f "$file"; fi
+ done
+ if [[ $backend == systemd ]]; then
+  systemctl daemon-reload
+  if [[ $active == 1 ]]; then systemctl restart argo; else systemctl stop argo; fi
+  [[ $enabled == 1 ]] || systemctl disable argo
+ else
+  if [[ $active == 1 ]]; then rc-service argo restart; else rc-service argo stop; fi
+  [[ $enabled == 1 ]] || rc-update del argo default
+ fi
+fi' EXIT
+if [[ $backend == systemd ]]; then
+cat > "$unit" <<EOF || exit 1
+[Unit]
+Description=sing-box-yg fixed Argo tunnel
+After=network.target
+[Service]
+Type=simple
+NoNewPrivileges=yes
+TimeoutStartSec=0
+ExecStart=/etc/s-box/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token "${token}"
+Restart=on-failure
+RestartSec=5s
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload && systemctl restart argo && systemctl is-active --quiet argo && systemctl enable argo || exit 1
+else
+cat > "$unit" <<EOF || exit 1
+#!/sbin/openrc-run
+description="sing-box-yg fixed Argo tunnel"
+command="/etc/s-box/cloudflared"
+command_args="tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token ${token}"
+pidfile="/run/argo.pid"
+command_background="yes"
+depend() { need net; }
+EOF
+chmod 755 "$unit" && rc-service argo restart && rc-service argo status && rc-update add argo default || exit 1
+fi
+printf '%s\n' "$domain" > /etc/s-box/sbargoym.log && printf '%s\n' "$token" > /etc/s-box/sbargotoken.log || exit 1
+chmod 600 /etc/s-box/sbargoym.log /etc/s-box/sbargotoken.log || exit 1
+done=1
+); then red "固定Argo配置失败，已尝试恢复原配置。备份：$backup"; return 1; fi
+}
+
+argo_fixed_stop(){
+local backend unit
+backend=$(argo_fixed_backend) || return 1
+if [[ $backend == systemd ]]; then
+unit=/etc/systemd/system/argo.service
+if [[ -e $unit ]]; then systemctl stop argo && systemctl disable argo || return 1; fi
+rm -f "$unit" || return 1
+systemctl daemon-reload || return 1
+else
+unit=/etc/init.d/argo
+if [[ -e $unit ]]; then rc-service argo stop && rc-update del argo default || return 1; fi
+rm -f "$unit" || return 1
+fi
+# Temporary and fixed VMess tunnels share this executable. Keep it until uninstall.
+rm -f /etc/s-box/vm_ws_argogd.txt
+}
+
+argo_temporary_stop(){
+local pid processes result=0
+processes=$(ps -eo pid=,args=) || return 1
+# Match the executable and --url argument, not every process mentioning localhost.
+# Stop old temporary instances even if the VMess port has since been changed.
+while IFS= read -r pid; do
+[[ $pid =~ ^[0-9]+$ ]] || continue
+kill -TERM "$pid" 2>/dev/null || { kill -0 "$pid" 2>/dev/null && result=1; }
+done < <(awk '$1 ~ /^[0-9]+$/ && $2=="/etc/s-box/cloudflared" && $3=="tunnel" { for (i=4;i<NF;i++) if ($i=="--url" && $(i+1) ~ /^http:\/\/localhost:[0-9]+$/) { print $1; break } }' <<< "$processes")
+return "$result"
+}
+
+# Parse only the exact UDP DNAT form emitted by our old/new port-hop generator.
+# No eval: unknown matches/comments/options are deliberately left alone.
+sb_port_hop_rule_match(){
+local -a args=("$@")
+local i=2 proto= jump= comment= source= target= udp_module= comment_module=
+[[ ${args[0]-} == -A && ${args[1]-} == PREROUTING ]] || return 1
+while (( i < ${#args[@]} )); do
+case ${args[i]} in
+-p) [[ -z $proto && ${args[i+1]-} == udp ]] || return 1; proto=udp; ((i+=2)) ;;
+-m)
+case ${args[i+1]-} in
+udp) [[ -z $udp_module ]] || return 1; udp_module=1; ((i+=2)) ;;
+comment) [[ -z $comment_module ]] || return 1; comment_module=1; ((i+=2)) ;;
+*) return 1 ;;
+esac ;;
+--dport) [[ -z $source && ${args[i+1]-} =~ ^[0-9]+(:[0-9]+)?$ ]] || return 1; source=${args[i+1]}; ((i+=2)) ;;
+--comment)
+[[ -z $comment && ${args[i+1]-} =~ ^\"?sing-box-yg:port-hop\"?$ ]] || return 1
+comment=1; ((i+=2)) ;;
+-j) [[ -z $jump && ${args[i+1]-} == DNAT ]] || return 1; jump=DNAT; ((i+=2)) ;;
+--to-destination) [[ -z $target && ${args[i+1]-} =~ ^:[0-9]+$ ]] || return 1; target=${args[i+1]#:}; ((i+=2)) ;;
+*) return 1 ;;
 esac
-curl -L -o /etc/s-box/cloudflared -# --retry 2 https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$cpu
-#curl -L -o /etc/s-box/cloudflared -# --retry 2 https://gitlab.com/rwkgyg/sing-box-yg/-/raw/main/$cpu
-chmod +x /etc/s-box/cloudflared
+done
+[[ $proto == udp && $jump == DNAT && -n $source && -n $target && $comment_module == "$comment" ]] || return 1
+sb_hop_source=$source; sb_hop_target=$target; sb_hop_marked=$comment
+}
+
+sb_port_hop_manage(){
+local action=$1; shift
+local -a targets=("$@") binaries=(iptables ip6tables) spec
+local binary rules rule target matched i result=0 all=0 sb_hop_source sb_hop_target sb_hop_marked ports
+case "$action" in list) binaries=(iptables) ;; remove) ;; *) return 1 ;; esac
+if [[ ${#targets[@]} == 0 ]]; then
+all=1
+if [[ -f /etc/s-box/sb.json ]]; then
+ports=$(jq -r '[.inbounds[] | select(.type=="hysteria2" or .type=="tuic") | .listen_port | select(type=="number" and .>=1 and .<=65535)] | .[]' /etc/s-box/sb.json) || return 1
+while IFS= read -r target; do [[ -z $target ]] || targets+=("$target"); done <<< "$ports"
+fi
+fi
+for binary in "${binaries[@]}"; do
+command -v "$binary" >/dev/null 2>&1 || continue
+rules=$("$binary" -t nat -S PREROUTING) || return 1
+while IFS= read -r rule; do
+read -r -a spec <<< "$rule"
+sb_port_hop_rule_match "${spec[@]}" || continue
+matched=0
+if [[ $all == 1 && -n $sb_hop_marked ]]; then matched=1
+else for target in "${targets[@]}"; do [[ $target != "$sb_hop_target" ]] || matched=1; done
+fi
+[[ $matched == 1 ]] || continue
+if [[ $action == list ]]; then printf '%s\n' "$sb_hop_source"
+else
+spec[0]=-D
+# iptables -S may quote comment strings; our marker contains no whitespace.
+for ((i=0;i<${#spec[@]};i++)); do [[ ${spec[i]} != '"sing-box-yg:port-hop"' ]] || spec[i]=sing-box-yg:port-hop; done
+"$binary" -t nat "${spec[@]}" || result=1
+fi
+done <<< "$rules"
+done
+return "$result"
+}
+
+cloudflaredargo(){
+if [[ ! -x /etc/s-box/cloudflared ]]; then
+local cpu stage
+case $(uname -m) in aarch64) cpu=arm64 ;; x86_64) cpu=amd64 ;; armv7l) cpu=arm ;; *) red "不支持的Argo架构。"; return 1 ;; esac
+stage=$(mktemp /etc/s-box/.cloudflared.XXXXXX) || return 1
+if ! curl -fL --retry 2 --connect-timeout 15 --max-time 300 "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$cpu" -o "$stage" || ! chmod 755 "$stage" || ! "$stage" version >/dev/null 2>&1; then
+rm -f "$stage"; red "Argo下载/校验失败，未覆盖原文件。"; return 1
+fi
+mv -f "$stage" /etc/s-box/cloudflared || { rm -f "$stage"; return 1; }
 fi
 green "Argo版本：V$(/etc/s-box/cloudflared version 2>/dev/null | awk '{print $3}')"
 }
 
 cfargoym(){
 echo
-if [[ -f /etc/s-box/sbargotoken.log && -f /etc/s-box/sbargoym.log ]]; then
-green "当前Argo固定隧道域名：$(cat /etc/s-box/sbargoym.log 2>/dev/null)"
-green "当前Argo固定隧道Token：$(cat /etc/s-box/sbargotoken.log 2>/dev/null)"
-fi
+if [[ -f /etc/s-box/sbargoym.log ]]; then green "当前Argo固定隧道域名：$(cat /etc/s-box/sbargoym.log 2>/dev/null)"; fi
 echo
 green "请进入Cloudflare官网 --- Zero Trust --- 网络 --- 连接器，创建固定隧道"
 yellow "1：重置/设置Argo固定隧道域名"
 yellow "2：停止Argo固定隧道"
 yellow "0：返回上层"
 readp "请选择【0-2】：" menu
-if [ "$menu" = "1" ]; then
-cloudflaredargo
+if [[ $menu == 1 ]]; then
+cloudflaredargo || return 1
+local argotoken argoym vm_port
 readp "输入Argo固定隧道Token: " argotoken
 readp "输入Argo固定隧道域名: " argoym
-vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
-echo
+vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port') || return 1
 yellow "注意！Zero Trust设置固定隧道URL端口填写Vmess端口：localhost:$vm_port"
-echo
-pid=$(ps -ef 2>/dev/null | awk '/[c]loudflared.*run/ && !/xhttp-argo\/cloudflared/ {print $2}')
-[ -n "$pid" ] && kill -9 "$pid" >/dev/null 2>&1
-echo
-if [[ -n "${argotoken}" && -n "${argoym}" ]]; then
-if pidof systemd >/dev/null 2>&1; then
-cat > /etc/systemd/system/argo.service <<EOF
-[Unit]
-Description=argo service
-After=network.target
-[Service]
-Type=simple
-NoNewPrivileges=yes
-TimeoutStartSec=0
-ExecStart=/etc/s-box/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token "${argotoken}"
-Restart=on-failure
-RestartSec=5s
-[Install]
-WantedBy=multi-user.target
-EOF
-systemctl daemon-reload >/dev/null 2>&1
-systemctl enable argo >/dev/null 2>&1
-systemctl start argo >/dev/null 2>&1
-elif command -v rc-service >/dev/null 2>&1; then
-cat > /etc/init.d/argo <<EOF
-#!/sbin/openrc-run
-description="argo service"
-command="/etc/s-box/cloudflared tunnel"
-command_args="--no-autoupdate --edge-ip-version auto --protocol http2 run --token ${argotoken}"
-pidfile="/run/argo.pid"
-command_background="yes"
-depend() {
-need net
-}
-EOF
-chmod +x /etc/init.d/argo >/dev/null 2>&1
-rc-update add argo default >/dev/null 2>&1
-rc-service argo start >/dev/null 2>&1
-fi
-fi
-echo ${argoym} > /etc/s-box/sbargoym.log
-echo ${argotoken} > /etc/s-box/sbargotoken.log
-argosh=$(cat /etc/s-box/sbargoym.log 2>/dev/null)
-sbshare > /dev/null 2>&1
-blue "Argo固定隧道设置完成，固定域名：$argosh"
-elif [ "$menu" = "2" ]; then
-if pidof systemd >/dev/null 2>&1; then
-systemctl stop argo >/dev/null 2>&1
-systemctl disable argo >/dev/null 2>&1
-rm -rf /etc/systemd/system/argo.service
-elif command -v rc-service >/dev/null 2>&1; then
-rc-service argo stop >/dev/null 2>&1
-rc-update del argo default >/dev/null 2>&1
-rm -rf /etc/init.d/argo
-fi
-rm -rf /etc/s-box/vm_ws_argogd.txt /etc/s-box/cloudflared
-sbshare > /dev/null 2>&1
+argo_fixed_apply "$argotoken" "$argoym" || return 1
+unset argotoken
+sbshare > /dev/null 2>&1 || { red "固定隧道已更新，但订阅刷新失败，请通过菜单9重试。"; return 1; }
+blue "Argo固定隧道设置完成，固定域名：$argoym"
+elif [[ $menu == 2 ]]; then
+argo_fixed_stop || { red "停止固定隧道失败，未删除共享程序。"; return 1; }
+sbshare > /dev/null 2>&1 || return 1
 green "Argo固定隧道已停止"
-else
-cfargo_ym
+else cfargo_ym
 fi
 }
 
@@ -2639,8 +2322,8 @@ yellow "0：返回上层"
 readp "请选择【0-2】：" menu
 if [ "$menu" = "1" ]; then
 green "请稍等……"
-cloudflaredargo
-ps -ef | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" | awk '{print $2}' | xargs kill 2>/dev/null
+cloudflaredargo || return 1
+argo_temporary_stop || { red "停止旧临时隧道失败。"; return 1; }
 nohup /etc/s-box/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 > /etc/s-box/argo.log 2>&1 &
 sleep 20
 if [[ -n $(curl -sL https://$(cat /etc/s-box/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')/ -I | awk 'NR==1 && /404|400|503/') ]]; then
@@ -2658,24 +2341,17 @@ EOF
 chmod +x /etc/local.d/alpineargo.start
 rc-update add local default >/dev/null 2>&1
 else
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/url http/d' /tmp/crontab.tmp
-echo '@reboot sleep 10 && /bin/bash -c "nohup /etc/s-box/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 > /etc/s-box/argo.log 2>&1 & sleep 10 && printf \"9\n1\n\" | bash /usr/bin/sb > /dev/null 2>&1"' >> /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update argo '@reboot sleep 10 && /bin/bash -c "nohup /etc/s-box/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 > /etc/s-box/argo.log 2>&1 & sleep 10 && printf \"9\n1\n\" | bash /usr/bin/sb > /dev/null 2>&1"' || { red "更新临时隧道开机任务失败。"; return 1; }
 fi
 else
 yellow "Argo临时域名验证暂不可用，请稍后再试"
 fi
 elif [ "$menu" = "2" ]; then
-ps -ef | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" | awk '{print $2}' | xargs kill 2>/dev/null
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/url http/d' /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
-rm -rf /etc/s-box/vm_ws_argols.txt /etc/s-box/cloudflared
+sb_cron_update argo || { red "清理临时隧道任务失败。"; return 1; }
+argo_temporary_stop || { red "停止临时隧道失败，保留程序。"; return 1; }
+rm -f /etc/s-box/vm_ws_argols.txt
 rm -rf /etc/local.d/alpineargo.start
-sbshare > /dev/null 2>&1
+sbshare > /dev/null 2>&1 || return 1
 green "Argo临时隧道已停止"
 else
 cfargo_ym
@@ -2689,7 +2365,7 @@ fi
 mkdir -p /etc/s-box
 v6
 openyn
-inssb
+inssb || return 1
 inscertificate
 insport
 sleep 2
@@ -2708,10 +2384,10 @@ warpwg
 inssbjsonser || return 1
 sbservice || return 1
 sbactive
-#curl -sL https://gitlab.com/rwkgyg/sing-box-yg/-/raw/main/version/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
-curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-lnsb && blue "Sing-box-yg脚本安装成功，脚本快捷方式：sb" && cronsb
+lnsb || return 1
+blue "Sing-box-yg脚本安装成功，脚本快捷方式：sb"
+cronsb || return 1
 echo
 wgcfgo
 sbshare
@@ -2852,8 +2528,8 @@ vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
 hy2_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].listen_port')
 tu5_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].listen_port')
 an_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[4].listen_port')
-hy2_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$hy2_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
-tu5_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$tu5_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
+hy2_ports=$(sb_port_hop_manage list "$hy2_port" | paste -sd, -)
+tu5_ports=$(sb_port_hop_manage list "$tu5_port" | paste -sd, -)
 [[ -n $hy2_ports ]] && hy2zfport="$hy2_ports" || hy2zfport="未添加"
 [[ -n $tu5_ports ]] && tu5zfport="$tu5_ports" || tu5zfport="未添加"
 }
@@ -2867,8 +2543,8 @@ if [[ $rangeport =~ ^([1-9][0-9]{3,4}:[1-9][0-9]{3,4})$ ]]; then
 b=${rangeport%%:*}
 c=${rangeport##*:}
 if [[ $b -ge 1000 && $b -le 65535 && $c -ge 1000 && $c -le 65535 && $b -lt $c ]]; then
-iptables -t nat -A PREROUTING -p udp --dport $rangeport -j DNAT --to-destination :$port
-ip6tables -t nat -A PREROUTING -p udp --dport $rangeport -j DNAT --to-destination :$port
+iptables -t nat -A PREROUTING -p udp --dport $rangeport -m comment --comment sing-box-yg:port-hop -j DNAT --to-destination :$port
+ip6tables -t nat -A PREROUTING -p udp --dport $rangeport -m comment --comment sing-box-yg:port-hop -j DNAT --to-destination :$port
 netfilter-persistent save >/dev/null 2>&1
 service iptables save >/dev/null 2>&1
 blue "已确认转发的端口范围：$rangeport"
@@ -2883,8 +2559,8 @@ echo
 fport(){
 readp "\n请输入一个转发的端口 (1000-65535范围内)：" onlyport
 if [[ $onlyport -ge 1000 && $onlyport -le 65535 ]]; then
-iptables -t nat -A PREROUTING -p udp --dport $onlyport -j DNAT --to-destination :$port
-ip6tables -t nat -A PREROUTING -p udp --dport $onlyport -j DNAT --to-destination :$port
+iptables -t nat -A PREROUTING -p udp --dport $onlyport -m comment --comment sing-box-yg:port-hop -j DNAT --to-destination :$port
+ip6tables -t nat -A PREROUTING -p udp --dport $onlyport -m comment --comment sing-box-yg:port-hop -j DNAT --to-destination :$port
 netfilter-persistent save >/dev/null 2>&1
 service iptables save >/dev/null 2>&1
 blue "已确认转发的端口：$onlyport"
@@ -2896,23 +2572,13 @@ echo
 
 hy2deports(){
 allports
-hy2_ports=$(echo "$hy2_ports" | sed 's/,/,/g')
-IFS=',' read -ra ports <<< "$hy2_ports"
-for port in "${ports[@]}"; do
-iptables -t nat -D PREROUTING -p udp --dport $port -j DNAT --to-destination :$hy2_port
-ip6tables -t nat -D PREROUTING -p udp --dport $port -j DNAT --to-destination :$hy2_port
-done
+sb_port_hop_manage remove "$hy2_port" || return 1
 netfilter-persistent save >/dev/null 2>&1
 service iptables save >/dev/null 2>&1
 }
 tu5deports(){
 allports
-tu5_ports=$(echo "$tu5_ports" | sed 's/,/,/g')
-IFS=',' read -ra ports <<< "$tu5_ports"
-for port in "${ports[@]}"; do
-iptables -t nat -D PREROUTING -p udp --dport $port -j DNAT --to-destination :$tu5_port
-ip6tables -t nat -D PREROUTING -p udp --dport $port -j DNAT --to-destination :$tu5_port
-done
+sb_port_hop_manage remove "$tu5_port" || return 1
 netfilter-persistent save >/dev/null 2>&1
 service iptables save >/dev/null 2>&1
 }
@@ -3080,7 +2746,7 @@ fi
 
 changeip(){
 if [[ "$sbnh" == "1.10" ]]; then
-v4v6
+v4v6 refresh
 chip(){
 rpip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[0].domain_strategy')
 sed -i "111s/$rpip/$rrpip/g" /etc/s-box/sb10.json
@@ -3320,8 +2986,10 @@ encryption=$(cat "$dir/encryption.key") || return 1
 [[ $encryption == mlkem768x25519plus.* ]] || return 1
 fi
 node_suffix_load || return 1
-(umask 077; xhttp_client_config "$dir" "$server" "$port" "$sni" "$id" "$public" "$sid" "$path" "${node_prefix_label}vless-xhttp-reality${node_suffix_label}" "$flow" "$encryption") || return 1
-cp "$dir/share.txt" /etc/s-box/xhttp.txt
+local out="${SB_EXPORT_DIR:-/etc/s-box}/xhttp"
+mkdir -p "$out" || return 1
+(umask 077; xhttp_client_config "$out" "$server" "$port" "$sni" "$id" "$public" "$sid" "$path" "${node_prefix_label}vless-xhttp-reality${node_suffix_label}" "$flow" "$encryption") || return 1
+cp "$out/share.txt" "${SB_EXPORT_DIR:-/etc/s-box}/xhttp.txt"
 }
 
 xhttp_service(){
@@ -3433,17 +3101,46 @@ fi
 green "已启用文章同款XHTTP + REALITY + VLESS Encryption（X25519认证）+ Vision；更新客户端订阅后使用。备份：$backup"
 }
 
+# Shared pinned Xray profile for both independent sidecar installers.
+# Outputs use caller-local scope; neither helper mutates an existing installation.
+xhttp_core_profile(){
+xhttp_xray_version=v26.11.9
+case $(uname -m) in
+x86_64) xhttp_xray_arch=64; xhttp_cloudflared_arch=amd64 ;;
+aarch64) xhttp_xray_arch=arm64-v8a; xhttp_cloudflared_arch=arm64 ;;
+armv7l) xhttp_xray_arch=arm32-v7a; xhttp_cloudflared_arch=arm ;;
+*) red "XHTTP 暂不支持该架构。"; return 1 ;;
+esac
+}
+
+xhttp_core_prepare(){
+local stage=$1 existing=${2-} expected actual reported xhttp_xray_version xhttp_xray_arch xhttp_cloudflared_arch
+xhttp_core_profile || return 1
+if [[ -n $existing && -x $existing ]]; then
+reported=$("$existing" version 2>/dev/null) || reported=
+reported=$(printf '%s\n' "$reported" | awk 'NR==1 && $1=="Xray" {print $2}')
+fi
+if [[ $reported == "${xhttp_xray_version#v}" ]]; then
+cp "$existing" "$stage/xray" || return 1
+else
+curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/XTLS/Xray-core/releases/download/$xhttp_xray_version/Xray-linux-$xhttp_xray_arch.zip" -o "$stage/core.zip" || return 1
+curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://github.com/XTLS/Xray-core/releases/download/$xhttp_xray_version/Xray-linux-$xhttp_xray_arch.zip.dgst" -o "$stage/core.dgst" || return 1
+expected=$(awk -F '= *' '/^SHA2-256=/{gsub(/\r/,"",$2); print $2}' "$stage/core.dgst") || return 1
+actual=$(sha256sum "$stage/core.zip" | awk '{print $1}') || return 1
+[[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || { echo "Xray SHA256校验失败" >&2; return 1; }
+unzip -q "$stage/core.zip" xray -d "$stage" || return 1
+rm "$stage/core.zip" "$stage/core.dgst" || return 1
+fi
+chmod 700 "$stage/xray" || return 1
+printf '%s\n' "$xhttp_xray_version" > "$stage/version"
+}
+
 xhttp_install(){
 [[ -f /etc/s-box/sb.json ]] || { red "请先安装 Sing-box。"; return 1; }
 [[ ! -e /etc/s-box/xhttp && ! -e /etc/systemd/system/sbox-xhttp.service && ! -e /etc/init.d/sbox-xhttp ]] || { red "XHTTP 已存在。请先备份并通过本菜单卸载，再重新部署。"; return 1; }
-local port sni arch profile
+local port sni profile xhttp_xray_version xhttp_xray_arch xhttp_cloudflared_arch
 xhttp_dependencies || return 1
-case $(uname -m) in
-x86_64) arch=64 ;;
-aarch64) arch=arm64-v8a ;;
-armv7l) arch=arm32-v7a ;;
-*) red "XHTTP 暂不支持该架构。"; return 1 ;;
-esac
+xhttp_core_profile || return 1
 readp "XHTTP方案：1=文章同款Encryption + Vision（默认）；2=普通XHTTP + REALITY：" profile
 profile=${profile:-1}
 [[ $profile == 1 || $profile == 2 ]] || { red "请选择1或2。"; return 1; }
@@ -3462,16 +3159,10 @@ fi
 # All changes are confined to a new sidecar. Failure never restarts sing-box.
 if ! (
 umask 077
-local stage committed=0 keypair private public id sid path expected actual version=v26.11.9 flow= decryption=none
+local stage committed=0 keypair private public id sid path flow= decryption=none
 stage=$(mktemp -d /etc/s-box/.xhttp-install.XXXXXX) || exit 1
 trap 'rm -rf "$stage"; if [[ $committed == 1 ]]; then xhttp_remove; fi' EXIT
-curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip" -o "$stage/core.zip" || exit 1
-curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip.dgst" -o "$stage/core.dgst" || exit 1
-expected=$(awk -F '= *' '/^SHA2-256=/{gsub(/\r/,"",$2); print $2}' "$stage/core.dgst") || exit 1
-actual=$(sha256sum "$stage/core.zip" | awk '{print $1}') || exit 1
-[[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || { echo "Xray SHA256校验失败" >&2; exit 1; }
-unzip -q "$stage/core.zip" xray -d "$stage" || exit 1
-chmod 700 "$stage/xray" || exit 1
+xhttp_core_prepare "$stage" || exit 1
 keypair=$("$stage/xray" x25519) || exit 1
 private=$(printf '%s\n' "$keypair" | awk '/^PrivateKey:/{print $2}') || exit 1
 public=$(printf '%s\n' "$keypair" | awk '/^Password \(PublicKey\):/{print $3} /^PublicKey:/{print $2}') || exit 1
@@ -3487,9 +3178,7 @@ path=/
 fi
 xhttp_server_config "$stage" "$port" "$sni" "$id" "$private" "$sid" "$path" "$flow" "$decryption" || exit 1
 printf '%s\n' "$public" > "$stage/public.key" || exit 1
-printf '%s\n' "$version" > "$stage/version" || exit 1
 "$stage/xray" run -test -config "$stage/config.json" || exit 1
-rm "$stage/core.zip" "$stage/core.dgst" || exit 1
 mv "$stage" /etc/s-box/xhttp || exit 1
 committed=1
 xhttp_export || exit 1
@@ -3610,16 +3299,18 @@ xhttp_argo_export(){
 local dir=/etc/s-box/xhttp-argo xhttp_argo_cl_node xhttp_argo_cl_name
 [[ -f $dir/config.json ]] || return 0
 node_suffix_load && xhttp_argo_mihomo_load || return 1
+local out="${SB_EXPORT_DIR:-/etc/s-box}/xhttp-argo"
+mkdir -p "$out" || return 1
 (umask 077
-printf '%s\n' "$xhttp_argo_cl_node" > "$dir/mihomo.json" || exit 1
+printf '%s\n' "$xhttp_argo_cl_node" > "$out/mihomo.json" || exit 1
 jq -n --argjson node "$xhttp_argo_cl_node" '{
  log:{loglevel:"warning"},inbounds:[{listen:"127.0.0.1",port:10808,protocol:"socks",settings:{auth:"noauth",udp:true}}],
  outbounds:[{tag:$node.name,protocol:"vless",settings:{vnext:[{address:$node.server,port:$node.port,users:[{id:$node.uuid,encryption:$node.encryption,flow:$node.flow}]}]},
  streamSettings:{network:"xhttp",security:"tls",tlsSettings:{serverName:$node.servername,fingerprint:"chrome",alpn:["h2","http/1.1"]},
  xhttpSettings:{host:$node["xhttp-opts"].host,path:$node["xhttp-opts"].path,mode:"packet-up",noSSEHeader:false}}}]
-}' > "$dir/client.json" || exit 1
-jq -r '"vless://"+.uuid+"@"+(if (.server|contains(":")) then "["+.server+"]" else .server end)+":443?encryption="+(.encryption|@uri)+"&flow="+.flow+"&security=tls&sni="+.servername+"&fp=chrome&alpn=h2%2Chttp%2F1.1&type=xhttp&host="+."xhttp-opts".host+"&path="+(."xhttp-opts".path|@uri)+"&mode=packet-up#"+(.name|@uri)' "$dir/mihomo.json" > "$dir/share.txt" || exit 1
-cp "$dir/share.txt" /etc/s-box/xhttp-argo.txt
+}' > "$out/client.json" || exit 1
+jq -r '"vless://"+.uuid+"@"+(if (.server|contains(":")) then "["+.server+"]" else .server end)+":443?encryption="+(.encryption|@uri)+"&flow="+.flow+"&security=tls&sni="+.servername+"&fp=chrome&alpn=h2%2Chttp%2F1.1&type=xhttp&host="+."xhttp-opts".host+"&path="+(."xhttp-opts".path|@uri)+"&mode=packet-up#"+(.name|@uri)' "$out/mihomo.json" > "$out/share.txt" || exit 1
+cp "$out/share.txt" "${SB_EXPORT_DIR:-/etc/s-box}/xhttp-argo.txt"
 )
 }
 
@@ -3759,7 +3450,7 @@ xhttp_argo_install(){
 [[ -f /etc/s-box/sb.json ]] || { red "请先安装 Sing-box。"; return 1; }
 [[ ! -e /etc/s-box/xhttp-argo && ! -e /etc/init.d/sbox-xhttp-argo && ! -e /etc/systemd/system/sbox-xhttp-argo.service && ! -e /etc/init.d/sbox-xhttp-argo-tunnel && ! -e /etc/systemd/system/sbox-xhttp-argo-tunnel.service ]] || { red "固定隧道节点已存在，请先备份后卸载。"; return 1; }
 xhttp_dependencies || return 1
-local domain port tokenfile arch cfarch
+local domain port tokenfile xhttp_xray_version xhttp_xray_arch xhttp_cloudflared_arch
 readp "固定隧道完整域名（例如 xhttp.example.com）：" domain
 [[ ${#domain} -le 253 && $domain =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}$ ]] || { red "域名格式错误。"; return 1; }
 readp "本机 HTTP 回源端口（默认18080；Cloudflare路由需一致）：" port
@@ -3773,34 +3464,18 @@ readp "Tunnel Token 文件的绝对路径（本服务器文件，不输入Token�
 local token
 token=$(tr -d '\r\n' < "$tokenfile") || return 1
 printf '%s' "$token" | base64 -d 2>/dev/null | jq -e 'type=="object" and (.a|type=="string") and (.t|type=="string") and (.s|type=="string")' >/dev/null 2>&1 || { red "Tunnel Token格式错误。"; return 1; }
-case $(uname -m) in
-x86_64) arch=64; cfarch=amd64 ;;
-aarch64) arch=arm64-v8a; cfarch=arm64 ;;
-armv7l) arch=arm32-v7a; cfarch=arm ;;
-*) red "不支持的架构。"; return 1 ;;
-esac
+xhttp_core_profile || return 1
 if ! (
 umask 077
-local stage committed=0 expected actual id path version=v26.11.9
+local stage committed=0 expected actual id path
 stage=$(mktemp -d /etc/s-box/.xhttp-argo-install.XXXXXX) || exit 1
 trap 'rm -rf "$stage"; if [[ $committed == 1 ]]; then xhttp_argo_remove; fi' EXIT
-if [[ -x /etc/s-box/xhttp/xray ]] && /etc/s-box/xhttp/xray version | head -n 1 | grep -q '26.11.9'; then
-cp /etc/s-box/xhttp/xray "$stage/xray" || exit 1
-else
-curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip" -o "$stage/core.zip" || exit 1
-curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://github.com/XTLS/Xray-core/releases/download/$version/Xray-linux-$arch.zip.dgst" -o "$stage/core.dgst" || exit 1
-expected=$(awk -F '= *' '/^SHA2-256=/{gsub(/\r/,"",$2); print $2}' "$stage/core.dgst")
-actual=$(sha256sum "$stage/core.zip" | awk '{print $1}')
-[[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || exit 1
-unzip -q "$stage/core.zip" xray -d "$stage" || exit 1
-rm "$stage/core.zip" "$stage/core.dgst" || exit 1
-fi
-chmod 700 "$stage/xray" || exit 1
+xhttp_core_prepare "$stage" /etc/s-box/xhttp/xray || exit 1
 if [[ -x /etc/s-box/cloudflared ]]; then cp /etc/s-box/cloudflared "$stage/cloudflared" || exit 1
 else
-curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-linux-$cfarch" -o "$stage/cloudflared" || exit 1
+curl -fL --retry 3 --connect-timeout 15 --max-time 300 "https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-linux-$xhttp_cloudflared_arch" -o "$stage/cloudflared" || exit 1
 curl -fL --retry 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/cloudflare/cloudflared/releases/tags/2026.11.1" -o "$stage/cloudflared.release.json" || exit 1
-expected=$(jq -er --arg name "cloudflared-linux-$cfarch" '.assets[]|select(.name==$name)|.digest|select(startswith("sha256:"))|ltrimstr("sha256:")' "$stage/cloudflared.release.json") || exit 1
+expected=$(jq -er --arg name "cloudflared-linux-$xhttp_cloudflared_arch" '.assets[]|select(.name==$name)|.digest|select(startswith("sha256:"))|ltrimstr("sha256:")' "$stage/cloudflared.release.json") || exit 1
 actual=$(sha256sum "$stage/cloudflared" | awk '{print $1}') || exit 1
 [[ $expected =~ ^[a-fA-F0-9]{64}$ && ${actual,,} == ${expected,,} ]] || { echo "cloudflared SHA256校验失败" >&2; exit 1; }
 rm "$stage/cloudflared.release.json" || exit 1
@@ -3809,7 +3484,6 @@ chmod 700 "$stage/cloudflared" || exit 1
 "$stage/cloudflared" tunnel run --help 2>&1 | grep -q -- '--token-file' || exit 1
 printf '%s\n' "$token" > "$stage/tunnel.token" || exit 1
 printf '%s\n' "$domain" > "$stage/domain" || exit 1
-printf '%s\n' "$version" > "$stage/version" || exit 1
 id=$("$stage/xray" uuid) || exit 1
 path="/xhttp/$(openssl rand -hex 16)/" || exit 1
 xhttp_encryption_pair "$stage" || exit 1
@@ -3942,10 +3616,7 @@ elif [ "$menu" = "3" ];then
 subportipsub
 elif [ "$menu" = "4" ];then
 kill -15 $(pgrep -f 'websbox' 2>/dev/null) >/dev/null 2>&1
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/websbox/d' /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update subscription || return 1
 rm -rf /root/websbox
 rm -rf /etc/local.d/alpinesub.start
 green "本地IP订阅链接已卸载完成" && sleep 3 && exit
@@ -3974,11 +3645,7 @@ EOF
 chmod +x /etc/local.d/alpinesub.start
 rc-update add local default >/dev/null 2>&1
 else
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/websbox/d' /tmp/crontab.tmp
-echo '@reboot sleep 10 && /bin/bash -c "busybox httpd -f -p $(cat /etc/s-box/subport.log 2>/dev/null) -h /root/websbox > /dev/null 2>&1 &"' >> /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update subscription '@reboot sleep 10 && /bin/bash -c "busybox httpd -f -p $(cat /etc/s-box/subport.log 2>/dev/null) -h /root/websbox > /dev/null 2>&1 &"' || return 1
 fi
 sbshare > /dev/null 2>&1
 sleep 1 && green "本地IP订阅链接已更新完成" && sleep 3 && sb
@@ -4027,13 +3694,16 @@ fi
 }
 
 gitlabsub(){
+(
+umask 077
 echo
 green "请确保Gitlab官网上已建立项目，已开启推送功能，已获取访问令牌"
 yellow "1：重置/设置Gitlab订阅链接"
 yellow "0：返回上层"
 readp "请选择【0-1】：" menu
 if [ "$menu" = "1" ]; then
-cd /etc/s-box
+sbshare > /dev/null || { red "导出刷新失败，未设置远端订阅。"; return 1; }
+cd /etc/s-box || return 1
 readp "输入登录邮箱: " email
 readp "输入访问令牌: " token
 readp "输入用户名: " userid
@@ -4042,6 +3712,21 @@ echo
 green "多台VPS共用一个令牌及项目名，可创建多个分支订阅链接"
 green "回车跳过表示不新建，仅使用主分支main订阅链接(首台VPS建议回车跳过)"
 readp "新建分支名称: " gitlabml
+local backup file setup_done=0 setup_changing=0
+local -a setup_files=(.git gitlab_ml_ml gitlabtoken.txt gitpush.sh sing_box_gitlab.txt clash_meta_gitlab.txt jh_sub_gitlab.txt)
+backup=$(mktemp -d /etc/s-box/gitlab-setup.bak.XXXXXX) || return 1
+for file in "${setup_files[@]}"; do
+[[ ! -e /etc/s-box/$file ]] || cp -a "/etc/s-box/$file" "$backup/$file" || return 1
+done
+trap 'if [[ $setup_changing == 1 && $setup_done == 0 ]]; then
+for file in "${setup_files[@]}"; do
+rm -rf "/etc/s-box/$file"
+[[ ! -e $backup/$file ]] || cp -a "$backup/$file" "/etc/s-box/$file" || echo "Gitlab设置恢复失败：$file；备份：$backup" >&2
+done
+fi' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+setup_changing=1
 echo
 if [[ -z "$gitlabml" ]]; then
 gitlab_ml=''
@@ -4052,31 +3737,32 @@ gitlab_ml=":${gitlabml}"
 git_sk="${gitlabml}"
 echo "${gitlab_ml}" > /etc/s-box/gitlab_ml_ml
 fi
-echo "$token" > /etc/s-box/gitlabtoken.txt
+[[ $userid =~ ^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$ && $project =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ ]] || { red "用户名/项目名格式无效。"; return 1; }
+git check-ref-format "refs/heads/$git_sk" >/dev/null || { red "分支名称无效。"; return 1; }
+(umask 077; printf '%s\n' "$token" > /etc/s-box/gitlabtoken.txt) && chmod 600 /etc/s-box/gitlabtoken.txt || return 1
 rm -rf /etc/s-box/.git
-git init >/dev/null 2>&1
-git add sbox.json clmi.yaml jhsub.txt >/dev/null 2>&1
-git config --global user.email "${email}" >/dev/null 2>&1
-git config --global user.name "${userid}" >/dev/null 2>&1
-git commit -m "commit_add_$(date +"%F %T")" >/dev/null 2>&1
+git init >/dev/null 2>&1 || return 1
+git add sbox.json clmi.yaml jhsub.txt >/dev/null 2>&1 || return 1
+git config user.email "${email}" >/dev/null 2>&1 || return 1
+git config user.name "${userid}" >/dev/null 2>&1 || return 1
+git commit -m "commit_add_$(date +"%F %T")" >/dev/null 2>&1 || return 1
 branches=$(git branch)
 if [[ $branches == *master* ]]; then
-git branch -m master main >/dev/null 2>&1
+git branch -m master main >/dev/null 2>&1 || return 1
 fi
-git remote add origin https://${token}@gitlab.com/${userid}/${project}.git >/dev/null 2>&1
+git remote add origin "https://gitlab.com/${userid}/${project}.git" >/dev/null 2>&1 || return 1
 if [[ $(ls -a | grep '^\.git$') ]]; then
-cat > /etc/s-box/gitpush.sh <<EOF
-#!/usr/bin/expect
-spawn bash -c "git push -f origin main${gitlab_ml}"
-expect "Password for 'https://$(cat /etc/s-box/gitlabtoken.txt 2>/dev/null)@gitlab.com':"
-send "$(cat /etc/s-box/gitlabtoken.txt 2>/dev/null)\r"
-interact
-EOF
-chmod +x gitpush.sh
-./gitpush.sh "git push -f origin main${gitlab_ml}" cat /etc/s-box/gitlabtoken.txt >/dev/null 2>&1
-echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/sbox.json/raw?ref=${git_sk}&private_token=${token}" > /etc/s-box/sing_box_gitlab.txt
-echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/clmi.yaml/raw?ref=${git_sk}&private_token=${token}" > /etc/s-box/clash_meta_gitlab.txt
-echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/jhsub.txt/raw?ref=${git_sk}&private_token=${token}" > /etc/s-box/jh_sub_gitlab.txt
+gitlab_push || { red "Gitlab推送失败，未完成订阅设置。已有远端分支不会被强制覆盖，请检查权限或改用新分支。"; return 1; }
+rm -f /etc/s-box/gitpush.sh
+local encoded_project encoded_ref encoded_token
+encoded_project=$(jq -nr --arg v "$userid/$project" '$v|@uri') || return 1
+encoded_ref=$(jq -nr --arg v "$git_sk" '$v|@uri') || return 1
+encoded_token=$(set -o pipefail; printf '%s' "$token" | jq -sRr @uri) || return 1
+echo "https://gitlab.com/api/v4/projects/${encoded_project}/repository/files/sbox.json/raw?ref=${encoded_ref}&private_token=${encoded_token}" > /etc/s-box/sing_box_gitlab.txt || return 1
+echo "https://gitlab.com/api/v4/projects/${encoded_project}/repository/files/clmi.yaml/raw?ref=${encoded_ref}&private_token=${encoded_token}" > /etc/s-box/clash_meta_gitlab.txt || return 1
+echo "https://gitlab.com/api/v4/projects/${encoded_project}/repository/files/jhsub.txt/raw?ref=${encoded_ref}&private_token=${encoded_token}" > /etc/s-box/jh_sub_gitlab.txt || return 1
+setup_done=1
+green "旧Gitlab设置备份：$backup"
 clsbshow
 else
 yellow "设置Gitlab订阅链接失败，请反馈"
@@ -4085,25 +3771,50 @@ cd
 else
 changeserv
 fi
+)
+}
+
+gitlab_push(){
+(
+umask 077
+local branch=main askpass remote
+if [[ -f /etc/s-box/gitlab_ml_ml ]]; then branch=$(cat /etc/s-box/gitlab_ml_ml) || exit 1; branch=${branch#:}; fi
+git check-ref-format "refs/heads/$branch" >/dev/null || exit 1
+[[ -s /etc/s-box/gitlabtoken.txt ]] || { red "缺少Gitlab令牌文件。" >&2; exit 1; }
+chmod 600 /etc/s-box/gitlabtoken.txt || exit 1
+remote=$(git remote get-url origin) || exit 1
+# Migrate old URLs containing the token; do not send credentials to arbitrary hosts.
+[[ $remote == https://gitlab.com/* || $remote == https://*@gitlab.com/* ]] || { red "只允许HTTPS Gitlab远端。" >&2; exit 1; }
+git remote set-url origin "https://gitlab.com/${remote#*gitlab.com/}" || exit 1
+askpass=$(mktemp /etc/s-box/git-askpass.XXXXXX) || exit 1
+trap 'rm -f "$askpass"' EXIT
+cat > "$askpass" <<'GITLAB_ASKPASS' || exit 1
+#!/bin/sh
+case "$1" in
+*sername*) printf '%s\n' oauth2 ;;
+*assword*) cat "$SB_GIT_TOKEN_FILE" ;;
+*) exit 1 ;;
+esac
+GITLAB_ASKPASS
+chmod 700 "$askpass" || exit 1
+GIT_TERMINAL_PROMPT=0 GIT_ASKPASS="$askpass" SB_GIT_TOKEN_FILE=/etc/s-box/gitlabtoken.txt \
+git -c credential.helper= push origin "HEAD:refs/heads/$branch"
+)
 }
 
 gitlabsubgo(){
-cd /etc/s-box
-if [[ $(ls -a | grep '^\.git$') ]]; then
-if [ -f /etc/s-box/gitlab_ml_ml ]; then
-gitlab_ml=$(cat /etc/s-box/gitlab_ml_ml)
-fi
-git rm --cached sbox.json clmi.yaml jhsub.txt >/dev/null 2>&1
-git commit -m "commit_rm_$(date +"%F %T")" >/dev/null 2>&1
-git add sbox.json clmi.yaml jhsub.txt >/dev/null 2>&1
-git commit -m "commit_add_$(date +"%F %T")" >/dev/null 2>&1
-chmod +x gitpush.sh
-./gitpush.sh "git push -f origin main${gitlab_ml}" cat /etc/s-box/gitlabtoken.txt >/dev/null 2>&1
+(
+cd /etc/s-box || exit 1
+[[ -d .git ]] || { yellow "未设置Gitlab订阅链接"; exit 1; }
+git add -- sbox.json clmi.yaml jhsub.txt || { red "Git暂存失败，未推送。"; exit 1; }
+git diff --cached --quiet --exit-code
+local changed=$?
+if [[ $changed == 1 ]]; then
+git commit -m "update_nodes_$(date +"%F %T")" || { red "Git提交失败，未推送。"; exit 1; }
+elif [[ $changed != 0 ]]; then red "Git差异检查失败，未推送。"; exit 1; fi
+gitlab_push || { red "Gitlab推送失败，远端未确认更新；请检查网络、权限或分支冲突后重试。"; exit 1; }
 clsbshow
-else
-yellow "未设置Gitlab订阅链接"
-fi
-cd
+)
 }
 
 clsbshow(){
@@ -4112,7 +3823,7 @@ green "Sing-box订阅链接如下："
 blue "$(cat /etc/s-box/sing_box_gitlab.txt 2>/dev/null)"
 echo
 green "Sing-box订阅链接二维码如下："
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/sing_box_gitlab.txt 2>/dev/null)"
+qrencode -o - -t ANSIUTF8 < /etc/s-box/sing_box_gitlab.txt
 echo
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
@@ -4121,7 +3832,7 @@ green "Mihomo订阅链接如下："
 blue "$(cat /etc/s-box/clash_meta_gitlab.txt 2>/dev/null)"
 echo
 green "Mihomo订阅链接二维码如下："
-qrencode -o - -t ANSIUTF8 "$(cat /etc/s-box/clash_meta_gitlab.txt 2>/dev/null)"
+qrencode -o - -t ANSIUTF8 < /etc/s-box/clash_meta_gitlab.txt
 echo
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
@@ -4589,12 +4300,12 @@ fi
 restartsb(){
 sb_config_check || return 1
 if command -v apk >/dev/null 2>&1; then
-rc-service sing-box restart
+rc-service sing-box restart || return 1
 else
-systemctl enable sing-box
-systemctl start sing-box
-systemctl restart sing-box
+systemctl restart sing-box || return 1
 fi
+sleep 1
+sb_update_service_active || { red "Sing-box服务未运行，请查看日志。" >&2; return 1; }
 }
 
 stclre(){
@@ -4603,15 +4314,14 @@ red "未正常安装Sing-box" && exit
 fi
 readp "1：重启\n2：关闭\n请选择：" menu
 if [ "$menu" = "1" ]; then
-restartsb
+restartsb || { red "重启失败，未确认服务运行；请查看日志。"; return 1; }
 sbactive
 green "Sing-box服务已重启\n" && sleep 3 && sb
 elif [ "$menu" = "2" ]; then
 if command -v apk >/dev/null 2>&1; then
-rc-service sing-box stop
+rc-service sing-box stop || return 1
 else
-systemctl stop sing-box
-systemctl disable sing-box
+systemctl stop sing-box && systemctl disable sing-box || return 1
 fi
 green "Sing-box服务已关闭\n" && sleep 3 && sb
 else
@@ -4620,20 +4330,10 @@ fi
 }
 
 cronsb(){
-uncronsb
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-echo "0 1 * * * systemctl restart sing-box;rc-service sing-box restart" >> /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update restart '0 1 * * * systemctl restart sing-box;rc-service sing-box restart'
 }
 uncronsb(){
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/sing-box/d' /tmp/crontab.tmp
-sed -i '/sbwpph/d' /tmp/crontab.tmp
-sed -i '/url http/d' /tmp/crontab.tmp
-sed -i '/websbox/d' /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update all
 }
 
 # Read newest-first release sections; display only (installed, latest].
@@ -4683,7 +4383,7 @@ BEGIN {
 sb_update_notice(){
 local insV=${1:-} latestV version_info updates
 # One response supplies both the version and its notes, avoiding mixed revisions.
-version_info=$(curl -fsSL --connect-timeout 5 --max-time 10 https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version 2>/dev/null) || version_info=
+version_info=$(sb_script_version_info 2>/dev/null) || version_info=
 latestV=
 if [[ $version_info =~ ^(v[0-9]+\.[0-9]+\.[0-9]+(-fork\.[0-9]+)?)更新内容 ]]; then
 latestV=${BASH_REMATCH[1]}
@@ -4708,37 +4408,206 @@ fi
 fi
 }
 
+# Updates never download over the live file. SHA256 records detect local damage;
+# they are not a publisher signature (old upstream releases have no digest asset).
+sb_update_download(){
+curl --fail --show-error --silent --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+--connect-timeout 10 --max-time 180 --retry 2 --output "$2" "$1" && [[ -s $2 ]]
+}
+
+sb_update_backup(){
+local kind=$1 backup path name
+shift
+mkdir -p /etc/s-box/backups || return 1
+backup=$(mktemp -d "/etc/s-box/backups/${kind}.$(date +%Y%m%d-%H%M%S).XXXXXX") || return 1
+chmod 700 "$backup" || return 1
+: > "$backup/SHA256SUMS" || return 1
+for path in "$@"; do
+name=${path##*/}
+if [[ -f $path ]]; then
+cp -p -- "$path" "$backup/$name" || return 1
+(cd "$backup" && sha256sum -- "$name") >> "$backup/SHA256SUMS" || return 1
+fi
+done
+printf '%s\n' "$backup"
+}
+
+sb_update_restore(){
+local backup=$1 path name tmp failed=0
+shift
+[[ -f $backup/SHA256SUMS ]] || return 1
+if [[ -s $backup/SHA256SUMS ]]; then
+(cd "$backup" && sha256sum -c SHA256SUMS) >&2 || return 1
+fi
+for path in "$@"; do
+name=${path##*/}
+if [[ -f $backup/$name ]]; then
+tmp=$(mktemp "${path}.restore.XXXXXX") || { failed=1; continue; }
+if ! cp -p -- "$backup/$name" "$tmp" || ! mv -f -- "$tmp" "$path"; then
+rm -f -- "$tmp"
+failed=1
+fi
+else
+rm -f -- "$path" || failed=1
+fi
+done
+return "$failed"
+}
+
+sb_update_service_active(){
+if command -v apk >/dev/null 2>&1; then
+rc-service sing-box status >/dev/null 2>&1
+else
+systemctl is-active --quiet sing-box
+fi
+}
+
+sb_update_core_stage(){
+local version=$1 stage=$2 name="sing-box-$1-linux-$cpu" actual listing
+if [[ ! $version =~ ^1\.([0-9]+)\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]] || (( 10#${BASH_REMATCH[1]:-0} < 10 )); then
+red "无效或不支持的内核版本：$version（要求1.10及以上）" >&2
+return 1
+fi
+sb_update_download "https://github.com/SagerNet/sing-box/releases/download/v$version/$name.tar.gz" "$stage/core.tar.gz" || {
+red "内核下载失败，保留现有内核及配置。" >&2; return 1;
+}
+# Extract only the exact regular-file member to stdout, never archive paths to disk.
+listing=$(tar -tvzf "$stage/core.tar.gz" "$name/sing-box") || return 1
+[[ $listing == -* ]] || { red "内核压缩包缺少常规二进制文件。" >&2; return 1; }
+tar -xOzf "$stage/core.tar.gz" "$name/sing-box" > "$stage/sing-box" || return 1
+[[ -s $stage/sing-box ]] && chmod 755 "$stage/sing-box" || return 1
+actual=$("$stage/sing-box" version) || { red "新内核无法执行。" >&2; return 1; }
+actual=$(printf '%s\n' "$actual" | awk '$1 == "sing-box" && $2 == "version" {print $3; exit}')
+[[ $actual == "$version" ]] || { red "内核版本不匹配：要求 $version，实际 ${actual:-未知}。" >&2; return 1; }
+(cd "$stage" && sha256sum core.tar.gz sing-box > NEW-SHA256SUMS) || return 1
+}
+
+sb_update_core(){
+(
+umask 077
+local version=$1 mode=${2:-update} stage backup current oldtrack=11 newtrack=11 changed=0 complete=0
+stage=$(mktemp -d /etc/s-box/.core-update.XXXXXX) || return 1
+trap 'if [[ $changed == 1 && $complete == 0 ]]; then
+  if sb_update_restore "$backup" /etc/s-box/sing-box /etc/s-box/sb.json /etc/s-box/sb10.json /etc/s-box/sb11.json; then
+    if [[ $mode == update ]] && ! restartsb; then red "旧文件已恢复，但旧服务重启失败，请查看日志；备份：$backup" >&2;
+    else red "更新失败，已恢复旧内核及配置；备份：$backup" >&2; fi
+  else red "自动恢复失败，请保留现场并从备份恢复：$backup" >&2; fi
+fi
+rm -rf -- "$stage"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+sb_update_core_stage "$version" "$stage" || return 1
+if [[ $mode == update ]]; then
+[[ -f /etc/s-box/sb.json ]] || return 1
+current=$(/etc/s-box/sing-box version) || return 1
+current=$(printf '%s\n' "$current" | awk '$1 == "sing-box" && $2 == "version" {print $3; exit}')
+[[ $current == 1.10.* ]] && oldtrack=10
+[[ $version == 1.10.* ]] && newtrack=10
+# Preserve the active configuration within one syntax family. A cross-family switch
+# uses the existing maintained template; never regenerate/erase it on download failure.
+if [[ $oldtrack == "$newtrack" ]]; then
+cp -p /etc/s-box/sb.json "$stage/sb.json" || return 1
+else
+cp -p "/etc/s-box/sb${newtrack}.json" "$stage/sb.json" || return 1
+fi
+"$stage/sing-box" check -c "$stage/sb.json" || { red "新内核配置预检失败，未更改现有文件。" >&2; return 1; }
+fi
+backup=$(sb_update_backup core /etc/s-box/sing-box /etc/s-box/sb.json /etc/s-box/sb10.json /etc/s-box/sb11.json) || return 1
+cp "$stage/NEW-SHA256SUMS" "$backup/NEW-SHA256SUMS" || return 1
+# mv uses the same filesystem, so a running binary is never overwritten in place.
+chown root:root "$stage/sing-box" || return 1
+changed=1
+mv -f -- "$stage/sing-box" /etc/s-box/sing-box || return 1
+if [[ $mode == update ]]; then
+mv -f -- "$stage/sb.json" /etc/s-box/sb.json || return 1
+restartsb || { red "新内核启动验证失败，正在回滚。" >&2; return 1; }
+fi
+complete=1
+blue "内核原版与配置备份（含SHA256）：$backup" >&2
+)
+}
+
 lnsb(){
-rm -rf /usr/bin/sb
-curl -L -o /usr/bin/sb -# --retry 2 --insecure https://raw.githubusercontent.com/redrohu/sing-box-yg/main/sb.sh
-chmod +x /usr/bin/sb
+(
+umask 077
+local target=/usr/bin/sb staged version_file marker ref_file backup version revision changed=0 complete=0
+staged=$(mktemp "${target}.update.XXXXXX") || return 1
+version_file=$(mktemp /etc/s-box/.version-download.XXXXXX) || { rm -f "$staged"; return 1; }
+marker=$(mktemp /etc/s-box/.version-update.XXXXXX) || { rm -f "$staged" "$version_file"; return 1; }
+ref_file=$(mktemp /etc/s-box/.revision-download.XXXXXX) || { rm -f "$staged" "$version_file" "$marker"; return 1; }
+trap 'if [[ $changed == 1 && $complete == 0 ]]; then
+  sb_update_restore "$backup" "$target" /etc/s-box/v || red "脚本恢复失败，请从备份恢复：$backup" >&2
+fi
+rm -f -- "$staged" "$version_file" "$marker" "$ref_file"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+# Pin script and marker to one commit, so a concurrent upstream release cannot
+# label an older downloaded script with a newer version.
+sb_update_download https://api.github.com/repos/redrohu/sing-box-yg/git/ref/heads/main "$ref_file" || return 1
+revision=$(jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))' "$ref_file") || return 1
+sb_update_download "https://raw.githubusercontent.com/redrohu/sing-box-yg/$revision/sb.sh" "$staged" || {
+red "脚本下载失败，保留原脚本及版本标记。" >&2; return 1;
+}
+sb_update_download "https://raw.githubusercontent.com/redrohu/sing-box-yg/$revision/version" "$version_file" || {
+red "版本信息下载失败，未替换脚本。" >&2; return 1;
+}
+[[ $(head -n 1 "$staged") == '#!/bin/bash' ]] && bash -n "$staged" || {
+red "下载的脚本格式或语法校验失败，保留原脚本。" >&2; return 1;
+}
+IFS= read -r version < "$version_file" || return 1
+if [[ $version =~ ^(v[0-9]+\.[0-9]+\.[0-9]+(-fork\.[0-9]+)?)更新内容 ]]; then
+version=${BASH_REMATCH[1]}
+else
+red "下载的版本标记无效，未替换脚本。" >&2; return 1
+fi
+printf '%s\n' "$version" > "$marker" || return 1
+chmod 755 "$staged" && chmod 644 "$marker" || return 1
+backup=$(sb_update_backup script "$target" /etc/s-box/v) || return 1
+sha256sum "$staged" "$marker" > "$backup/NEW-SHA256SUMS" || return 1
+printf '%s\n' "$revision" > "$backup/NEW-REVISION" || return 1
+changed=1
+mv -f -- "$staged" "$target" && mv -f -- "$marker" /etc/s-box/v || return 1
+complete=1
+blue "脚本原版备份（含SHA256）：$backup" >&2
+)
 }
 
 upsbyg(){
 if [[ ! -f '/usr/bin/sb' ]]; then
-red "未正常安装Sing-box-yg" && exit
+red "未正常安装Sing-box-yg" >&2
+return 1
 fi
-lnsb
-curl -sL https://raw.githubusercontent.com/redrohu/sing-box-yg/main/version | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/s-box/v
+lnsb || return 1
 green "Sing-box-yg安装脚本升级成功" && sleep 5 && sb
 }
 
 lapre(){
-json=$(curl -Ls --max-time 3 https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box)
-if echo "$json"|grep -q '"versions"'; then
-latcore=$(echo "$json"|grep -Eo '"[0-9.]+",'|head -n1|tr -d '",')
-precore=$(echo "$json"|grep -Eo '"[0-9.]*-[^"]*"'|head -n1|tr -d '",')
-else
-page=$(curl -Ls --max-time 3 https://github.com/SagerNet/sing-box/releases)
-latcore=$(echo "$page"|grep -oE 'tag/v[0-9.]+'|head -n1|cut -d'v' -f2)
-precore=$(echo "$page"|grep -oE '/tag/v[0-9.]+-[^"]+'|head -n1|cut -d'v' -f2)
+local data json page stable preview SB_MENU_REFRESH=${SB_MENU_REFRESH:-0}
+[[ ${1:-} != refresh ]] || SB_MENU_REFRESH=1
+if ! data=$(sb_info_cache_get cores 300); then
+json=$(curl -fsSL --connect-timeout 2 --max-time 3 https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box)
+stable=$(jq -r '[.versions[]?|select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))][0] // empty' <<< "$json" 2>/dev/null)
+preview=$(jq -r '[.versions[]?|select(test("^[0-9]+\\.[0-9]+\\.[0-9]+-(alpha|beta|rc)\\.[0-9]+$"))][0] // empty' <<< "$json" 2>/dev/null)
+if [[ -z $stable || -z $preview ]]; then
+page=$(curl -fsSL --connect-timeout 2 --max-time 3 https://github.com/SagerNet/sing-box/releases)
+stable=$(printf '%s\n' "$page" | grep -oE 'tag/v[0-9.]+' | head -n1 | cut -d'v' -f2)
+preview=$(printf '%s\n' "$page" | grep -oE '/tag/v[0-9.]+-(alpha|beta|rc)\.[0-9]+' | head -n1 | cut -d'v' -f2)
 fi
+data=$(jq -nc --arg stable "$stable" --arg preview "$preview" '{stable:$stable,preview:$preview}')
+if printf '%s\n' "$data" | sb_info_valid cores; then printf '%s\n' "$data" | sb_info_cache_put cores || :
+else data='{"stable":"","preview":""}'; fi
+fi
+latcore=$(jq -r .stable <<< "$data"); precore=$(jq -r .preview <<< "$data")
+# Installed binary is always read live, never cached.
 inscore=$(/etc/s-box/sing-box version 2>/dev/null | awk '/version/{print $NF}')
 }
 
 upsbcroe(){
+local upcore menu lat= pre=
 sbactive
-lapre
+lapre refresh
 [[ $inscore =~ ^[0-9.]+$ ]] && lat="【已安装v$inscore】" || pre="【已安装v$inscore】"
 green "1：升级/切换Sing-box最新正式版 v$latcore  ${bblue}${lat}${plain}"
 green "2：升级/切换Sing-box最新测试版 v$precore  ${bblue}${pre}${plain}"
@@ -4746,47 +4615,38 @@ green "3：切换Sing-box某个正式版或测试版，需指定版本号 (建�
 green "0：返回上层"
 readp "请选择【0-3】：" menu
 if [ "$menu" = "1" ]; then
-upcore=$(curl -Ls https://github.com/SagerNet/sing-box/releases/latest | grep -oP 'tag/v\K[0-9.]+' | head -n 1)
+upcore=$latcore
 elif [ "$menu" = "2" ]; then
-upcore=$(curl -Ls https://github.com/SagerNet/sing-box/releases | grep -oP '/tag/v\K[0-9.]+-[^"]+' | head -n 1)
+upcore=$precore
 elif [ "$menu" = "3" ]; then
 echo
-red "注意: 版本号在 https://github.com/SagerNet/sing-box/tags 可查，且有Downloads字样 (必须1.10系或者1.30系以上版本)"
+red "注意: 版本号在 https://github.com/SagerNet/sing-box/tags 可查，且有Downloads字样 (必须1.10及以上版本)"
 green "正式版版本号格式：数字.数字.数字 (例：1.10.7   注意，1.10系列内核支持geosite分流，1.10以上内核不支持geosite分流"
 green "测试版版本号格式：数字.数字.数字-alpha或rc或beta.数字 (例：1.13.0-alpha或rc或beta.1)"
 readp "请输入Sing-box版本号：" upcore
 else
 sb
+return
 fi
-if [[ -n $upcore ]]; then
-green "开始下载并更新Sing-box内核……请稍等"
-sbname="sing-box-$upcore-linux-$cpu"
-curl -L -o /etc/s-box/sing-box.tar.gz  -# --retry 2 https://github.com/SagerNet/sing-box/releases/download/v$upcore/$sbname.tar.gz
-if [[ -f '/etc/s-box/sing-box.tar.gz' ]]; then
-tar xzf /etc/s-box/sing-box.tar.gz -C /etc/s-box
-mv /etc/s-box/$sbname/sing-box /etc/s-box
-rm -rf /etc/s-box/{sing-box.tar.gz,$sbname}
-if [[ -f '/etc/s-box/sing-box' ]]; then
-chown root:root /etc/s-box/sing-box
-chmod +x /etc/s-box/sing-box
-sbnh=$(/etc/s-box/sing-box version 2>/dev/null | awk '/version/{print $NF}' 2>/dev/null | cut -d '.' -f 1,2)
-[[ "$sbnh" == "1.10" ]] && num=10 || num=11
-rm -rf /etc/s-box/sb.json
-cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
-restartsb && sbshare > /dev/null 2>&1
-blue "成功升级/切换 Sing-box 内核版本：$(/etc/s-box/sing-box version | awk '/version/{print $NF}')" && sleep 3 && sb
-else
-red "下载 Sing-box 内核不完整，安装失败，请重试" && upsbcroe
+if [[ -z $upcore ]]; then
+red "版本号检测出错，请稍后重试。" >&2
+return 1
 fi
-else
-red "下载 Sing-box 内核失败或不存在，请重试" && upsbcroe
+green "开始下载并核验Sing-box内核……请稍等"
+sb_update_core "$upcore" update || return 1
+sbnh=$(printf '%s\n' "$upcore" | cut -d '.' -f 1,2)
+if ! sbshare; then
+red "内核已更新并启动，但订阅刷新失败；请先修复配置后使用菜单9刷新。" >&2
+return 1
 fi
-else
-red "版本号检测出错，请重试" && upsbcroe
-fi
+blue "成功升级/切换 Sing-box 内核版本：$upcore" && sleep 3 && sb
 }
 
 unins(){
+# Preserve other applications' NAT/cron resources; abort on cleanup failure.
+sb_port_hop_manage remove || { red "清理本项目端口转发失败，保留安装以便排查。"; return 1; }
+uncronsb || return 1
+argo_temporary_stop || return 1
 if [[ -d /etc/s-box/xhttp-argo ]]; then xhttp_argo_remove || return 1; fi
 if [[ -d /etc/s-box/xhttp ]]; then xhttp_remove || return 1; fi
 if command -v apk >/dev/null 2>&1; then
@@ -4802,13 +4662,10 @@ systemctl disable "$svc" >/dev/null 2>&1
 done
 rm -rf /etc/systemd/system/{sing-box.service,argo.service}
 fi
-ps -ef | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json 2>/dev/null | jq -r '.inbounds[1].listen_port')" | awk '{print $2}' | xargs kill 2>/dev/null
 ps -ef | grep '[s]bwpph' | awk '{print $2}' | xargs kill 2>/dev/null
 kill -15 $(pgrep -f 'websbox' 2>/dev/null) >/dev/null 2>&1
 rm -rf /etc/s-box sbyg_update /usr/bin/sb /root/geoip.db /root/geosite.db /root/warpapi /root/warpip /root/websbox
 rm -f /etc/local.d/alpineargo.start /etc/local.d/alpinesub.start /etc/local.d/alpinews5.start
-uncronsb
-iptables -t nat -F PREROUTING >/dev/null 2>&1
 netfilter-persistent save >/dev/null 2>&1
 service iptables save >/dev/null 2>&1
 green "Sing-box卸载完成！"
@@ -4833,39 +4690,35 @@ fi
 }
 
 sbshare(){
-node_suffix_load || return 1
-rm -rf /etc/s-box/{jhdy,vl_reality,vm_ws_argols,vm_ws_argogd,vm_ws,vm_ws_tls,hy2,tuic5,an}.txt
-result_vl_vm_hy_tu && resvless && resvmess && reshy2 && restu5
-if [[ "$sbnh" != "1.10" ]]; then
-resan
-fi
-cat /etc/s-box/vl_reality.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/vm_ws_argols.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/vm_ws_argogd.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/vm_ws.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/vm_ws_tls.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/hy2.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/tuic5.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-cat /etc/s-box/an.txt 2>/dev/null >> /etc/s-box/jhdy.txt
-if [[ -f /etc/s-box/xhttp/config.json ]]; then
-xhttp_export || return 1
-cat /etc/s-box/xhttp.txt >> /etc/s-box/jhdy.txt
-fi
-if [[ -f /etc/s-box/xhttp-argo/config.json ]]; then
-xhttp_argo_export || return 1
-cat /etc/s-box/xhttp-argo.txt >> /etc/s-box/jhdy.txt
-fi
-v2sub=$(cat /etc/s-box/jhdy.txt 2>/dev/null)
-echo "$v2sub" > /etc/s-box/jhsub.txt
-echo
+(
+umask 077
+local SB_EXPORT_DIR file
+SB_EXPORT_DIR=$(mktemp -d /etc/s-box/share-stage.XXXXXX) || exit 1
+trap 'rm -rf "$SB_EXPORT_DIR"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+node_suffix_load || exit 1
+# No live output changes before every renderer succeeds.
+{
+result_vl_vm_hy_tu && resvless && resvmess && reshy2 && restu5 || exit 1
+if [[ "$sbnh" != "1.10" ]]; then resan || exit 1; fi
+if [[ -f /etc/s-box/xhttp/config.json ]]; then xhttp_export || return 1; fi
+if [[ -f /etc/s-box/xhttp-argo/config.json ]]; then xhttp_argo_export || return 1; fi
+sb_client || exit 1
+} > "$SB_EXPORT_DIR/display.txt" || exit 1
+: > "$SB_EXPORT_DIR/jhdy.txt" || exit 1
+for file in vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt hy2.txt tuic5.txt an.txt xhttp.txt xhttp-argo.txt; do
+[[ ! -f $SB_EXPORT_DIR/$file ]] || cat "$SB_EXPORT_DIR/$file" >> "$SB_EXPORT_DIR/jhdy.txt" || exit 1
+done
+[[ -s $SB_EXPORT_DIR/jhdy.txt ]] || { red "聚合订阅为空，保留旧导出。" >&2; exit 1; }
+cp "$SB_EXPORT_DIR/jhdy.txt" "$SB_EXPORT_DIR/jhsub.txt" || exit 1
+sb_exports_commit "$SB_EXPORT_DIR" sbox.json clmi.yaml jhsub.txt jhdy.txt vl_reality.txt vm_ws_argols.txt vm_ws_argogd.txt vm_ws.txt vm_ws_tls.txt vm_ws_argo.txt hy2.txt tuic5.txt an.txt SHA256.txt xhttp.txt xhttp/client.json xhttp/share.txt xhttp-argo.txt xhttp-argo/mihomo.json xhttp-argo/client.json xhttp-argo/share.txt || exit 1
+cat "$SB_EXPORT_DIR/display.txt"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-red "🚀【 聚合节点 】节点信息如下：" && sleep 2
-echo
-echo "分享链接"
-echo -e "${yellow}$v2sub${plain}"
-white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo
-sb_client
+red "🚀【 聚合节点 】节点信息如下："
+cat /etc/s-box/jhsub.txt
+)
 }
 
 clash_sb_share(){
@@ -4880,10 +4733,14 @@ if [ "$menu" = "1" ]; then
 sbshare
 elif  [ "$menu" = "2" ]; then
 green "请稍等……"
-sbshare > /dev/null 2>&1
+sbshare > /dev/null || { red "刷新失败，未推送；旧订阅保持不变。"; return 1; }
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 red "Gitlab订阅链接如下："
-gitlabsubgo
+if [[ -d /etc/s-box/.git ]]; then
+gitlabsubgo || return 1
+else
+yellow "未设置Gitlab订阅，以下显示已刷新的本地配置。"
+fi
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 red "🚀Mihomo配置文件显示如下："
 red "文件目录 /etc/s-box/clmi.yaml ，复制自建以yaml文件格式为准" && sleep 2
@@ -5053,7 +4910,7 @@ curl -L -o /etc/s-box/sbwpph -# --retry 2 --insecure https://raw.githubuserconte
 chmod +x /etc/s-box/sbwpph
 fi
 ps -ef | grep '[s]bwpph' | awk '{print $2}' | xargs kill 2>/dev/null
-v4v6
+v4v6 refresh
 if [[ -n $v4 ]]; then
 sw46=4
 else
@@ -5084,10 +4941,7 @@ restartsb
 unins(){
 ps -ef | grep '[s]bwpph' | awk '{print $2}' | xargs kill 2>/dev/null
 rm -rf /etc/s-box/sbwpph.log
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/sbwpph/d' /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update warp || return 1
 rm -rf /etc/local.d/alpinews5.start
 }
 aplws5(){
@@ -5100,11 +4954,7 @@ EOF
 chmod +x /etc/local.d/alpinews5.start
 rc-update add local default >/dev/null 2>&1
 else
-crontab -l 2>/dev/null > /tmp/crontab.tmp
-sed -i '/sbwpph/d' /tmp/crontab.tmp
-echo '@reboot sleep 10 && /bin/bash -c "nohup $(cat /etc/s-box/sbwpph.log 2>/dev/null) &"' >> /tmp/crontab.tmp
-crontab /tmp/crontab.tmp >/dev/null 2>&1
-rm /tmp/crontab.tmp
+sb_cron_update warp '@reboot sleep 10 && /bin/bash -c "nohup $(cat /etc/s-box/sbwpph.log 2>/dev/null) &"' || return 1
 fi
 }
 echo

@@ -1,23 +1,39 @@
+// Set Worker secret SERV00_TARGETS to JSON, for example:
+// [{"url":"https://s1.user.serv00.net/up","token":"<64-character management token>"}]
+// Old public GET keepalive links are deliberately no longer supported.
 addEventListener('scheduled', event => event.waitUntil(handleScheduled()));
-// 配合甬哥的serv00的SSH脚本或者Github/VPS/软路由脚本，生成保活网页与重启网页
-// 每个保活/up网页或每个重启/re网页之间用空格或者，或者,间隔开，网页前带http://
-const urlString = 'http://保活或重启网页1 http://保活或重启网页2 http://保活或重启网页3 ………';
-const urls = urlString.split(/[\s,，]+/);
-const TIMEOUT = 5000;
-async function fetchWithTimeout(url) {
+const TIMEOUT = 250000;
+async function fetchWithTimeout(target) {
+  const url = new URL(target.url);
+  if (url.protocol !== 'https:' || url.username || url.password ||
+      !['/up', '/re'].includes(url.pathname) || !/^[a-fA-F0-9]{64}$/.test(target.token || '')) {
+    throw new Error('Use an HTTPS /up or /re URL and a separate management token.');
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT);
   try {
-    await fetch(url, { signal: controller.signal });
-    console.log(`✅ 成功: ${url}`);
+    const response = await fetch(url.toString(), {
+      method: 'POST', headers: { Authorization: `Bearer ${target.token}` },
+      redirect: 'error', signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    if (result.ok !== true) throw new Error('Service did not confirm a healthy operation.');
+    console.log('✅ 保活操作完成');
+    return true;
   } catch (error) {
-    console.warn(`❌ 访问失败: ${url}, 错误: ${error.message}`);
-  } finally {
-    clearTimeout(timeout);
-  }
+    // Never log URLs, headers or response bodies containing credentials.
+    console.warn(`❌ 保活失败: ${error.name === 'AbortError' ? 'timeout' : 'request rejected'}`);
+    return false;
+  } finally { clearTimeout(timeout); }
 }
 async function handleScheduled() {
-  console.log('⏳ 任务开始');
-  await Promise.all(urls.map(fetchWithTimeout));
-  console.log('📊 任务结束');
+  const targets = JSON.parse(typeof SERV00_TARGETS === 'string' ? SERV00_TARGETS : '[]');
+  if (!Array.isArray(targets) || targets.length === 0) throw new Error('Configure the SERV00_TARGETS JSON secret.');
+  let failed = false;
+  for (let i = 0; i < targets.length; i += 4) {
+    const results = await Promise.all(targets.slice(i, i + 4).map(fetchWithTimeout));
+    if (results.some(ok => !ok)) failed = true;
+  }
+  if (failed) throw new Error('One or more keepalive operations failed.');
 }

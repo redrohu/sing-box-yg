@@ -39,7 +39,7 @@ class NodeSuffix(unittest.TestCase):
     def share_helpers(self, d):
         source = self.source.replace("/etc/s-box", bashpath(d))
         helpers = "".join(function(source, name) for name in [
-            "node_suffix_valid", "node_suffix_load", "change_node_suffix", "sb_client_profile", "xhttp_mihomo_load",
+            "sb_exports_commit", "node_suffix_valid", "node_suffix_load", "change_node_suffix", "sb_client_profile", "xhttp_mihomo_load",
             "sb_client", "resvless", "resvmess", "reshy2", "restu5", "resan", "sbshare", "readp",
             "xhttp_export", "xhttp_client_config"])
         # Suppress only external side effects; use real renderers and share assembly.

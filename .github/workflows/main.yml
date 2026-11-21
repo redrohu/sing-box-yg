@@ -1,40 +1,57 @@
-name: Parallel URL Fetch
+name: Authenticated Serv00 Keepalive
 
 on:
- # schedule:
-#  - cron: '*/10 * * * *' # 每10分钟执行一次（公开库每月2000分钟运行时长，每天64分钟）
-  workflow_dispatch: 
+  # schedule:
+  #   - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
 
 jobs:
   fetch-urls:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 15
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Run authenticated keepalive requests
+        # secrets.http must now be JSON, not a list of public GET URLs:
+        # [{"url":"https://s1.user.serv00.net/up","token":"<management token>"}]
+        env:
+          SERV00_TARGETS: ${{ secrets.http }}
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures, http.client, json, os, re, urllib.parse
 
-    - name: Fetch URLs in parallel
-      # secrets设置，变量名称：http
-      # 变量值要求：每个保活/up网页或每个重启/re网页之间用空格或者，或者,间隔开，网页前带http://
-      # 变量值填写示例：http://保活或重启网页1 http://保活或重启网页2 http://保活或重启网页3 ………
-      run: |
-        IFS=$',， ' read -r -a http <<< "${{ secrets.http }}"
-         echo "*****************************************************"
-         echo "甬哥Github项目  ：github.com/yonggekkk"
-         echo "甬哥Blogger博客 ：ygkkk.blogspot.com"
-         echo "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
-         echo "🎉Github定时运行serv00保活网页🎉"
-         echo "请先确认已成功安装甬哥的serv00的SSH脚本或者Github/VPS/软路由脚本"
-         echo "脚本地址：https://github.com/yonggekkk/sing-box-yg"
-         echo "*****************************************************"
-        for url in "${http[@]}"; do
-          response=$(curl -sk "$url" || true)
-          if [[ "$response" == *"网页保活启动"* ]]; then
-          echo "🎉恭喜！$url ✅运行正常，成功拉起一次保活"
-          elif [[ "$response" == *"主程序重启成功"* ]]; then
-          echo "🎉恭喜！$url ✅运行正常，成功重启一次主程序"
-          else
-         echo "💥杯具！$url ❌运行失败，⚠️网页变量是否填写正确？或者Serv00炸了"
-         fi
-        done
-        wait
+          targets = json.loads(os.environ.get('SERV00_TARGETS') or '[]')
+          if not isinstance(targets, list) or not targets:
+              raise SystemExit('Configure secrets.http as the authenticated target JSON array.')
+
+          def keepalive(target):
+              connection = None
+              try:
+                  url = urllib.parse.urlsplit(target['url'])
+                  token = target['token']
+                  if (url.scheme != 'https' or not url.hostname or url.username or url.password
+                          or url.path not in ('/up', '/re') or url.fragment
+                          or not isinstance(token, str) or not re.fullmatch(r'[a-fA-F0-9]{64}', token)):
+                      raise ValueError('Invalid HTTPS management target.')
+                  connection = http.client.HTTPSConnection(url.hostname, url.port or 443, timeout=260)
+                  connection.request('POST', urllib.parse.urlunsplit(('', '', url.path, url.query, '')),
+                                     headers={'Authorization': 'Bearer ' + token})
+                  response = connection.getresponse()
+                  if response.status != 200:
+                      raise ValueError('Management request rejected.')
+                  result = json.loads(response.read(1024 * 1024))
+                  return result.get('ok') is True
+              except Exception:
+                  # Never print URLs, tokens, response bodies or raw exceptions.
+                  return False
+              finally:
+                  if connection is not None:
+                      connection.close()
+
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              results = list(pool.map(keepalive, targets))
+          print('Completed:', sum(results), 'Failed:', len(results) - sum(results))
+          if not all(results):
+              raise SystemExit(1)
+          PY

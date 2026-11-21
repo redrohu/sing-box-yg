@@ -61,7 +61,7 @@ class UpdateLog(unittest.TestCase):
             (d / 'v').write_text(installed + '\n', encoding='utf8')
         (d / 'remote.txt').write_bytes(text.encode('utf8'))
         source = self.source.replace('/etc/s-box', bashpath(d))
-        helpers = function(source, 'sb_update_log') + function(source, 'sb_update_notice')
+        helpers = ''.join(function(source, n) for n in ['sb_info_valid', 'sb_info_cache_get', 'sb_info_cache_put', 'sb_script_version_info', 'sb_update_log', 'sb_update_notice'])
         start = source.index('insV=$(cat ')
         block = source[start:source.index('\nlapre\n', start)]
         self.assertTrue(block.rstrip().endswith('sb_update_notice "$insV"'))
