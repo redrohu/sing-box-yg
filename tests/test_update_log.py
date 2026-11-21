@@ -61,7 +61,7 @@ class UpdateLog(unittest.TestCase):
             (d / 'v').write_text(installed + '\n', encoding='utf8')
         (d / 'remote.txt').write_bytes(text.encode('utf8'))
         source = self.source.replace('/etc/s-box', bashpath(d))
-        helpers = ''.join(function(source, n) for n in ['sb_info_valid', 'sb_info_cache_get', 'sb_info_cache_put', 'sb_script_version_info', 'sb_update_log', 'sb_update_notice'])
+        helpers = ''.join(function(source, n) for n in ['sb_info_valid', 'sb_info_cache_get', 'sb_info_cache_put', 'sb_script_version_info', 'sb_update_log', 'sb_version_compare', 'sb_update_notice'])
         start = source.index('insV=$(cat ')
         block = source[start:source.index('\nlapre\n', start)]
         self.assertTrue(block.rstrip().endswith('sb_update_notice "$insV"'))
@@ -77,6 +77,39 @@ curl() {
         output = shell(script, d).stdout.decode('utf8')
         self.assertEqual(len((d / 'curl-calls.txt').read_text().splitlines()), 1)
         return output
+
+    def test_screenshot_fork14_to_fork16(self):
+        history = 'v26.11.21-fork.16更新内容：\n新版修复\n历史版本：\nv26.11.20-fork.14更新内容：\n旧版\n'
+        output = self.notice('v26.11.20-fork.14', history)
+        self.assertIn('可选择7进行更新', output)
+        self.assertIn('新版修复', output)
+        self.assertNotIn('无可用更新', output)
+
+    def test_update_detection_does_not_depend_on_log_parser(self):
+        original = self.source
+        try:
+            start = self.source.index('updates=$(printf')
+            end = self.source.index('\n', start)
+            self.source = self.source[:start] + "updates=" + self.source[end:]
+            output = self.notice('v26.11.16-fork.4')
+            self.assertIn('可选择7进行更新', output)
+            self.assertIn('更新日志暂时无法解析', output)
+            self.assertNotIn('无可用更新', output)
+        finally:
+            self.source = original
+
+    def test_version_comparison_numeric_and_invalid(self):
+        d = self.output / self._testMethodName
+        script = function(self.source, 'sb_version_compare')
+        script += """
+sb_version_compare v26.11.20-fork.14 v26.11.21-fork.16
+sb_version_compare v26.11.21-fork.9 v26.11.21-fork.10
+sb_version_compare v26.11.21-fork.16 v26.11.21-fork.16
+sb_version_compare v27.1.1 v26.12.31-fork.99
+sb_version_compare v26.11.21 v26.11.21-fork.1
+if sb_version_compare unknown v26.11.21; then exit 1; fi
+"""
+        self.assertEqual(shell(script, d).stdout.decode().splitlines(), ['-1', '-1', '0', '1', '-1'])
 
     def test_reported_fork4_to_fork6_only_displays_fork6_and_fork5(self):
         text = self.notice('v26.11.16-fork.4')

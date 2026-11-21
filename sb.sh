@@ -4340,8 +4340,8 @@ sb_cron_update all
 sb_update_log(){
 awk -v installed="$1" -v latest="$2" '
 function clean(v) {
-    sub(/^[[:space:]]+/, "", v)
-    sub(/[[:space:]]+$/, "", v)
+    sub(/^[ \t\r\n]+/, "", v)
+    sub(/[ \t\r\n]+$/, "", v)
     return v
 }
 function valid(v) {
@@ -4367,21 +4367,41 @@ BEGIN {
 }
 {
     sub(/\r$/, "")
-    if ($0 ~ /^v[^[:space:]]+更新内容/) {
+    if ($0 ~ /^v[^ \t\r\n]+更新内容/) {
         entry = $0; sub(/更新内容.*/, "", entry)
         show = valid(entry) && !newer(entry, latest) && (known ? newer(entry, installed) : entry == latest)
         if (show && printed) blank = 1
     }
-    if (!show || $0 ~ /^历史版本[：:][[:space:]]*$/) next
-    if ($0 ~ /^[[:space:]]*$/) { if (printed) blank = 1; next }
+    if (!show || $0 ~ /^历史版本(：|:)[ \t\r\n]*$/) next
+    if ($0 ~ /^[ \t\r\n]*$/) { if (printed) blank = 1; next }
     if (printed && blank) print ""
     print
     printed = 1; blank = 0
 }'
 }
 
+# Compare versions independently of release-note parsing (including old awk).
+# Output: 1 = left newer, 0 = equal, -1 = left older; invalid input fails.
+sb_version_compare(){
+local value i j
+local -a left right
+for j in 0 1; do
+if (( j == 0 )); then value=$1; else value=$2; fi
+[[ $value =~ ^[[:space:]]*v([0-9]+)\.([0-9]+)\.([0-9]+)(-fork\.([0-9]+))?[[:space:]]*$ ]] || return 1
+local -a parts=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[5]:-0}")
+# Bound arithmetic input; release components are small decimal integers.
+for value in "${parts[@]}"; do [[ ${#value} -le 9 ]] || return 1; done
+if (( j == 0 )); then left=("${parts[@]}"); else right=("${parts[@]}"); fi
+done
+for i in 0 1 2 3; do
+if (( 10#${left[i]} > 10#${right[i]} )); then printf '1\n'; return 0; fi
+if (( 10#${left[i]} < 10#${right[i]} )); then printf '%s\n' -1; return 0; fi
+done
+printf '0\n'
+}
+
 sb_update_notice(){
-local insV=${1:-} latestV version_info updates
+local insV=${1:-} latestV version_info updates comparison
 # One response supplies both the version and its notes, avoiding mixed revisions.
 version_info=$(sb_script_version_info 2>/dev/null) || version_info=
 latestV=
@@ -4394,14 +4414,19 @@ yellow "未安装 Sing-box-yg 脚本！请先选择 1 安装"
 elif [[ -z $latestV ]]; then
 echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${insV}${plain}"
 yellow "暂时无法检查脚本更新，请稍后重试。"
-elif [[ $insV == "$latestV" ]]; then
+elif [[ $(sb_version_compare "$insV" "$latestV") == 0 ]]; then
 echo -e "当前 Sing-box-yg 脚本最新版：${bblue}${insV}${plain} (已安装)"
 else
 updates=$(printf '%s\n' "$version_info" | sb_update_log "$insV" "$latestV")
 echo -e "当前 Sing-box-yg 脚本版本号：${bblue}${insV}${plain}"
-if [[ -n $updates ]]; then
+comparison=$(sb_version_compare "$insV" "$latestV") || comparison=unknown
+if [[ $comparison == -1 || $comparison == unknown ]]; then
 echo -e "检测到最新 Sing-box-yg 脚本版本号：${yellow}${latestV}${plain} (可选择7进行更新)"
+if [[ -n $updates ]]; then
 printf '%b%s%b\n' "$yellow" "$updates" "$plain"
+else
+yellow "更新日志暂时无法解析；版本比较独立生效，可选择7更新。"
+fi
 else
 echo -e "线上最新 Sing-box-yg 脚本版本号：${bblue}${latestV}${plain} (当前版本不低于线上版本，无可用更新)"
 fi
