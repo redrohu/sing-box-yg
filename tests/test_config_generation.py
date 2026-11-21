@@ -199,8 +199,8 @@ serv00_server_profile config.json config.json ./test-core
                             (17, "vless_port"), (18, "vmess_port"), (19, "hy2_port")]:
             self.assertTrue(keep[line - 1].startswith("export " + field + "="))
 
-    def test_original_menu_labels_and_no_template_dispatch(self):
-        fixture = json.loads((ROOT / "tests/fixtures/original-menu-labels.json").read_text(encoding="utf8"))
+    def test_current_menu_labels_and_no_template_dispatch(self):
+        fixture = json.loads((ROOT / "tests/fixtures/current-menu-copy.json").read_text(encoding="utf8"))
         source = self.sources["sb.sh"]
         labels = re.findall(r'^(?:green|yellow|white|red) "[^"\n]*"', source[source.rindex('sbsm(){'):], re.M)
         labels = [x for x in labels if re.match(r'\w+ "\s*\d+\.', x)]
@@ -209,7 +209,7 @@ serv00_server_profile config.json config.json ./test-core
         self.assertNotIn("sb14_", source)
         start = source.rindex("\nclear\n") + 1
         header = source[start:source.index("insV=", start)]
-        self.assertEqual(header, json.loads((ROOT / "tests/fixtures/original-menu-header.json").read_text(encoding="utf8"))["header"])
+        self.assertEqual(header, json.loads((ROOT / "tests/fixtures/current-menu-copy.json").read_text(encoding="utf8"))["header"])
 
     def test_clash_templates_original_except_names_quoting_and_whitespace(self):
         fixture = json.loads((ROOT / "tests/fixtures/original-clash-sha256.json").read_text(encoding="utf8"))

@@ -179,7 +179,7 @@ change_node_suffix() { echo called > dispatched; }
 changeserv
 ''', d)
         self.assertEqual((d / "dispatched").read_text().strip(), "called")
-        self.assertIn("10：设置节点名称前缀/后缀", (d / "prompt").read_text(encoding="utf8"))
+        self.assertIn("10：设置/清除节点名称前后缀", (d / "prompt").read_text(encoding="utf8"))
         self.assertIn("请选择【0-11】", (d / "prompt").read_text(encoding="utf8"))
 
 

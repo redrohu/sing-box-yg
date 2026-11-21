@@ -315,7 +315,7 @@ export resport=y
 exec bash "$HOME/serv00keep.sh"
 WEBPORT
 chmod +x webport.sh
-green "开始安装多功能主页，请稍等……"
+green "开始安装认证管理接口，请稍等……"
 devil www del ${snb}.${USERNAME}.serv00.net > /dev/null 2>&1
 devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
 devil www add ${snb}.${USERNAME}.serv00.net nodejs /usr/local/bin/node18 > /dev/null 2>&1
@@ -329,7 +329,7 @@ cd "$keep_path"
 npm install basic-auth express dotenv axios --silent > /dev/null 2>&1
 rm $HOME/domains/${snb}.${USERNAME}.serv00.net/public_nodejs/public/index.html > /dev/null 2>&1
 devil www restart ${snb}.${USERNAME}.serv00.net
-green "安装完毕，多功能主页地址：http://${snb}.${USERNAME}.serv00.net"
+green "安装完毕，管理入口（HTTP仅作地址展示；管理请求须使用可信HTTPS + POST/Bearer）：http://${snb}.${USERNAME}.serv00.net"
 fi
 
 if [[ "$resport" =~ ^[Yy]$ ]]; then
@@ -1374,15 +1374,15 @@ CF节点落地到非CF网站的地区为：$IP所在地区
 二、Vmess-ws分享链接三形态如下：
 
 1、Vmess-ws主节点分享链接如下：
-(该节点默认不支持CDN，如果设置为CDN回源(需域名)：客户端地址可自行修改优选IP/域名，7个80系端口随便换，被墙依旧能用！)
+(该节点默认不支持CDN，如果设置为CDN回源(需域名)：客户端地址可自行修改优选IP/域名，7个80系端口随便换，需实际验证Cloudflare可达性，不保证可用或提速。)
 $vmws_link
 
 2、Vmess-ws-tls_Argo分享链接如下： 
-(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，6个443系端口随便换，被墙依旧能用！)
+(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，6个443系端口随便换，需实际验证Cloudflare可达性，不保证可用或提速。)
 $vmatls_link
 
 3、Vmess-ws_Argo分享链接如下：
-(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，7个80系端口随便换，被墙依旧能用！)
+(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，7个80系端口随便换，需实际验证Cloudflare可达性，不保证可用或提速。)
 $vma_link
 -------------------------------------------------------------------------------------------------
 
@@ -1394,7 +1394,7 @@ $hy2_link
 
 四、聚合通用节点，共计22个节点：
 3个IP全覆盖：3个reality、3个vmess+ws、3个hy2
-13个argo节点全覆盖 (已添加CF不死IP)：7个关tls 80系端口节点、6个开tls 443系端口节点
+13个argo节点全覆盖 (已添加CF候选连接地址，需验证可用性)：7个关tls 80系端口节点、6个开tls 443系端口节点
 
 订阅分享链接：
 $V2rayN_LINK
@@ -1404,7 +1404,7 @@ $baseurl
 -------------------------------------------------------------------------------------------------
 
 
-五、查看Sing-box与Clash-meta的订阅配置文件，请进入主菜单选择4
+五、查看Sing-box与Clash-meta的订阅配置文件，请进入主菜单选择7（选项6查看订阅链接）
 
 Clash-meta订阅分享链接：
 $Clashmeta_LINK
@@ -1413,7 +1413,7 @@ Sing-box订阅分享链接：
 $Singbox_LINK
 -------------------------------------------------------------------------------------------------
 
-多功能主页地址：http://${snb}.${USERNAME}.serv00.net
+管理入口（HTTP仅作地址展示；管理请求须使用可信HTTPS + POST/Bearer）：http://${snb}.${USERNAME}.serv00.net
 
 =================================================================================================
 

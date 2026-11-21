@@ -1355,7 +1355,7 @@ if [[ "$tls" = "false" ]]; then
 if ps -ef 2>/dev/null | grep "[l]ocalhost:$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')" >/dev/null 2>&1; then
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-red "🚀【 vmess-ws(tls)+Argo 】临时节点信息如下(可选择3-8-3，自定义CDN优选地址)：" && sleep 2
+red "🚀【 vmess-ws(tls)+Argo 】临时节点信息如下(可选择3→9→3，手动设置VMess Argo连接地址)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argo'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
@@ -1368,7 +1368,7 @@ if ps -ef 2>/dev/null | grep -v '[x]http-argo/cloudflared' | grep -q '[c]loudfla
 argogd=$(cat /etc/s-box/sbargoym.log 2>/dev/null)
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-red "🚀【 vmess-ws(tls)+Argo 】固定节点信息如下 (可选择3-8-3，自定义CDN优选地址)：" && sleep 2
+red "🚀【 vmess-ws(tls)+Argo 】固定节点信息如下 (可选择3→9→3，手动设置VMess Argo连接地址)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"443","ps":"'"${node_prefix_label}vm-argo${node_suffix_label}"'","tls":"tls","sni":"'$argogd'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
@@ -1379,7 +1379,7 @@ qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws_argogd.txt"
 fi
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-red "🚀【 vmess-ws 】节点信息如下 (建议选择3-8-1，设置为CDN优选节点)：" && sleep 2
+red "🚀【 vmess-ws 】节点信息如下 (可选择3→9→1，手动设置VMess CDN连接地址)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws${node_suffix_label}"'","tls":"","type":"none","v":"2"}' | base64 -w 0)${plain}"
@@ -1390,7 +1390,7 @@ qrencode -o - -t ANSIUTF8 "$(cat "${SB_EXPORT_DIR:-/etc/s-box}/vm_ws.txt")"
 else
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-red "🚀【 vmess-ws-tls 】节点信息如下 (建议选择3-8-1，设置为CDN优选节点)：" && sleep 2
+red "🚀【 vmess-ws-tls 】节点信息如下 (可选择3→9→1，手动设置VMess CDN连接地址)：" && sleep 2
 echo
 echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
 echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'"${node_prefix_label}vm-ws-tls${node_suffix_label}"'","tls":"tls","sni":"'$vm_name'","fp":"chrome","type":"none","v":"2"}' | base64 -w 0)${plain}"
@@ -2065,7 +2065,7 @@ else
 changeserv
 fi
 else
-yellow "因vmess开启了tls，Argo隧道功能不可用" && sleep 2
+yellow "因VMess入站开启TLS，此VMess Argo菜单不可用；不影响独立XHTTP Argo" && sleep 2
 fi
 }
 
@@ -2401,7 +2401,7 @@ changeym(){
 [ -f /root/ygkkkca/ca.log ] && ymzs="$yellow切换为域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)$plain" || ymzs="$yellow未申请域名证书，无法切换$plain"
 vl_na="正在使用的域名：$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.server_name')。$yellow更换符合reality要求的域名，不支持证书域名$plain"
 tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
-[[ "$tls" = "false" ]] && vm_na="当前已关闭TLS。$ymzs ${yellow}将开启TLS，Argo隧道将不支持开启${plain}" || vm_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为关闭TLS，Argo隧道将可用$plain"
+[[ "$tls" = "false" ]] && vm_na="当前已关闭TLS。$ymzs ${yellow}将开启TLS，VMess Argo隧道将不支持开启（不影响XHTTP Argo）${plain}" || vm_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为关闭TLS，VMess Argo隧道将可用（不影响XHTTP Argo）$plain"
 hy2_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].tls.key_path')
 [[ "$hy2_sniname" = '/etc/s-box/private.key' ]] && hy2_na="正在使用自签bing证书。$ymzs" || hy2_na="正在使用的域名证书：$(cat /root/ygkkkca/ca.log 2>/dev/null)。$yellow切换为自签bing证书$plain"
 tu5_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].tls.key_path')
@@ -2584,7 +2584,7 @@ service iptables save >/dev/null 2>&1
 }
 
 allports
-green "Vless-reality、Vmess-ws、Anytls仅能更改唯一的端口，vmess-ws注意Argo端口重置"
+green "此处仅管理Sing-box五协议端口；独立XHTTP端口不随此菜单更改。VMess端口变更后需同步Argo回源。"
 green "Hysteria2与Tuic5支持更改主端口，也支持增删多个转发端口"
 green "Hysteria2支持端口跳跃，且与Tuic5都支持多端口复用"
 echo
@@ -2618,7 +2618,7 @@ tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
 if [[ "$tls" = "false" ]]; then
 blue "切记：如果Argo使用中，临时隧道必须重置，固定隧道的CF设置界面端口必须修改为$port_vm_ws"
 else
-blue "因TLS已开启，当前Argo隧道已不支持开启"
+blue "因VMess入站TLS已开启，VMess Argo不可开启；不影响独立XHTTP Argo"
 fi
 echo
 elif [ "$menu" = "3" ]; then
@@ -2711,10 +2711,10 @@ changeuuid(){
 echo
 olduuid=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].users[0].uuid')
 oldvmpath=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].transport.path')
-green "全协议的uuid (密码)：$olduuid"
+green "Sing-box五协议共用的UUID (密码，不含XHTTP)：$olduuid"
 green "Vmess的path路径：$oldvmpath"
 echo
-yellow "1：自定义全协议的uuid (密码)"
+yellow "1：自定义Sing-box五协议共用的UUID (密码，不含XHTTP)"
 yellow "2：自定义Vmess的path路径"
 yellow "0：返回上层"
 readp "请选择【0-2】：" menu
@@ -2767,7 +2767,7 @@ red "当前不存在你选择的IPV4/IPV6地址，或者输入错误" && changei
 fi
 blue "当前已更换的IP优先级：${v4_6}" && sb
 else
-red "仅支持1.10.7内核可用" && exit
+red "此项仅支持1.10系列Sing-box内核，不影响独立XHTTP节点" && exit
 fi
 }
 
@@ -3228,7 +3228,7 @@ red "XHTTP部署失败，已尝试清理本次部署；若上方提示停止失�
 return 1
 fi
 green "XHTTP + REALITY 已部署。请在云防火墙/安全组及系统防火墙放行 TCP $port。"
-yellow "此节点直连VPS，不经Argo/CDN；需要支持XHTTP的Xray客户端。"
+yellow "此节点直连VPS，不经Argo/CDN；需支持相应模式的Xray/Mihomo客户端，不写入Sing-box配置。"
 cat /etc/s-box/xhttp/share.txt
 sbshare > /dev/null || { red "节点已部署，但聚合订阅刷新失败，请通过菜单9重试。"; return 1; }
 }
@@ -3507,7 +3507,7 @@ sbshare > /dev/null || { red "节点已部署，但订阅刷新失败，请通�
 
 xhttp_argo_menu(){
 local action confirm
-readp "XHTTP + 固定Argo（独立节点，保留现有REALITY）\n1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：状态\n6：日志\n7：卸载固定Argo节点\n8：独立设置优选域名/IP、恢复默认\n0：返回\n请选择【0-8】：" action
+readp "XHTTP + 固定Argo（独立节点，不叠加REALITY；保留直连节点）\n1：部署\n2：查看节点并刷新本地订阅（Gitlab另用9→2推送）\n3：重启\n4：停止\n5：状态\n6：日志\n7：卸载固定Argo节点\n8：独立设置优选域名/IP、恢复默认\n0：返回\n请选择【0-8】：" action
 case "$action" in
 1) xhttp_argo_install ;;
 2) [[ -f /etc/s-box/xhttp-argo/config.json ]] || return 1
@@ -3516,7 +3516,7 @@ xhttp_argo_export && cat /etc/s-box/xhttp-argo/share.txt && sbshare > /dev/null 
 4) xhttp_argo_service stop ;;
 5) xhttp_argo_service status ;;
 6) if command -v apk >/dev/null 2>&1; then tail -n 100 /etc/s-box/xhttp-argo/*.log; else journalctl -u sbox-xhttp-argo -u sbox-xhttp-argo-tunnel -n 100 --no-pager; fi ;;
-7) readp "会删除固定隧道节点配置和Token，输入 yes 确认：" confirm
+7) readp "仅删除本机XHTTP Argo服务、配置、密钥及Token；不删除Cloudflare隧道/路由。输入 yes 确认：" confirm
 [[ $confirm == yes ]] || return 0
 xhttp_argo_remove && sbshare > /dev/null ;;
 8) xhttp_argo_address_menu ;;
@@ -3526,8 +3526,8 @@ esac
 
 xhttp_menu(){
 local action confirm
-yellow "XHTTP + REALITY（独立Xray，不影响现有五协议；不跟随Sing-box的启停/UUID/端口设置）"
-readp "1：部署\n2：查看节点及刷新订阅\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：卸载XHTTP\n8：已有节点启用文章同款Encryption + Vision（备份后升级）\n9：XHTTP + 固定Argo（独立隧道节点）\n0：返回\n请选择【0-9】：" action
+yellow "XHTTP管理：1–8为直连REALITY，9为固定Argo；独立Xray，不跟随Sing-box启停/UUID/端口"
+readp "1：部署\n2：查看节点并刷新本地订阅（Gitlab另用9→2推送）\n3：重启\n4：停止\n5：查看状态\n6：查看日志\n7：仅卸载直连XHTTP（保留XHTTP Argo）\n8：已有直连节点启用文章同款Encryption + Vision（备份后升级）\n9：XHTTP + 固定Argo（独立隧道节点）\n0：返回\n请选择【0-9】：" action
 case "$action" in
 1) xhttp_install ;;
 2) [[ -f /etc/s-box/xhttp/config.json ]] || { red "尚未部署XHTTP。"; return 1; }
@@ -3536,7 +3536,7 @@ xhttp_export && cat /etc/s-box/xhttp/share.txt && sbshare > /dev/null ;;
 4) xhttp_service stop ;;
 5) xhttp_service status ;;
 6) if command -v apk >/dev/null 2>&1; then tail -n 100 /etc/s-box/xhttp/service.log; else journalctl -u sbox-xhttp -n 100 --no-pager; fi ;;
-7) readp "将删除XHTTP配置和密钥；输入 yes 确认：" confirm
+7) readp "仅删除直连XHTTP服务、配置和密钥，保留XHTTP Argo；输入 yes 确认：" confirm
 [[ $confirm == yes ]] || return 0
 xhttp_remove && sbshare > /dev/null ;;
 8) xhttp_article_enable ;;
@@ -3548,8 +3548,8 @@ esac
 changeserv(){
 sbactive
 echo
-green "Sing-box配置变更选择如下:"
-readp "1：更换Reality域名伪装地址、切换自签证书与Acme域名证书、开关TLS\n2：更换全协议UUID(密码)、Vmess-Path路径\n3：设置Argo临时隧道、固定隧道\n4：切换IPV4或IPV6的代理优先级 (仅 1.10.7 内核可用)\n5：设置Telegram推送节点通知\n6：更换Warp-wireguard出站账户\n7：设置Gitlab订阅分享链接\n8：设置本地IP订阅分享链接\n9：设置所有Vmess节点的CDN优选地址\n10：设置节点名称前缀/后缀（默认无前缀、后缀为主机名）\n11：部署/管理 XHTTP + REALITY（独立Xray）\n0：返回上层\n请选择【0-11】：" menu
+green "配置变更：选项1–9主要管理Sing-box；独立XHTTP见11"
+readp "1：更换Reality域名伪装地址、切换自签证书与Acme域名证书、开关TLS\n2：更换Sing-box五协议UUID(密码)、VMess路径（不含XHTTP）\n3：设置VMess的Argo临时隧道、固定隧道（XHTTP见11→9）\n4：切换IPV4或IPV6的代理优先级 (仅1.10系列内核可用，不影响独立XHTTP)\n5：设置Telegram推送节点通知\n6：更换Warp-wireguard出站账户\n7：设置Gitlab订阅分享链接\n8：设置本地IP订阅分享链接\n9：手动设置VMess主节点/Argo的CDN连接地址（不含XHTTP）\n10：设置/清除节点名称前后缀（含XHTTP；初始后缀为主机名）\n11：管理独立XHTTP：直连REALITY / 固定Argo\n0：返回上层\n请选择【0-11】：" menu
 if [ "$menu" = "1" ];then
 changeym
 elif [ "$menu" = "2" ];then
@@ -3653,18 +3653,19 @@ sleep 1 && green "本地IP订阅链接已更新完成" && sleep 3 && sb
 
 vmesscfadd(){
 echo
-green "推荐使用稳定的世界大厂或组织的官方CDN域名作为CDN优选地址："
+green "以下为候选CDN连接地址，请自行验证可用性；本菜单不自动测速或保证提速："
 blue "cloudflare-ech.com"
 blue "www.visa.com.sg"
 blue "www.wto.org"
 blue "www.shopify.com"
 blue "yg1.ygkkk.dpdns.org (yg1中的1，可换为1-13中任意数字)"
 echo
-yellow "恢复默认操作：选项1设置为VPS的IP或者解析的域名，选项2设置为www.bing.com或者解析的域名"
+yellow "主节点恢复连接地址：选项1填VPS IP/域名；选项2仅清除Host/SNI覆盖，不恢复连接地址。"
 echo
-yellow "1：自定义Vmess-ws(tls)主协议节点的CDN优选地址"
-yellow "2：针对选项1，重置客户端host/sni域名(IP解析到CF上的域名)"
-yellow "3：自定义Vmess-ws(tls)-Argo节点的CDN优选地址"
+yellow "1：手动设置VMess-ws(tls)主节点连接地址"
+yellow "2：清除主节点自定义Host/SNI覆盖（选项1可重新设置）"
+yellow "3：手动设置所有VMess-Argo节点连接地址（不影响XHTTP）"
+yellow "XHTTP Argo独立地址设置：3→11→9→8；修改连接地址不改变隧道Host/SNI。"
 yellow "0：返回上层"
 readp "请选择【0-3】：" menu
 if [ "$menu" = "1" ]; then
@@ -4636,7 +4637,7 @@ lapre refresh
 [[ $inscore =~ ^[0-9.]+$ ]] && lat="【已安装v$inscore】" || pre="【已安装v$inscore】"
 green "1：升级/切换Sing-box最新正式版 v$latcore  ${bblue}${lat}${plain}"
 green "2：升级/切换Sing-box最新测试版 v$precore  ${bblue}${pre}${plain}"
-green "3：切换Sing-box某个正式版或测试版，需指定版本号 (建议1.10.0以上版本)"
+green "3：指定Sing-box版本（1.10及以上；现有配置须通过目标内核检查，否则回滚）"
 green "0：返回上层"
 readp "请选择【0-3】：" menu
 if [ "$menu" = "1" ]; then
@@ -4646,8 +4647,8 @@ upcore=$precore
 elif [ "$menu" = "3" ]; then
 echo
 red "注意: 版本号在 https://github.com/SagerNet/sing-box/tags 可查，且有Downloads字样 (必须1.10及以上版本)"
-green "正式版版本号格式：数字.数字.数字 (例：1.10.7   注意，1.10系列内核支持geosite分流，1.10以上内核不支持geosite分流"
-green "测试版版本号格式：数字.数字.数字-alpha或rc或beta.数字 (例：1.13.0-alpha或rc或beta.1)"
+green "正式版格式：数字.数字.数字（例1.14.4）；本脚本旧geosite分流菜单仅限1.10系列。"
+green "测试版格式：数字.数字.数字-alpha.N / beta.N / rc.N（例1.15.0-alpha.13）。此处不更新Xray。"
 readp "请输入Sing-box版本号：" upcore
 else
 sb
@@ -4749,9 +4750,10 @@ cat /etc/s-box/jhsub.txt
 clash_sb_share(){
 sbactive
 echo
-yellow "1：刷新并查看各协议分享链接、二维码、聚合节点"
-yellow "2：刷新并查看Mihomo、Sing-box客户端SFA/SFI/SFW三合一配置、Gitlab私有订阅链接"
-yellow "3：推送最新节点配置信息(选项1+选项2)到Telegram通知"
+yellow "1：刷新本地订阅，查看分享链接/二维码/聚合节点（不推送Gitlab）"
+yellow "2：刷新并查看Mihomo/Sing-box配置；已配置Gitlab时同时推送远端"
+yellow "3：刷新节点并推送Telegram通知（需先配置TG）"
+yellow "XHTTP仅导出到Mihomo和通用分享；Sing-box JSON不含XHTTP。"
 yellow "0：返回上层"
 readp "请选择【0-3】：" menu
 if [ "$menu" = "1" ]; then
@@ -4775,8 +4777,8 @@ echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-red "🚀SFA/SFI/SFW配置文件显示如下："
-red "安卓SFA、苹果SFI，win电脑官方文件包SFW请到甬哥Github项目自行下载，"
+red "🚀Sing-box客户端配置如下（默认1.14格式，不含XHTTP）："
+red "请使用支持对应配置格式的Sing-box客户端；旧客户端需匹配导出版本。"
 red "文件目录 /etc/s-box/sbox.json ，复制自建以json文件格式为准" && sleep 2
 echo
 cat /etc/s-box/sbox.json
@@ -5058,16 +5060,23 @@ fi
 
 sbsm(){
 echo
-green "关注甬哥YouTube频道：https://youtube.com/@ygkkk?sub_confirmation=1 了解最新代理协议与翻墙动态"
+green "本fork项目：https://github.com/redrohu/sing-box-yg"
+blue "使用说明：https://github.com/redrohu/sing-box-yg/blob/main/README.md"
+blue "版本兼容：https://github.com/redrohu/sing-box-yg/blob/main/CONFIG-COMPATIBILITY.md"
+blue "菜单功能图册：https://github.com/redrohu/sing-box-yg/blob/main/docs/MENU-GUIDE.md"
 echo
-blue "sing-box-yg脚本视频教程：https://www.youtube.com/playlist?list=PLMgly2AulGG_Affv6skQXWnVqw7XWiPwJ"
+yellow "3→10：设置/清除节点名称前后缀；3→9：VMess连接地址（手动设置，不自动测速）。"
+yellow "3→11：独立XHTTP直连REALITY；3→11→9：固定Argo；其选项8设置独立连接地址。"
+yellow "XHTTP支持相应模式的Xray/Mihomo客户端，不写入官方Sing-box客户端配置。"
+yellow "主菜单4/6/8仅管理Sing-box端口/启停/内核，不管理独立XHTTP；主菜单2会一并卸载。"
+yellow "9→1刷新本地订阅；9→2在配置Gitlab后推送远端；客户端还需重新拉取订阅。"
+yellow "菜单IP缓存60秒，版本信息缓存5分钟；SB_MENU_REFRESH=1 sb 可强制刷新查询。"
+yellow "Serv00管理/保活需HTTPS + POST + 独立Bearer令牌；旧GET保活链接需迁移。"
+blue "迁移说明：https://github.com/redrohu/sing-box-yg/blob/main/docs/SERV00-MANAGEMENT-MIGRATION.md"
 echo
-blue "sing-box-yg脚本博客说明：http://ygkkk.blogspot.com/2023/10/sing-box-yg.html"
-echo
-blue "sing-box-yg脚本项目地址：https://github.com/yonggekkk/sing-box-yg"
-echo
-blue "推荐甬哥新品：ArgoSBX一键无交互小钢炮脚本"
-blue "ArgoSBX项目地址：https://github.com/yonggekkk/argosbx"
+blue "上游项目/原作者：https://github.com/yonggekkk/sing-box-yg"
+blue "上游视频教程（不含本fork新增功能）：https://www.youtube.com/playlist?list=PLMgly2AulGG_Affv6skQXWnVqw7XWiPwJ"
+blue "上游博客：https://ygkkk.blogspot.com/2023/10/sing-box-yg.html"
 echo
 }
 
@@ -5084,28 +5093,28 @@ white "甬哥Github项目  ：github.com/yonggekkk"
 white "甬哥Blogger博客 ：ygkkk.blogspot.com"
 white "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" 
-white "Vless-reality-vision、Vmess-ws(tls)+Argo、Hy2、Tuic、Anytls 五协议共存脚本"
+white "Sing-box五协议 + 可选独立XHTTP（直连REALITY / 固定Argo，入口3→11）"
 white "脚本快捷方式：sb"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 green " 1. 一键安装 Sing-box" 
-green " 2. 删除卸载 Sing-box"
+green " 2. 完整卸载本脚本（含独立XHTTP、隧道服务及配置密钥）"
 white "----------------------------------------------------------------------------------"
-green " 3. 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】" 
-green " 4. 更改主端口/添加多端口跳跃复用" 
-green " 5. 三通道域名分流"
-green " 6. 关闭/重启 Sing-box"   
+green " 3. 配置管理 【TLS/UUID/VMess-Argo/订阅/CDN/节点名称/独立XHTTP】"
+green " 4. Sing-box五协议端口/UDP多端口转发（不含XHTTP）"
+green " 5. Sing-box三通道域名分流（不影响独立XHTTP）"
+green " 6. 关闭/重启 Sing-box（不影响独立XHTTP）"
 green " 7. 更新 Sing-box-yg 脚本"
 green " 8. 更新/切换/指定 Sing-box 内核版本"
 white "----------------------------------------------------------------------------------"
-green " 9. 刷新并查看节点 【Mihomo/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】"
+green " 9. 节点与订阅 【本地刷新/Mihomo与Sing-box配置/Gitlab推送/TG】"
 green "10. 查看 Sing-box 运行日志"
-green "11. 一键原版BBR+FQ加速"
+green "11. 调用外部BBR/FQ优化脚本（不保证提速）"
 green "12. 管理 Acme 申请域名IP证书"
 green "13. 管理 Warp 查看Netflix/ChatGPT解锁情况"
 green "14. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】"
 green "15. 更换IP刷新本地IP、调整IPV4/IPV6配置输出"
 white "----------------------------------------------------------------------------------"
-green "16. Sing-box-yg脚本使用说明书"
+green "16. 本fork使用说明/菜单导航/上游教程"
 white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"

@@ -1,3 +1,9 @@
+v26.11.21-fork.2更新内容：
+1、修正配置查看入口为7，明确管理/保活接口需HTTPS + POST + 独立Bearer令牌
+2、管理接口非交互式主页，保留原订阅入口；说明见docs/SERV00-MANAGEMENT-MIGRATION.md
+3、完整菜单功能图与子菜单说明见docs/MENU-GUIDE.md
+
+历史版本：
 v26.11.16-fork.1更新内容：
 1、服务端按内核生成 WireGuard endpoint 或旧版兼容配置，写入前校验并备份
 2、客户端默认使用 1.14 的 typed DNS、HTTP Client 和缓存格式

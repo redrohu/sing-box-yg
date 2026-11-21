@@ -1362,15 +1362,15 @@ CF节点落地到非CF网站的地区为：$IP所在地区
 二、Vmess-ws分享链接三形态如下：
 
 1、Vmess-ws主节点分享链接如下：
-(该节点默认不支持CDN，如果设置为CDN回源(需域名)：客户端地址可自行修改优选IP/域名，7个80系端口随便换，被墙依旧能用！)
+(该节点默认不支持CDN，如果设置为CDN回源(需域名)：客户端地址可自行修改优选IP/域名，7个80系端口随便换，需实际验证Cloudflare可达性，不保证可用或提速。)
 $vmws_link
 
 2、Vmess-ws-tls_Argo分享链接如下： 
-(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，6个443系端口随便换，被墙依旧能用！)
+(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，6个443系端口随便换，需实际验证Cloudflare可达性，不保证可用或提速。)
 $vmatls_link
 
 3、Vmess-ws_Argo分享链接如下：
-(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，7个80系端口随便换，被墙依旧能用！)
+(该节点为CDN优选IP节点，客户端地址可自行修改优选IP/域名，7个80系端口随便换，需实际验证Cloudflare可达性，不保证可用或提速。)
 $vma_link
 -------------------------------------------------------------------------------------------------
 
@@ -1382,7 +1382,7 @@ $hy2_link
 
 四、聚合通用节点，共计22个节点：
 3个IP全覆盖：3个reality、3个vmess+ws、3个hy2
-13个argo节点全覆盖 (已添加CF不死IP)：7个关tls 80系端口节点、6个开tls 443系端口节点
+13个argo节点全覆盖 (已添加CF候选连接地址，需验证可用性)：7个关tls 80系端口节点、6个开tls 443系端口节点
 
 订阅分享链接：
 $V2rayN_LINK
@@ -1392,7 +1392,7 @@ $baseurl
 -------------------------------------------------------------------------------------------------
 
 
-五、查看Sing-box与Clash-meta的订阅配置文件，请进入主菜单选择4
+五、查看Sing-box与Clash-meta的订阅配置文件，请进入主菜单选择7（选项6查看订阅链接）
 
 Clash-meta订阅分享链接：
 $Clashmeta_LINK
@@ -1424,13 +1424,13 @@ if [[ -e $WORKDIR/sing_box.json ]]; then
 green "查看clash与singbox配置明文！更新中，请稍等……"
 sleep 3
 green "Sing_box配置文件如下，可上传到订阅类客户端上使用："
-yellow "其中Argo节点为CDN优选IP节点，server地址可自行修改优选IP/域名，被墙依旧能用！"
+yellow "其中Argo节点为CDN优选IP节点，server地址可自行修改优选IP/域名，需实际验证Cloudflare可达性，不保证可用或提速。"
 sleep 2
 cat $WORKDIR/sing_box.json 
 echo
 echo
 green "Clash_meta配置文件如下，可上传到订阅类客户端上使用："
-yellow "其中Argo节点为CDN优选IP节点，server地址可自行修改优选IP/域名，被墙依旧能用！"
+yellow "其中Argo节点为CDN优选IP节点，server地址可自行修改优选IP/域名，需实际验证Cloudflare可达性，不保证可用或提速。"
 sleep 2
 cat $WORKDIR/clash_meta.yaml
 echo
@@ -1447,7 +1447,7 @@ export resport=y
 exec bash "$HOME/serv00keep.sh"
 WEBPORT
 chmod +x webport.sh
-green "开始安装多功能主页，请稍等……"
+green "开始安装认证管理接口，请稍等……"
 devil www del ${snb}.${USERNAME}.${hona}.net > /dev/null 2>&1
 devil www add ${USERNAME}.${hona}.net php > /dev/null 2>&1
 devil www add ${snb}.${USERNAME}.${hona}.net nodejs /usr/local/bin/node18 > /dev/null 2>&1
@@ -1462,7 +1462,7 @@ npm install basic-auth express dotenv axios --silent > /dev/null 2>&1
 rm $HOME/domains/${snb}.${USERNAME}.${hona}.net/public_nodejs/public/index.html > /dev/null 2>&1
 devil www restart ${snb}.${USERNAME}.${hona}.net
 curl -s --connect-timeout 5 --max-time 10 "http://${snb}.${USERNAME}.${hona}.net/healthz" > /dev/null 2>&1
-green "安装完毕，多功能主页地址：http://${snb}.${USERNAME}.${hona}.net" && sleep 2
+green "安装完毕，管理入口（HTTP仅作地址展示；管理请求须使用可信HTTPS + POST/Bearer）：http://${snb}.${USERNAME}.${hona}.net" && sleep 2
 }
 
 okip(){
@@ -1586,13 +1586,14 @@ menu() {
    green "甬哥Blogger博客 ：ygkkk.blogspot.com"
    green "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
    green "Serv00/Hostuno三协议共存脚本：vless-reality/Vmess-ws(Argo)/Hy2"
-   green "脚本快捷方式：sb"
+   green "脚本快捷方式：sb；本fork项目：github.com/redrohu/sing-box-yg"
+   yellow "管理/保活令牌：~/.serv00-management-token；勿通过HTTP或URL发送。迁移说明见项目docs。"
    echo   "============================================================"
    green  "1. 一键安装 Serv00/Hostuno-sb-yg"
    echo   "------------------------------------------------------------"
    yellow "2. 卸载删除 Serv00/Hostuno-sb-yg"
    echo   "------------------------------------------------------------"
-   green  "3. 重启主进程 (修复主节点)"
+   green  "3. 重启Sing-box主进程（不重启Argo；不保证连接恢复）"
    echo   "------------------------------------------------------------"
    green  "4. Argo重置（临时隧道与固定隧道相互切换、更换固定域名）"
    echo   "------------------------------------------------------------"
@@ -1679,7 +1680,7 @@ fi
 green "Argo固定域名：$argogd $check"
 fi
 if [ "$hona" = "serv00" ]; then
-green "多功能主页如下 (支持保活、重启、重置端口、进程查看、节点查询)"
+green "认证管理接口（非交互式控制页）：保活/重启/端口重置/运行状态需POST + Bearer；节点查询用原订阅链接"
 purple "http://${snb}.${USERNAME}.${hona}.net"
 fi
 else

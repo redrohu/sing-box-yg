@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2490" viewBox="0 0 1800 2490" role="img" aria-labelledby="title desc">
+<title id="title">安装、协议端口与域名分流</title>
+<desc id="desc">按实际输入路径列出菜单、子菜单、功能与影响范围。可配合MENU-GUIDE.md读取完整文字。</desc>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#162b3c}.h{font-size:42px;font-weight:700}.sub{font-size:22px;fill:#526878}.group{font-size:27px;font-weight:700}.label{font-size:23px;font-weight:600}.note{font-size:20px;fill:#42596b}.foot{font-size:23px;fill:#42596b}.path{font-family:Consolas,"Microsoft YaHei",monospace;fill:#526878;font-size:18px}</style>
+<rect width="1800" height="2490" fill="#f2f6fa"/>
+<rect x="60" y="44" width="8" height="65" rx="4" fill="#0e7490"/>
+<text x="90" y="84" class="h">05 / 安装、协议端口与域名分流</text>
+<text x="90" y="127" class="sub">条件选项按核心和证书状态显示；说明限制，不创造隐藏功能。</text>
+<text x="90" y="164" class="path">VPS v26.11.21-fork.18 / Serv00 v26.11.21-fork.2 · 路径数字对应实际输入顺序 · 非远程控制界面</text>
+<rect x="60" y="195" width="820" height="1025" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="60" y="195" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="90" y="239" class="group">1　安装交互顺序</text>
+<text x="112" y="289" class="path">1→IP环境</text>
+<path d="M 100 277 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="319" class="label">检测IPv4 / IPv6 / Warp</text>
+<text x="112" y="349" class="note">检测IPv4/IPv6/Warp；纯IPv6分支会写NAT64 DNS；已有Warp服务可</text>
+<text x="112" y="376" class="note">能临时重启。</text>
+<text x="134" y="401" class="path">1→防火墙→1</text>
+<path d="M 122 389 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="431" class="label">开放端口 / 关闭防火墙（默认）</text>
+<text x="134" y="461" class="note">会清理规则，请先评估其他业务；云厂商安全组仍需自行设置。</text>
+<text x="134" y="486" class="path">1→防火墙→2</text>
+<path d="M 122 474 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="516" class="label">跳过防火墙更改</text>
+<text x="134" y="546" class="note">由用户自行放行代理TCP/UDP端口。</text>
+<text x="134" y="571" class="path">1→内核→1</text>
+<path d="M 122 559 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="601" class="label">安装最新正式版（默认）</text>
+<text x="134" y="631" class="note">下载校验、归档和配置检查；具体版本以本次获取结果为准。</text>
+<text x="134" y="656" class="path">1→内核→2</text>
+<path d="M 122 644 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="686" class="label">安装旧1.10.7分支</text>
+<text x="134" y="716" class="note">保留geosite/IP优先设置，无AnyTLS；不要据此认为兼容所有新配</text>
+<text x="134" y="743" class="note">置。</text>
+<text x="134" y="768" class="path">1→证书→1</text>
+<path d="M 122 756 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="798" class="label">使用自签证书（默认）</text>
+<text x="134" y="828" class="note">若已有Acme证书则拒绝切换使用；否则不申请。</text>
+<text x="134" y="853" class="path">1→证书→2</text>
+<path d="M 122 841 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="883" class="label">使用 / 申请Acme证书</text>
+<text x="134" y="913" class="note">有证书则使用已有；没有时调用外部Acme脚本，失败退回自签。</text>
+<text x="134" y="938" class="path">1→端口→1</text>
+<path d="M 122 926 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="968" class="label">随机端口（默认）</text>
+<text x="134" y="998" class="note">大多在10000–65535；VMess按TLS状态改选可用CDN标准端口。</text>
+<text x="134" y="1023" class="path">1→端口→2</text>
+<path d="M 122 1011 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="1053" class="label">依次自定义协议端口</text>
+<text x="134" y="1083" class="note">VLESS / VMess / HY2 / TUIC，现代分支再设置AnyTLS。</text>
+<text x="112" y="1108" class="path">1→完成</text>
+<path d="M 100 1096 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1138" class="label">生成身份、服务和导出</text>
+<text x="112" y="1168" class="note">自动生成共用UUID、VMess路径、REALITY密钥及Warp账户；XHTTP另</text>
+<text x="112" y="1195" class="note">行部署。</text>
+<rect x="60" y="1260" width="820" height="944" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="60" y="1260" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="90" y="1304" class="group">5　域名分流：通道 → 匹配方式</text>
+<text x="112" y="1354" class="path">5→1</text>
+<path d="M 100 1342 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1384" class="label">Warp WireGuard IPv4优先</text>
+<text x="112" y="1414" class="note">仅1.10分支可用。</text>
+<text x="112" y="1439" class="path">5→2</text>
+<path d="M 100 1427 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1469" class="label">Warp WireGuard IPv6优先</text>
+<text x="112" y="1499" class="note">1.10和现代分支可进入；依赖该通道网络可用。</text>
+<text x="112" y="1524" class="path">5→3</text>
+<path d="M 100 1512 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1554" class="label">本机SOCKS5 IPv4优先</text>
+<text x="112" y="1584" class="note">先通过13或14准备可用SOCKS5服务。</text>
+<text x="112" y="1609" class="path">5→4</text>
+<path d="M 100 1597 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1639" class="label">本机SOCKS5 IPv6优先</text>
+<text x="112" y="1669" class="note">仅1.10分支可用。</text>
+<text x="112" y="1694" class="path">5→5</text>
+<path d="M 100 1682 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1724" class="label">VPS本地IPv4优先</text>
+<text x="112" y="1754" class="note">走本地出站，仍受当前可用地址族限制。</text>
+<text x="112" y="1779" class="path">5→6</text>
+<path d="M 100 1767 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1809" class="label">VPS本地IPv6优先</text>
+<text x="112" y="1839" class="note">走本地出站，仍受当前可用地址族限制。</text>
+<text x="134" y="1864" class="path">5→通道→1</text>
+<path d="M 122 1852 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="1894" class="label">按后缀域名匹配</text>
+<text x="134" y="1924" class="note">空格分隔，如example.com；回车清空该通道规则。</text>
+<text x="134" y="1949" class="path">5→通道→2</text>
+<path d="M 122 1937 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="1979" class="label">按geosite规则匹配</text>
+<text x="134" y="2009" class="note">仅1.10分支可用；现代分支仍可能显示选项2，但选择后拒绝。</text>
+<text x="134" y="2034" class="path">5→通道→3</text>
+<path d="M 122 2022 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="134" y="2064" class="label">返回通道选择</text>
+<text x="134" y="2094" class="note">不要把同一个域名/规则重复放入多个通道。</text>
+<text x="112" y="2119" class="path">5→0</text>
+<path d="M 100 2107 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="2149" class="label">返回主菜单</text>
+<text x="112" y="2179" class="note">不撤销已经保存的分流规则。</text>
+<rect x="920" y="195" width="820" height="1481" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="920" y="195" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="950" y="239" class="group">4　五协议端口与UDP多端口</text>
+<text x="972" y="289" class="path">4→1</text>
+<path d="M 960 277 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="319" class="label">更改VLESS REALITY主端口</text>
+<text x="972" y="349" class="note">仅一个主端口；需同步客户端及防火墙。</text>
+<text x="972" y="374" class="path">4→2</text>
+<path d="M 960 362 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="404" class="label">更改VMess WS主端口</text>
+<text x="972" y="434" class="note">临时Argo需重置；固定Argo的CF回源端口需同步。</text>
+<text x="972" y="459" class="path">4→3</text>
+<path d="M 960 447 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="489" class="label">Hysteria2端口管理</text>
+<text x="972" y="519" class="note">主端口 / UDP多端口，支持跳跃。</text>
+<text x="994" y="544" class="path">4→3→1</text>
+<path d="M 982 532 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="994" y="574" class="label">更换HY2主端口</text>
+<text x="994" y="604" class="note">原有多端口转发先清理，再生成新导出。</text>
+<text x="994" y="629" class="path">4→3→2</text>
+<path d="M 982 617 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="994" y="659" class="label">进入HY2添加多端口</text>
+<text x="994" y="689" class="note">1范围端口，2单端口，0返回HY2端口菜单。</text>
+<text x="1016" y="714" class="path">4→3→2→1</text>
+<path d="M 1004 702 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="1016" y="744" class="label">增加HY2范围端口</text>
+<text x="1016" y="774" class="note">输入小数字:大数字，限制1000–65535。</text>
+<text x="1016" y="799" class="path">4→3→2→2</text>
+<path d="M 1004 787 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="1016" y="829" class="label">增加HY2单个端口</text>
+<text x="1016" y="859" class="note">输入1000–65535，添加本项目标记的UDP转发规则。</text>
+<text x="994" y="884" class="path">4→3→3</text>
+<path d="M 982 872 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="994" y="914" class="label">删除HY2多端口</text>
+<text x="994" y="944" class="note">仅清理识别为本项目的相关转发，不清空整机NAT。</text>
+<text x="972" y="969" class="path">4→4</text>
+<path d="M 960 957 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="999" class="label">TUIC5端口管理</text>
+<text x="972" y="1029" class="note">主端口 / UDP多端口；结构与HY2相同，不导出客户端自动跳跃配置</text>
+<text x="972" y="1056" class="note">。</text>
+<text x="994" y="1081" class="path">4→4→1</text>
+<path d="M 982 1069 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="994" y="1111" class="label">更换TUIC主端口</text>
+<text x="994" y="1141" class="note">原有TUIC多端口先清理，客户端随后更新。</text>
+<text x="994" y="1166" class="path">4→4→2</text>
+<path d="M 982 1154 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="994" y="1196" class="label">进入TUIC添加多端口</text>
+<text x="994" y="1226" class="note">1范围端口，2单端口，0返回TUIC端口菜单。</text>
+<text x="1016" y="1251" class="path">4→4→2→1</text>
+<path d="M 1004 1239 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="1016" y="1281" class="label">增加TUIC范围端口</text>
+<text x="1016" y="1311" class="note">输入小数字:大数字；服务器UDP转发，不等于客户端自动跳跃。</text>
+<text x="1016" y="1336" class="path">4→4→2→2</text>
+<path d="M 1004 1324 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="1016" y="1366" class="label">增加TUIC单个端口</text>
+<text x="1016" y="1396" class="note">输入1000–65535；需自行处理防火墙。</text>
+<text x="994" y="1421" class="path">4→4→3</text>
+<path d="M 982 1409 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="994" y="1451" class="label">删除TUIC多端口</text>
+<text x="994" y="1481" class="note">仅清理识别为本项目的相关端口转发。</text>
+<text x="972" y="1506" class="path">4→5</text>
+<path d="M 960 1494 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="1536" class="label">更改AnyTLS主端口</text>
+<text x="972" y="1566" class="note">只在非1.10分支显示；只有一个主端口。</text>
+<text x="972" y="1591" class="path">4→0</text>
+<path d="M 960 1579 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="1621" class="label">返回主菜单</text>
+<text x="972" y="1651" class="note">HY2/TUIC子菜单及添加子菜单各自0返回上层，不涉及独立XHTTP。</text>
+<line x1="60" x2="1740" y1="2244" y2="2244" stroke="#c6d6e2"/>
+<text x="60" y="2288" class="foot">• 安装防火墙步骤1会关闭/清理防火墙规则，影响不止本脚本；已有其他业务建议选2自行放行。</text>
+<text x="60" y="2319" class="foot">• 5→分流：1.10支持1–6通道与geosite；现代分支1、4不可用。geosite选项可能仍显示，但选择会被拒绝。</text>
+<text x="60" y="2350" class="foot">• 分流通道不可用时目标网站可能被阻断；这些规则只作用于Sing-box五协议，独立XHTTP仍走独立出站。</text>
+<text x="60" y="2462" class="path">sing-box-yg / redrohu fork · 05 / 07 · 2026-11-21 · 源码与文字详表：docs/MENU-GUIDE.md</text>
+</svg>

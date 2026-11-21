@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1752" viewBox="0 0 1800 1752" role="img" aria-labelledby="title desc">
+<title id="title">服务、版本、日志与外部工具</title>
+<desc id="desc">按实际输入路径列出菜单、子菜单、功能与影响范围。可配合MENU-GUIDE.md读取完整文字。</desc>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#162b3c}.h{font-size:42px;font-weight:700}.sub{font-size:22px;fill:#526878}.group{font-size:27px;font-weight:700}.label{font-size:23px;font-weight:600}.note{font-size:20px;fill:#42596b}.foot{font-size:23px;fill:#42596b}.path{font-family:Consolas,"Microsoft YaHei",monospace;fill:#526878;font-size:18px}</style>
+<rect width="1800" height="1752" fill="#f2f6fa"/>
+<rect x="60" y="44" width="8" height="65" rx="4" fill="#0e7490"/>
+<text x="90" y="84" class="h">06 / 服务、版本、日志与外部工具</text>
+<text x="90" y="127" class="sub">版本查询、脚本更新、核心切换和客户端刷新不可互相替代。</text>
+<text x="90" y="164" class="path">VPS v26.11.21-fork.18 / Serv00 v26.11.21-fork.2 · 路径数字对应实际输入顺序 · 非远程控制界面</text>
+<rect x="60" y="195" width="820" height="801" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="60" y="195" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="90" y="239" class="group">6 / 7 / 8 / 10　服务与版本</text>
+<text x="112" y="289" class="path">6→1</text>
+<path d="M 100 277 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="319" class="label">重启Sing-box</text>
+<text x="112" y="349" class="note">先做配置检查；独立XHTTP不跟随。</text>
+<text x="112" y="374" class="path">6→2</text>
+<path d="M 100 362 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="404" class="label">关闭Sing-box</text>
+<text x="112" y="434" class="note">停止主服务；独立XHTTP和其他辅助服务并非一起停止。</text>
+<text x="90" y="459" class="path">7</text>
+<text x="90" y="489" class="label">更新脚本</text>
+<text x="90" y="519" class="note">先暂存校验、备份，再替换；不更新Sing-box/Xray核心，不部署XHTTP</text>
+<text x="90" y="546" class="note">。</text>
+<text x="112" y="571" class="path">8→1</text>
+<path d="M 100 559 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="601" class="label">切换最新正式版核心</text>
+<text x="112" y="631" class="note">重新查询可用版本，下载检查；配置/服务失败尝试回滚。</text>
+<text x="112" y="656" class="path">8→2</text>
+<path d="M 100 644 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="686" class="label">切换最新测试版核心</text>
+<text x="112" y="716" class="note">测试版本风险较高；现有配置必须适配。</text>
+<text x="112" y="741" class="path">8→3</text>
+<path d="M 100 729 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="771" class="label">指定版本核心</text>
+<text x="112" y="801" class="note">输入数字.数字.数字或带alpha/beta/rc后缀；需1.10及以上。</text>
+<text x="112" y="826" class="path">8→0</text>
+<path d="M 100 814 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="856" class="label">返回主菜单</text>
+<text x="112" y="886" class="note">不会仅因打开页面就切换核心。</text>
+<text x="90" y="911" class="path">10</text>
+<text x="90" y="941" class="label">查看Sing-box日志</text>
+<text x="90" y="971" class="note">journal跟随/日志文件；退出查看不等于停止服务。</text>
+<rect x="60" y="1036" width="820" height="461" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="60" y="1036" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="90" y="1080" class="group">15　刷新导出IP地址</text>
+<text x="112" y="1130" class="path">15→1</text>
+<path d="M 100 1118 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1160" class="label">双栈使用IPv4输出（默认）</text>
+<text x="112" y="1190" class="note">先刷新本地IP；用于导出地址，不设置系统网卡IP。</text>
+<text x="112" y="1215" class="path">15→2</text>
+<path d="M 100 1203 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1245" class="label">双栈使用IPv6输出</text>
+<text x="112" y="1275" class="note">URI加方括号，配置字段使用裸IPv6；客户端网络需可达。</text>
+<text x="112" y="1300" class="path">15→单栈</text>
+<path d="M 100 1288 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1330" class="label">自动获取当前可用IP</text>
+<text x="112" y="1360" class="note">无双栈选择；更新后刷新本地订阅，远端仍需9→2。</text>
+<text x="112" y="1385" class="path">15→影响范围</text>
+<path d="M 100 1373 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="112" y="1415" class="label">导出地址与实际连接参数</text>
+<text x="112" y="1445" class="note">直连XHTTP随公共导出地址读取；自定义XHTTP Argo server不受此项</text>
+<text x="112" y="1472" class="note">覆盖。</text>
+<rect x="920" y="195" width="820" height="434" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="920" y="195" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="950" y="239" class="group">11 / 12 / 13　外部脚本边界</text>
+<text x="950" y="289" class="path">11</text>
+<text x="950" y="319" class="label">BBR优化脚本</text>
+<text x="950" y="349" class="note">LXC/OpenVZ分支拦截；否则调用teddysun/across的bbr.sh。</text>
+<text x="950" y="374" class="path">12</text>
+<text x="950" y="404" class="label">Acme证书管理</text>
+<text x="950" y="434" class="note">调用yonggekkk/acme-yg；具体签发模式与菜单由外部脚本提供。</text>
+<text x="950" y="459" class="path">13</text>
+<text x="950" y="489" class="label">Warp管理 / 解锁检测</text>
+<text x="950" y="519" class="note">调用yonggekkk/warp-yg；不会自动把XHTTP接入Sing-box分流。</text>
+<text x="950" y="544" class="path">16</text>
+<text x="950" y="574" class="label">本fork帮助 / 导航</text>
+<text x="950" y="604" class="note">项目README、兼容说明、菜单路径、缓存强刷与Serv00迁移链接。</text>
+<rect x="920" y="669" width="820" height="434" rx="18" fill="#fff" stroke="#d5e0e9"/>
+<rect x="920" y="669" width="8" height="64" rx="4" fill="#0e7490"/>
+<text x="950" y="713" class="group">14　本地WARP-plus-Socks5</text>
+<text x="972" y="763" class="path">14→1</text>
+<path d="M 960 751 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="793" class="label">启用 / 重置本地Warp代理</text>
+<text x="972" y="823" class="note">需检测到IPv4；设置端口默认40000；会更换辅助进程。</text>
+<text x="972" y="848" class="path">14→2</text>
+<path d="M 960 836 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="878" class="label">启用 / 重置Psiphon代理</text>
+<text x="972" y="908" class="note">同样设置本机SOCKS5端口，再输入国家地区两位代码。</text>
+<text x="972" y="933" class="path">14→3</text>
+<path d="M 960 921 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="963" class="label">停止辅助代理</text>
+<text x="972" y="993" class="note">只停止本项辅助进程；依赖它的分流可能不可用。</text>
+<text x="972" y="1018" class="path">14→0</text>
+<path d="M 960 1006 v 20 h 8" fill="none" stroke="#b6c7d3" stroke-width="1.5"/>
+<text x="972" y="1048" class="label">返回主菜单</text>
+<text x="972" y="1078" class="note">不代表卸载已安装的全部代理。</text>
+<line x1="60" x2="1740" y1="1537" y2="1537" stroke="#c6d6e2"/>
+<text x="60" y="1581" class="foot">• 菜单信息可短期缓存：IP/地区60秒、版本5分钟；SB_MENU_REFRESH=1 sb强刷元数据，不自动执行更新。</text>
+<text x="60" y="1612" class="foot">• 11/12/13在线取得外部脚本：图仅列本仓库入口，无法固定它们未来变化的子菜单；执行前自行检查来源、权限和影响。</text>
+<text x="60" y="1724" class="path">sing-box-yg / redrohu fork · 06 / 07 · 2026-11-21 · 源码与文字详表：docs/MENU-GUIDE.md</text>
+</svg>

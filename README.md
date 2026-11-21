@@ -3,6 +3,28 @@
 
 > 本 fork 已从初始版本重新适配官方 sing-box 新配置格式，默认导出 1.14 客户端配置；保留原菜单和协议，不使用第三方十入站模板。版本兼容、更新说明及验证范围见 [CONFIG-COMPATIBILITY.md](CONFIG-COMPATIBILITY.md)。
 
+### 当前菜单导航（VPS）
+
+**完整菜单功能图：[7张分层功能图与子菜单详表](docs/MENU-GUIDE.md)**，包含安装、配置、端口、分流、两种 XHTTP、维护和 Serv00；提供 SVG / PNG 及[离线图册](docs/MENU-GUIDE.html)。终端菜单 **16** 也提供入口。
+
+菜单编号保持不变，**16** 提供本 fork 帮助与上游教程。两种 XHTTP 都是可选的独立 Xray 服务，并非 Sing-box 的新增入站。
+
+| 入口 | 实际作用与范围 |
+| --- | --- |
+| 2 | 完整卸载本脚本，包含已部署的独立 XHTTP、隧道服务及本机配置/密钥；不删除 Cloudflare 云端隧道或路由 |
+| 3 → 2；主菜单 4、6、8 | 分别管理 Sing-box 五协议 UUID / 端口 / 启停 / 内核，不更改独立 XHTTP |
+| 3 → 3 | VMess 的临时/固定 Argo，不管理 XHTTP Argo |
+| 3 → 9 | 手动设置 VMess 主节点/Argo 连接地址，不自动测速、不保证提速 |
+| 3 → 10 | 设置或清除节点名称前后缀，包含已部署的 XHTTP |
+| 3 → 11 → 1–8 | 管理直连 XHTTP + REALITY；选项 7 只卸载此直连节点 |
+| 3 → 11 → 9 | 管理独立 XHTTP + 固定 Argo（不叠加 REALITY）；其选项 8 设置独立连接地址 |
+| 9 → 1 | 刷新本地订阅、查看节点，不推送 Gitlab |
+| 9 → 2 | 刷新/查看配置；已配置 Gitlab 时同时推送远端；客户端还需重新拉取 |
+
+XHTTP 写入 Mihomo YAML 和通用分享订阅，不写入官方 Sing-box JSON。菜单 IP/地区查询缓存 60 秒，版本信息缓存 5 分钟；`SB_MENU_REFRESH=1 sb` 可强制刷新查询，不代表更新脚本或内核。
+
+Serv00/Hostuno 菜单独立：**6** 查看节点与订阅链接，**7** 查看配置文件。网页管理是认证 API，不是交互控制面板；管理/保活需可信 HTTPS、POST 和独立 Bearer 令牌，详见 [迁移说明](docs/SERV00-MANAGEMENT-MIGRATION.md)。
+
 ### 节点名称前缀 / 后缀（VPS）
 
 菜单 **3 → 10**：1 设置后缀、2 恢复主机名后缀、3 设置前缀、4 清除前缀、**5 清除后缀（不显示主机名）**。清除前后缀互不影响；例如清除后缀后 `RN 美国 | anytls racknerd-54213c7` 变为 `RN 美国 | anytls`，不残留尾随空格。

@@ -1,0 +1,22 @@
+{
+  "labels": [
+    "green \" 1. 一键安装 Sing-box\"",
+    "green \" 2. 完整卸载本脚本（含独立XHTTP、隧道服务及配置密钥）\"",
+    "green \" 3. 配置管理 【TLS/UUID/VMess-Argo/订阅/CDN/节点名称/独立XHTTP】\"",
+    "green \" 4. Sing-box五协议端口/UDP多端口转发（不含XHTTP）\"",
+    "green \" 5. Sing-box三通道域名分流（不影响独立XHTTP）\"",
+    "green \" 6. 关闭/重启 Sing-box（不影响独立XHTTP）\"",
+    "green \" 7. 更新 Sing-box-yg 脚本\"",
+    "green \" 8. 更新/切换/指定 Sing-box 内核版本\"",
+    "green \" 9. 节点与订阅 【本地刷新/Mihomo与Sing-box配置/Gitlab推送/TG】\"",
+    "green \"10. 查看 Sing-box 运行日志\"",
+    "green \"11. 调用外部BBR/FQ优化脚本（不保证提速）\"",
+    "green \"12. 管理 Acme 申请域名IP证书\"",
+    "green \"13. 管理 Warp 查看Netflix/ChatGPT解锁情况\"",
+    "green \"14. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】\"",
+    "green \"15. 更换IP刷新本地IP、调整IPV4/IPV6配置输出\"",
+    "green \"16. 本fork使用说明/菜单导航/上游教程\"",
+    "green \" 0. 退出脚本\""
+  ],
+  "header": "clear\nwhite \"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\" \necho -e \"${bblue} ░██     ░██      ░██ ██ ██         ░█${plain}█   ░██     ░██   ░██     ░█${red}█   ░██${plain}  \"\necho -e \"${bblue}  ░██   ░██      ░██    ░░██${plain}        ░██  ░██      ░██  ░██${red}      ░██  ░██${plain}   \"\necho -e \"${bblue}   ░██ ░██      ░██ ${plain}                ░██ ██        ░██ █${red}█        ░██ ██  ${plain}   \"\necho -e \"${bblue}     ░██        ░${plain}██    ░██ ██       ░██ ██        ░█${red}█ ██        ░██ ██  ${plain}  \"\necho -e \"${bblue}     ░██ ${plain}        ░██    ░░██        ░██ ░██       ░${red}██ ░██       ░██ ░██ ${plain}  \"\necho -e \"${bblue}     ░█${plain}█          ░██ ██ ██         ░██  ░░${red}██     ░██  ░░██     ░██  ░░██ ${plain}  \"\nwhite \"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\" \nwhite \"甬哥Github项目  ：github.com/yonggekkk\"\nwhite \"甬哥Blogger博客 ：ygkkk.blogspot.com\"\nwhite \"甬哥YouTube频道 ：www.youtube.com/@ygkkk\"\nwhite \"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\" \nwhite \"Sing-box五协议 + 可选独立XHTTP（直连REALITY / 固定Argo，入口3→11）\"\nwhite \"脚本快捷方式：sb\"\nred \"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\"\ngreen \" 1. 一键安装 Sing-box\" \ngreen \" 2. 完整卸载本脚本（含独立XHTTP、隧道服务及配置密钥）\"\nwhite \"----------------------------------------------------------------------------------\"\ngreen \" 3. 配置管理 【TLS/UUID/VMess-Argo/订阅/CDN/节点名称/独立XHTTP】\"\ngreen \" 4. Sing-box五协议端口/UDP多端口转发（不含XHTTP）\"\ngreen \" 5. Sing-box三通道域名分流（不影响独立XHTTP）\"\ngreen \" 6. 关闭/重启 Sing-box（不影响独立XHTTP）\"\ngreen \" 7. 更新 Sing-box-yg 脚本\"\ngreen \" 8. 更新/切换/指定 Sing-box 内核版本\"\nwhite \"----------------------------------------------------------------------------------\"\ngreen \" 9. 节点与订阅 【本地刷新/Mihomo与Sing-box配置/Gitlab推送/TG】\"\ngreen \"10. 查看 Sing-box 运行日志\"\ngreen \"11. 调用外部BBR/FQ优化脚本（不保证提速）\"\ngreen \"12. 管理 Acme 申请域名IP证书\"\ngreen \"13. 管理 Warp 查看Netflix/ChatGPT解锁情况\"\ngreen \"14. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】\"\ngreen \"15. 更换IP刷新本地IP、调整IPV4/IPV6配置输出\"\nwhite \"----------------------------------------------------------------------------------\"\ngreen \"16. 本fork使用说明/菜单导航/上游教程\"\nwhite \"----------------------------------------------------------------------------------\"\ngreen \" 0. 退出脚本\"\nred \"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\"\n"
+}

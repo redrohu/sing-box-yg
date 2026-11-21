@@ -1,0 +1,1059 @@
+{
+  "version": "VPS v26.11.21-fork.18 / Serv00 v26.11.21-fork.2",
+  "sections": [
+    {
+      "id": "01-overview",
+      "title": "VPS 主菜单总览",
+      "subtitle": "从安装到维护：先选择管理范围，再进入对应子菜单。",
+      "domain": "core",
+      "notes": [
+        "数字0在主菜单退出；多数子菜单0返回或结束当前子菜单，XHTTP子菜单选择一次后结束，不保证自动重新绘制上层菜单。",
+        "主菜单2完整卸载含独立XHTTP；4/5/6/8等Sing-box设置不会自动同步至独立XHTTP。"
+      ],
+      "groups": [
+        {
+          "title": "部署与日常连接",
+          "root": "sb",
+          "items": [
+            {
+              "path": "1",
+              "title": "一键安装 Sing-box",
+              "note": "按提示处理IP/防火墙、核心、证书和端口；不会自动部署XHTTP。"
+            },
+            {
+              "path": "2",
+              "title": "完整卸载本脚本",
+              "note": "移除Sing-box、已部署XHTTP及本机隧道/配置/密钥；操作前备份。"
+            },
+            {
+              "path": "3",
+              "title": "配置管理",
+              "note": "证书、UUID、VMess Argo、订阅、连接地址、节点名称和独立XHTTP。"
+            },
+            {
+              "path": "4",
+              "title": "Sing-box五协议端口 / UDP转发",
+              "note": "HY2/TUIC有多端口子菜单；XHTTP端口不在这里更改。"
+            },
+            {
+              "path": "5",
+              "title": "Sing-box三通道域名分流",
+              "note": "Warp WireGuard / SOCKS5 / 本地出站；限制随核心分支变化。"
+            },
+            {
+              "path": "6",
+              "title": "Sing-box重启 / 关闭",
+              "note": "仅主服务；不控制XHTTP、XHTTP Argo的独立服务。"
+            },
+            {
+              "path": "9",
+              "title": "节点、配置与订阅",
+              "note": "本地刷新、Gitlab远端推送、Telegram通知分开处理。"
+            }
+          ]
+        },
+        {
+          "title": "版本、排查与扩展",
+          "root": "sb",
+          "items": [
+            {
+              "path": "7",
+              "title": "更新 Sing-box-yg脚本",
+              "note": "更新菜单和脚本版本；不会自动升级Sing-box/Xray内核。"
+            },
+            {
+              "path": "8",
+              "title": "切换 / 更新 Sing-box内核",
+              "note": "正式版、测试版或指定版本；检查现有配置，失败回滚。"
+            },
+            {
+              "path": "10",
+              "title": "查看 Sing-box日志",
+              "note": "systemd journal或OpenRC日志；XHTTP日志见3→11。"
+            },
+            {
+              "path": "11",
+              "title": "调用外部BBR优化脚本",
+              "note": "按虚拟化条件拦截；不保证提速，外部菜单非本仓库固定。"
+            },
+            {
+              "path": "12",
+              "title": "调用外部Acme证书脚本",
+              "note": "申请/管理证书；申请后可在3→1切换证书模式。"
+            },
+            {
+              "path": "13",
+              "title": "调用外部Warp管理脚本",
+              "note": "Warp及解锁检测；菜单来自外部下载脚本。"
+            },
+            {
+              "path": "14",
+              "title": "本地SOCKS5 / 多地区Psiphon",
+              "note": "WARP-plus-Socks5辅助进程，不是新客户端入站协议。"
+            },
+            {
+              "path": "15",
+              "title": "刷新本地IP / 输出地址族",
+              "note": "双栈可选IPv4/IPv6；更新导出地址，不改变系统IP分配。"
+            },
+            {
+              "path": "16",
+              "title": "本fork帮助与菜单导航",
+              "note": "项目说明、兼容说明、独立XHTTP范围及Serv00迁移说明。"
+            },
+            {
+              "path": "0",
+              "title": "退出脚本",
+              "note": "不主动停止已运行的服务。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "02-connection",
+      "title": "配置子菜单：证书、身份与隧道",
+      "subtitle": "入口3的选项1–6；VMess Argo与独立XHTTP Argo不要混用。",
+      "domain": "core",
+      "notes": [
+        "3→1的选项2–5受已申请Acme证书条件控制；1.10分支不提供AnyTLS。",
+        "改UUID、证书、VMess路径或端口后，应刷新并重新拉取客户端订阅；这些设置不改独立XHTTP。"
+      ],
+      "groups": [
+        {
+          "title": "3 → 1　证书 / REALITY域名",
+          "root": "3→1",
+          "items": [
+            {
+              "path": "3→1→1",
+              "title": "VLESS REALITY伪装域名",
+              "note": "输入域名，回车默认apple.com；不是为该域名申请证书。"
+            },
+            {
+              "path": "3→1→2",
+              "title": "VMess WS的TLS切换",
+              "note": "Acme可用时切换TLS；VMess入站开启TLS后不能使用此VMess Argo菜单。"
+            },
+            {
+              "path": "3→1→3",
+              "title": "Hysteria2证书切换",
+              "note": "自签证书与已有Acme证书切换，随后更新客户端。"
+            },
+            {
+              "path": "3→1→4",
+              "title": "TUIC5证书切换",
+              "note": "自签证书与已有Acme证书切换。"
+            },
+            {
+              "path": "3→1→5",
+              "title": "AnyTLS证书切换",
+              "note": "现代核心分支可见；使用已有Acme证书或自签证书。"
+            },
+            {
+              "path": "3→1→0",
+              "title": "返回配置菜单",
+              "note": "证书申请入口在主菜单12，不在本子菜单直接签发。"
+            }
+          ]
+        },
+        {
+          "title": "3 → 2 / 3 → 4　身份与IP优先级",
+          "root": "3",
+          "items": [
+            {
+              "path": "3→2→1",
+              "title": "设置共用UUID / 密码",
+              "note": "五协议共用，回车随机生成；不改变独立XHTTP UUID。"
+            },
+            {
+              "path": "3→2→2",
+              "title": "修改VMess路径",
+              "note": "回车不变；只改VMess WS的Path。"
+            },
+            {
+              "path": "3→2→0",
+              "title": "返回配置菜单",
+              "note": "保留现有配置。"
+            },
+            {
+              "path": "3→4→1",
+              "title": "IPv4优先",
+              "note": "仅1.10系列；需要存在IPv4。"
+            },
+            {
+              "path": "3→4→2",
+              "title": "IPv6优先",
+              "note": "仅1.10系列；需要存在IPv6。"
+            },
+            {
+              "path": "3→4→3",
+              "title": "仅IPv4",
+              "note": "仅1.10系列；独立XHTTP出站不跟随。"
+            },
+            {
+              "path": "3→4→4",
+              "title": "仅IPv6",
+              "note": "仅1.10系列；独立XHTTP出站不跟随。"
+            }
+          ]
+        },
+        {
+          "title": "3 → 3　VMess专用Argo",
+          "root": "3→3",
+          "items": [
+            {
+              "path": "3→3→1",
+              "title": "临时隧道管理",
+              "note": "VMess入站必须关闭TLS；默认不需自有域名。"
+            },
+            {
+              "path": "3→3→1→1",
+              "title": "重置临时域名 / 启动",
+              "note": "启动本机VMess回源隧道；域名会变化，更新客户端订阅。"
+            },
+            {
+              "path": "3→3→1→2",
+              "title": "停止临时隧道",
+              "note": "清理本项目临时隧道进程与任务，不停止独立XHTTP隧道。"
+            },
+            {
+              "path": "3→3→2",
+              "title": "固定隧道管理",
+              "note": "准备Cloudflare隧道、域名和Token；回源端口为VMess端口。"
+            },
+            {
+              "path": "3→3→2→1",
+              "title": "设置 / 重置固定隧道",
+              "note": "输入Token和域名；云端HTTP路由回源本机VMess端口。"
+            },
+            {
+              "path": "3→3→2→2",
+              "title": "停止固定隧道",
+              "note": "仅停止本机VMess固定隧道，不删除Cloudflare云端对象。"
+            },
+            {
+              "path": "3→3→0",
+              "title": "返回配置菜单",
+              "note": "临时/固定各自子菜单0返回Argo选择。"
+            }
+          ]
+        },
+        {
+          "title": "3 → 5 / 3 → 6　通知与WireGuard",
+          "root": "3",
+          "items": [
+            {
+              "path": "3→5→1",
+              "title": "配置Telegram通知",
+              "note": "输入机器人Token及用户ID；当前配置会触发通知发送。"
+            },
+            {
+              "path": "3→5→0",
+              "title": "返回配置菜单",
+              "note": "手动发送通知入口为9→3。"
+            },
+            {
+              "path": "3→6→1",
+              "title": "更换Warp WireGuard账户",
+              "note": "显示当前参数及新随机账户；输入私钥、IPv6和Reserved。"
+            },
+            {
+              "path": "3→6→0",
+              "title": "返回配置菜单",
+              "note": "只影响Sing-box出站；参数显示可能含私钥，勿公开日志。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "03-subscriptions",
+      "title": "订阅、连接地址与节点名称",
+      "subtitle": "入口3的选项7–10及主菜单9：生成、发布、拉取是三件事。",
+      "domain": "core",
+      "notes": [
+        "本地订阅为HTTP文件服务，路径密码不能代替传输加密；通过不可信网络拉取时需自行做好可信HTTPS保护。",
+        "客户端server是连接地址；Host/SNI是握手/路由身份。XHTTP Argo仅改变server时必须保留原隧道Host/SNI。"
+      ],
+      "groups": [
+        {
+          "title": "3 → 7 / 3 → 8　订阅发布",
+          "root": "3",
+          "items": [
+            {
+              "path": "3→7→1",
+              "title": "设置 / 重置Gitlab订阅",
+              "note": "输入邮箱、访问令牌、用户/项目及可选分支；先生成再推送，不强制覆盖冲突。"
+            },
+            {
+              "path": "3→7→0",
+              "title": "返回配置菜单",
+              "note": "远端配置好后日常发布用9→2；订阅URL包含凭据，勿公开。"
+            },
+            {
+              "path": "3→8→1",
+              "title": "安装 / 重置本地IP订阅",
+              "note": "设置路径密码（默认当前UUID）及端口（默认随机），启动HTTP文件服务。"
+            },
+            {
+              "path": "3→8→2",
+              "title": "更换订阅路径密码",
+              "note": "更新URL路径；客户端必须换用新链接。"
+            },
+            {
+              "path": "3→8→3",
+              "title": "更换本地订阅端口",
+              "note": "未被占用的端口；还需处理云端/系统防火墙。"
+            },
+            {
+              "path": "3→8→4",
+              "title": "卸载本地IP订阅",
+              "note": "停止文件服务、清理发布目录及本项目开机任务。"
+            },
+            {
+              "path": "3→8→0",
+              "title": "返回配置菜单",
+              "note": "只退出此设置页，不停代理服务。"
+            }
+          ]
+        },
+        {
+          "title": "3 → 9　VMess连接地址",
+          "root": "3→9",
+          "items": [
+            {
+              "path": "3→9→1",
+              "title": "设置VMess主节点连接地址",
+              "note": "手动填IP/域名；需要时提示Host/SNI，CDN回源域名需正确配置。"
+            },
+            {
+              "path": "3→9→2",
+              "title": "清除主节点Host/SNI覆盖",
+              "note": "不是清除server连接地址；想改连接地址需再选1。"
+            },
+            {
+              "path": "3→9→3",
+              "title": "设置所有VMess Argo连接地址",
+              "note": "固定/临时VMess Argo共用，不改XHTTP Argo；不会自动测速。"
+            },
+            {
+              "path": "3→9→0",
+              "title": "返回配置菜单",
+              "note": "XHTTP Argo独立连接地址见3→11→9→8。"
+            }
+          ]
+        },
+        {
+          "title": "3 → 10　名称前后缀",
+          "root": "3→10",
+          "items": [
+            {
+              "path": "3→10→1",
+              "title": "设置自定义后缀",
+              "note": "退出无后缀模式；仅改显示名称与分组引用。"
+            },
+            {
+              "path": "3→10→2",
+              "title": "恢复主机名后缀",
+              "note": "不修改系统主机名。"
+            },
+            {
+              "path": "3→10→3",
+              "title": "设置自定义前缀",
+              "note": "前缀加在协议名前，包含已部署XHTTP。"
+            },
+            {
+              "path": "3→10→4",
+              "title": "清除前缀",
+              "note": "与后缀设置互不影响。"
+            },
+            {
+              "path": "3→10→5",
+              "title": "清除后缀",
+              "note": "不显示自定义后缀或主机名；保留前缀。"
+            },
+            {
+              "path": "3→10→0",
+              "title": "返回配置菜单",
+              "note": "名称变更会刷新本地导出；Gitlab仍用9→2，客户端再拉取。"
+            }
+          ]
+        },
+        {
+          "title": "9　刷新、查看与通知",
+          "root": "9",
+          "items": [
+            {
+              "path": "9→1",
+              "title": "刷新本地订阅 / 查看节点",
+              "note": "生成分享链接、二维码及聚合订阅；不推送Gitlab。"
+            },
+            {
+              "path": "9→2",
+              "title": "配置查看 / Gitlab发布",
+              "note": "刷新本地Mihomo/Sing-box配置；若已设置Gitlab，同时推送远端。"
+            },
+            {
+              "path": "9→3",
+              "title": "Telegram通知",
+              "note": "刷新本地节点后调用已配置的通知脚本；不等于Gitlab发布。"
+            },
+            {
+              "path": "9→0",
+              "title": "返回主菜单",
+              "note": "客户端需要主动重新拉取，脚本不能代替客户端刷新。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "04-xhttp",
+      "title": "独立 XHTTP：直连与固定Argo",
+      "subtitle": "入口3→11；两个节点共存，但凭据、服务、配置与启停分离。",
+      "domain": "xhttp",
+      "notes": [
+        "直连默认REALITY + VLESS Encryption（X25519认证）+ Vision，mode:auto；普通模式不带额外Encryption/Vision。",
+        "固定Argo为TLS + XHTTP packet-up + Encryption/Vision；本机HTTP回源，不叠加REALITY，也不是端到端REALITY。",
+        "仅导出给兼容的Mihomo/Xray客户端及通用分享；官方Sing-box JSON不含XHTTP。"
+      ],
+      "groups": [
+        {
+          "title": "3 → 11　直连REALITY节点",
+          "root": "3→11",
+          "items": [
+            {
+              "path": "3→11→1",
+              "title": "部署直连节点",
+              "note": "先装Sing-box；选模式、独立TCP端口（默认443）、REALITY目标域名。"
+            },
+            {
+              "path": "3→11→1→模式1",
+              "title": "Encryption + Vision（默认）",
+              "note": "独立VLESS Encryption凭据；路径/，保留外层REALITY。"
+            },
+            {
+              "path": "3→11→1→模式2",
+              "title": "普通XHTTP + REALITY",
+              "note": "不添加VLESS Encryption与Vision；普通模式路径自动随机。"
+            },
+            {
+              "path": "3→11→2",
+              "title": "查看节点并刷新本地订阅",
+              "note": "更新Xray客户端JSON、Mihomo和URI；远端仍用9→2。"
+            },
+            {
+              "path": "3→11→3",
+              "title": "检查配置并重启",
+              "note": "只操作独立sbox-xhttp服务，不重启Sing-box。"
+            },
+            {
+              "path": "3→11→4",
+              "title": "停止直连服务",
+              "note": "保留配置；再次使用先重启，停止不代表移除订阅节点。"
+            },
+            {
+              "path": "3→11→5",
+              "title": "查看状态",
+              "note": "本机服务状态，不是公网测速或客户端连接证明。"
+            },
+            {
+              "path": "3→11→6",
+              "title": "查看日志",
+              "note": "独立服务journal或OpenRC日志。"
+            },
+            {
+              "path": "3→11→7",
+              "title": "仅卸载直连XHTTP",
+              "note": "需输入yes；删除本机直连配置/密钥，保留XHTTP Argo。"
+            },
+            {
+              "path": "3→11→8",
+              "title": "已有普通节点升级文章模式",
+              "note": "先备份；保留端口/UUID/REALITY密钥，启用Encryption/Vision并改路径/；必须换客户端配置。"
+            },
+            {
+              "path": "3→11→9",
+              "title": "进入XHTTP固定Argo菜单",
+              "note": "无需先部署直连节点，已有Sing-box即可单独部署。"
+            },
+            {
+              "path": "3→11→0",
+              "title": "结束当前子菜单",
+              "note": "不停止服务，不保证自动重绘主菜单。"
+            }
+          ]
+        },
+        {
+          "title": "3 → 11 → 9　固定Argo节点",
+          "root": "3→11→9",
+          "items": [
+            {
+              "path": "3→11→9→1",
+              "title": "部署独立固定隧道节点",
+              "note": "输入完整域名、回环HTTP端口（默认18080）、服务器上Token文件绝对路径。"
+            },
+            {
+              "path": "3→11→9→1→Cloudflare准备",
+              "title": "隧道 + 域名 + 已发布应用",
+              "note": "独立隧道路由：HTTP 127.0.0.1:18080，路径留空；端口与脚本输入一致。"
+            },
+            {
+              "path": "3→11→9→2",
+              "title": "查看节点并刷新本地订阅",
+              "note": "Xray client.json、Mihomo与聚合URI；Gitlab另用9→2。"
+            },
+            {
+              "path": "3→11→9→3",
+              "title": "检查配置并重启",
+              "note": "操作sbox-xhttp-argo和sbox-xhttp-argo-tunnel两服务。"
+            },
+            {
+              "path": "3→11→9→4",
+              "title": "停止节点与固定隧道",
+              "note": "保留配置及Token；不影响VMess Argo/直连REALITY。"
+            },
+            {
+              "path": "3→11→9→5",
+              "title": "查看两项服务状态",
+              "note": "只证明本机服务状态，不证明云端路由或客户端成功。"
+            },
+            {
+              "path": "3→11→9→6",
+              "title": "查看节点及隧道日志",
+              "note": "排查回源拒绝、隧道未连、认证或握手错误。"
+            },
+            {
+              "path": "3→11→9→7",
+              "title": "卸载本机固定Argo节点",
+              "note": "输入yes；删本机服务/配置/密钥/Token，不删CF云端隧道/路由。"
+            },
+            {
+              "path": "3→11→9→8",
+              "title": "独立连接地址设置",
+              "note": "只改此XHTTP Argo，不受3→9的VMess设置影响。"
+            },
+            {
+              "path": "3→11→9→8→1",
+              "title": "设置优选域名 / IPv4 / IPv6",
+              "note": "无协议、端口、路径；仅改server/address，Host/SNI保留隧道域名。"
+            },
+            {
+              "path": "3→11→9→8→2",
+              "title": "恢复默认隧道域名",
+              "note": "移除自定义连接地址；不更改UUID、Token或服务端口。"
+            },
+            {
+              "path": "3→11→9→8→0",
+              "title": "取消地址设置",
+              "note": "不保存新设置。"
+            },
+            {
+              "path": "3→11→9→0",
+              "title": "结束当前子菜单",
+              "note": "云端对象不会随返回动作改变。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "05-install-routing",
+      "title": "安装、协议端口与域名分流",
+      "subtitle": "条件选项按核心和证书状态显示；说明限制，不创造隐藏功能。",
+      "domain": "core",
+      "notes": [
+        "安装防火墙步骤1会关闭/清理防火墙规则，影响不止本脚本；已有其他业务建议选2自行放行。",
+        "5→分流：1.10支持1–6通道与geosite；现代分支1、4不可用。geosite选项可能仍显示，但选择会被拒绝。",
+        "分流通道不可用时目标网站可能被阻断；这些规则只作用于Sing-box五协议，独立XHTTP仍走独立出站。"
+      ],
+      "groups": [
+        {
+          "title": "1　安装交互顺序",
+          "root": "1",
+          "items": [
+            {
+              "path": "1→IP环境",
+              "title": "检测IPv4 / IPv6 / Warp",
+              "note": "检测IPv4/IPv6/Warp；纯IPv6分支会写NAT64 DNS；已有Warp服务可能临时重启。"
+            },
+            {
+              "path": "1→防火墙→1",
+              "title": "开放端口 / 关闭防火墙（默认）",
+              "note": "会清理规则，请先评估其他业务；云厂商安全组仍需自行设置。"
+            },
+            {
+              "path": "1→防火墙→2",
+              "title": "跳过防火墙更改",
+              "note": "由用户自行放行代理TCP/UDP端口。"
+            },
+            {
+              "path": "1→内核→1",
+              "title": "安装最新正式版（默认）",
+              "note": "下载校验、归档和配置检查；具体版本以本次获取结果为准。"
+            },
+            {
+              "path": "1→内核→2",
+              "title": "安装旧1.10.7分支",
+              "note": "保留geosite/IP优先设置，无AnyTLS；不要据此认为兼容所有新配置。"
+            },
+            {
+              "path": "1→证书→1",
+              "title": "使用自签证书（默认）",
+              "note": "若已有Acme证书则拒绝切换使用；否则不申请。"
+            },
+            {
+              "path": "1→证书→2",
+              "title": "使用 / 申请Acme证书",
+              "note": "有证书则使用已有；没有时调用外部Acme脚本，失败退回自签。"
+            },
+            {
+              "path": "1→端口→1",
+              "title": "随机端口（默认）",
+              "note": "大多在10000–65535；VMess按TLS状态改选可用CDN标准端口。"
+            },
+            {
+              "path": "1→端口→2",
+              "title": "依次自定义协议端口",
+              "note": "VLESS / VMess / HY2 / TUIC，现代分支再设置AnyTLS。"
+            },
+            {
+              "path": "1→完成",
+              "title": "生成身份、服务和导出",
+              "note": "自动生成共用UUID、VMess路径、REALITY密钥及Warp账户；XHTTP另行部署。"
+            }
+          ]
+        },
+        {
+          "title": "4　五协议端口与UDP多端口",
+          "root": "4",
+          "items": [
+            {
+              "path": "4→1",
+              "title": "更改VLESS REALITY主端口",
+              "note": "仅一个主端口；需同步客户端及防火墙。"
+            },
+            {
+              "path": "4→2",
+              "title": "更改VMess WS主端口",
+              "note": "临时Argo需重置；固定Argo的CF回源端口需同步。"
+            },
+            {
+              "path": "4→3",
+              "title": "Hysteria2端口管理",
+              "note": "主端口 / UDP多端口，支持跳跃。"
+            },
+            {
+              "path": "4→3→1",
+              "title": "更换HY2主端口",
+              "note": "原有多端口转发先清理，再生成新导出。"
+            },
+            {
+              "path": "4→3→2",
+              "title": "进入HY2添加多端口",
+              "note": "1范围端口，2单端口，0返回HY2端口菜单。"
+            },
+            {
+              "path": "4→3→2→1",
+              "title": "增加HY2范围端口",
+              "note": "输入小数字:大数字，限制1000–65535。"
+            },
+            {
+              "path": "4→3→2→2",
+              "title": "增加HY2单个端口",
+              "note": "输入1000–65535，添加本项目标记的UDP转发规则。"
+            },
+            {
+              "path": "4→3→3",
+              "title": "删除HY2多端口",
+              "note": "仅清理识别为本项目的相关转发，不清空整机NAT。"
+            },
+            {
+              "path": "4→4",
+              "title": "TUIC5端口管理",
+              "note": "主端口 / UDP多端口；结构与HY2相同，不导出客户端自动跳跃配置。"
+            },
+            {
+              "path": "4→4→1",
+              "title": "更换TUIC主端口",
+              "note": "原有TUIC多端口先清理，客户端随后更新。"
+            },
+            {
+              "path": "4→4→2",
+              "title": "进入TUIC添加多端口",
+              "note": "1范围端口，2单端口，0返回TUIC端口菜单。"
+            },
+            {
+              "path": "4→4→2→1",
+              "title": "增加TUIC范围端口",
+              "note": "输入小数字:大数字；服务器UDP转发，不等于客户端自动跳跃。"
+            },
+            {
+              "path": "4→4→2→2",
+              "title": "增加TUIC单个端口",
+              "note": "输入1000–65535；需自行处理防火墙。"
+            },
+            {
+              "path": "4→4→3",
+              "title": "删除TUIC多端口",
+              "note": "仅清理识别为本项目的相关端口转发。"
+            },
+            {
+              "path": "4→5",
+              "title": "更改AnyTLS主端口",
+              "note": "只在非1.10分支显示；只有一个主端口。"
+            },
+            {
+              "path": "4→0",
+              "title": "返回主菜单",
+              "note": "HY2/TUIC子菜单及添加子菜单各自0返回上层，不涉及独立XHTTP。"
+            }
+          ]
+        },
+        {
+          "title": "5　域名分流：通道 → 匹配方式",
+          "root": "5",
+          "items": [
+            {
+              "path": "5→1",
+              "title": "Warp WireGuard IPv4优先",
+              "note": "仅1.10分支可用。"
+            },
+            {
+              "path": "5→2",
+              "title": "Warp WireGuard IPv6优先",
+              "note": "1.10和现代分支可进入；依赖该通道网络可用。"
+            },
+            {
+              "path": "5→3",
+              "title": "本机SOCKS5 IPv4优先",
+              "note": "先通过13或14准备可用SOCKS5服务。"
+            },
+            {
+              "path": "5→4",
+              "title": "本机SOCKS5 IPv6优先",
+              "note": "仅1.10分支可用。"
+            },
+            {
+              "path": "5→5",
+              "title": "VPS本地IPv4优先",
+              "note": "走本地出站，仍受当前可用地址族限制。"
+            },
+            {
+              "path": "5→6",
+              "title": "VPS本地IPv6优先",
+              "note": "走本地出站，仍受当前可用地址族限制。"
+            },
+            {
+              "path": "5→通道→1",
+              "title": "按后缀域名匹配",
+              "note": "空格分隔，如example.com；回车清空该通道规则。"
+            },
+            {
+              "path": "5→通道→2",
+              "title": "按geosite规则匹配",
+              "note": "仅1.10分支可用；现代分支仍可能显示选项2，但选择后拒绝。"
+            },
+            {
+              "path": "5→通道→3",
+              "title": "返回通道选择",
+              "note": "不要把同一个域名/规则重复放入多个通道。"
+            },
+            {
+              "path": "5→0",
+              "title": "返回主菜单",
+              "note": "不撤销已经保存的分流规则。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "06-maintenance",
+      "title": "服务、版本、日志与外部工具",
+      "subtitle": "版本查询、脚本更新、核心切换和客户端刷新不可互相替代。",
+      "domain": "core",
+      "notes": [
+        "菜单信息可短期缓存：IP/地区60秒、版本5分钟；SB_MENU_REFRESH=1 sb强刷元数据，不自动执行更新。",
+        "11/12/13在线取得外部脚本：图仅列本仓库入口，无法固定它们未来变化的子菜单；执行前自行检查来源、权限和影响。"
+      ],
+      "groups": [
+        {
+          "title": "6 / 7 / 8 / 10　服务与版本",
+          "root": "sb",
+          "items": [
+            {
+              "path": "6→1",
+              "title": "重启Sing-box",
+              "note": "先做配置检查；独立XHTTP不跟随。"
+            },
+            {
+              "path": "6→2",
+              "title": "关闭Sing-box",
+              "note": "停止主服务；独立XHTTP和其他辅助服务并非一起停止。"
+            },
+            {
+              "path": "7",
+              "title": "更新脚本",
+              "note": "先暂存校验、备份，再替换；不更新Sing-box/Xray核心，不部署XHTTP。"
+            },
+            {
+              "path": "8→1",
+              "title": "切换最新正式版核心",
+              "note": "重新查询可用版本，下载检查；配置/服务失败尝试回滚。"
+            },
+            {
+              "path": "8→2",
+              "title": "切换最新测试版核心",
+              "note": "测试版本风险较高；现有配置必须适配。"
+            },
+            {
+              "path": "8→3",
+              "title": "指定版本核心",
+              "note": "输入数字.数字.数字或带alpha/beta/rc后缀；需1.10及以上。"
+            },
+            {
+              "path": "8→0",
+              "title": "返回主菜单",
+              "note": "不会仅因打开页面就切换核心。"
+            },
+            {
+              "path": "10",
+              "title": "查看Sing-box日志",
+              "note": "journal跟随/日志文件；退出查看不等于停止服务。"
+            }
+          ]
+        },
+        {
+          "title": "11 / 12 / 13　外部脚本边界",
+          "root": "sb",
+          "items": [
+            {
+              "path": "11",
+              "title": "BBR优化脚本",
+              "note": "LXC/OpenVZ分支拦截；否则调用teddysun/across的bbr.sh。"
+            },
+            {
+              "path": "12",
+              "title": "Acme证书管理",
+              "note": "调用yonggekkk/acme-yg；具体签发模式与菜单由外部脚本提供。"
+            },
+            {
+              "path": "13",
+              "title": "Warp管理 / 解锁检测",
+              "note": "调用yonggekkk/warp-yg；不会自动把XHTTP接入Sing-box分流。"
+            },
+            {
+              "path": "16",
+              "title": "本fork帮助 / 导航",
+              "note": "项目README、兼容说明、菜单路径、缓存强刷与Serv00迁移链接。"
+            }
+          ]
+        },
+        {
+          "title": "14　本地WARP-plus-Socks5",
+          "root": "14",
+          "items": [
+            {
+              "path": "14→1",
+              "title": "启用 / 重置本地Warp代理",
+              "note": "需检测到IPv4；设置端口默认40000；会更换辅助进程。"
+            },
+            {
+              "path": "14→2",
+              "title": "启用 / 重置Psiphon代理",
+              "note": "同样设置本机SOCKS5端口，再输入国家地区两位代码。"
+            },
+            {
+              "path": "14→3",
+              "title": "停止辅助代理",
+              "note": "只停止本项辅助进程；依赖它的分流可能不可用。"
+            },
+            {
+              "path": "14→0",
+              "title": "返回主菜单",
+              "note": "不代表卸载已安装的全部代理。"
+            }
+          ]
+        },
+        {
+          "title": "15　刷新导出IP地址",
+          "root": "15",
+          "items": [
+            {
+              "path": "15→1",
+              "title": "双栈使用IPv4输出（默认）",
+              "note": "先刷新本地IP；用于导出地址，不设置系统网卡IP。"
+            },
+            {
+              "path": "15→2",
+              "title": "双栈使用IPv6输出",
+              "note": "URI加方括号，配置字段使用裸IPv6；客户端网络需可达。"
+            },
+            {
+              "path": "15→单栈",
+              "title": "自动获取当前可用IP",
+              "note": "无双栈选择；更新后刷新本地订阅，远端仍需9→2。"
+            },
+            {
+              "path": "15→影响范围",
+              "title": "导出地址与实际连接参数",
+              "note": "直连XHTTP随公共导出地址读取；自定义XHTTP Argo server不受此项覆盖。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "07-serv00",
+      "title": "Serv00 / Hostuno 独立菜单",
+      "subtitle": "与VPS菜单不是同一套编号；这里的S只用来标识平台，不需输入。",
+      "domain": "serv00",
+      "notes": [
+        "S→2不只是清理一份配置：会结束当前账户多个进程并删除bin/domains等及网站配置；S→9更会递归删除账户家目录内容，极高风险。",
+        "本图记录实际行为，不代表建议执行破坏性操作；先离线备份，勿用于存有其他业务的共享账户。",
+        "认证管理接口不是网页交互面板；可信HTTPS + POST + Authorization: Bearer，令牌保存在~/.serv00-management-token。"
+      ],
+      "groups": [
+        {
+          "title": "S　主菜单0–9",
+          "root": "S",
+          "items": [
+            {
+              "path": "S→1",
+              "title": "安装三协议脚本",
+              "note": "VLESS REALITY / VMess WS(Argo) / HY2；不是VPS独立XHTTP安装器。"
+            },
+            {
+              "path": "S→2",
+              "title": "卸载脚本及相关账户资源",
+              "note": "需y/n确认；删除bin/domains等并清理账户网站配置，范围较广。"
+            },
+            {
+              "path": "S→3",
+              "title": "重启Sing-box主进程",
+              "note": "配置校验并重启核心，不重启Argo；不保证端到端恢复。"
+            },
+            {
+              "path": "S→4",
+              "title": "Argo切换 / 重置",
+              "note": "临时与固定互换、重用已有固定配置或换域名/Token。"
+            },
+            {
+              "path": "S→5",
+              "title": "更新本地SSH菜单脚本",
+              "note": "下载并校验脚本；不等于部署全部核心/管理应用。"
+            },
+            {
+              "path": "S→6",
+              "title": "查看节点与订阅链接",
+              "note": "刷新链接信息，包含三IP/Argo节点、反代IP/ProxyIP说明。"
+            },
+            {
+              "path": "S→7",
+              "title": "查看Sing-box / Mihomo配置",
+              "note": "生成并显示本地配置明文，含客户端凭据，勿公开。"
+            },
+            {
+              "path": "S→8",
+              "title": "随机重置三个协议端口",
+              "note": "自动选择新端口并刷新进程/导出；固定Argo需同步CF回源。"
+            },
+            {
+              "path": "S→9",
+              "title": "账户级清理 / 初始化",
+              "note": "需y确认；删除家目录文件及账户进程，可能断开SSH。"
+            },
+            {
+              "path": "S→0",
+              "title": "退出菜单",
+              "note": "不主动停止后台服务。"
+            }
+          ]
+        },
+        {
+          "title": "S → 1 / 4　交互与固定隧道",
+          "root": "S",
+          "items": [
+            {
+              "path": "S→1→IP",
+              "title": "选择服务器地址",
+              "note": "回车默认选择可用IP，或输入列出的候选IP。"
+            },
+            {
+              "path": "S→1→REALITY",
+              "title": "输入伪装域名",
+              "note": "回车使用账户官方域名，s使用blog.cloudflare.com，或输入合规域名。"
+            },
+            {
+              "path": "S→1→UUID",
+              "title": "共用UUID",
+              "note": "回车随机；不要在截图/公开文档中展示实际值。"
+            },
+            {
+              "path": "S→1→端口",
+              "title": "分配三协议端口",
+              "note": "check_port检查/分配2个TCP和1个UDP，具体以平台配额为准。"
+            },
+            {
+              "path": "S→1/4→回车",
+              "title": "使用临时Argo隧道",
+              "note": "生成临时域名；域名变化后需刷新客户端。"
+            },
+            {
+              "path": "S→1/4→g",
+              "title": "使用固定Argo隧道",
+              "note": "输入域名与Token；已有记录时可回车复用或替换，显示可能含Token，勿录屏。"
+            },
+            {
+              "path": "S→固定→回源",
+              "title": "Cloudflare端口同步",
+              "note": "HTTP回源为本机VMess端口，不是VPS XHTTP默认18080。"
+            }
+          ]
+        },
+        {
+          "title": "管理 / 保活 API（不是SSH数字菜单）",
+          "root": "API",
+          "items": [
+            {
+              "path": "API→/healthz",
+              "title": "匿名健康端点",
+              "note": "只返回网页服务健康，不重启代理，不证明代理可用。"
+            },
+            {
+              "path": "API→/up",
+              "title": "保活",
+              "note": "POST + Bearer；等待子命令完成并检查进程，操作冲突返回409。"
+            },
+            {
+              "path": "API→/re",
+              "title": "重启",
+              "note": "POST + Bearer；拒绝旧GET管理链接。"
+            },
+            {
+              "path": "API→/rp",
+              "title": "端口重置",
+              "note": "POST + Bearer；有连接中断风险，客户端需刷新。"
+            },
+            {
+              "path": "API→/jc",
+              "title": "运行状态",
+              "note": "POST + Bearer；仅状态，不公开完整进程参数和Token。"
+            },
+            {
+              "path": "API→/list/<UUID>",
+              "title": "订阅查询",
+              "note": "保留原UUID链接；不是管理令牌，不应公开。"
+            },
+            {
+              "path": "API→配置迁移",
+              "title": "Worker / GitHub保活",
+              "note": "HTTPS目标 + 独立令牌JSON；不再使用公开GET保活URL。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
