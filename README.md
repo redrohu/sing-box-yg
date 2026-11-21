@@ -5,7 +5,7 @@
 
 ### 当前菜单导航（VPS）
 
-**完整菜单功能图：[7张分层功能图与子菜单详表](docs/MENU-GUIDE.md)**，包含安装、配置、端口、分流、两种 XHTTP、维护和 Serv00；提供 SVG / PNG 及[离线图册](docs/MENU-GUIDE.html)。终端菜单 **16** 也提供入口。
+**实际菜单功能图：**[可编辑XMind](docs/MENU-ACTUAL-TREE.xmind) · [完整展开SVG](docs/menu-maps/vps-actual-menu-full.svg) · [菜单速览PNG](docs/menu-maps/vps-actual-menu-overview.png)。按实际主菜单及子菜单展示作用和注意事项；另有[文字详表](docs/MENU-GUIDE.md)和[离线查看页](docs/MENU-GUIDE.html)。终端菜单 **16** 也提供入口。
 
 菜单编号保持不变，**16** 提供本 fork 帮助与上游教程。两种 XHTTP 都是可选的独立 Xray 服务，并非 Sing-box 的新增入站。
 

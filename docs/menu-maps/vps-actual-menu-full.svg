@@ -1,0 +1,1531 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3490" height="24618" viewBox="0 0 3490 24618">
+<rect width="100%" height="100%" fill="#f8fafc"/>
+<text x="30" y="42" font-family="Microsoft YaHei,sans-serif" font-size="26" font-weight="bold">VPS实际菜单完整树：菜单、功能及注意事项</text>
+<path d="M 460,12333.0 C 495,12333.0 495,855.0 530,855.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,1803.0 530,1803.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,7221.0 530,7221.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,13625.0 530,13625.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,16539.0 530,16539.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,18553.0 530,18553.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,19031.0 530,19031.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,19559.0 530,19559.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,20251.0 530,20251.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,20757.0 530,20757.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,21163.0 530,21163.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,21655.0 530,21655.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,22069.0 530,22069.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,22719.0 530,22719.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,23575.0 530,23575.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,24131.0 530,24131.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 460,12333.0 C 495,12333.0 495,24431.0 530,24431.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="30" y="12306.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+<text x="46" y="12335.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Sing-box-yg · VPS实际菜单</text>
+<path d="M 960,855.0 C 995,855.0 995,149.0 1030,149.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,377.0 1030,377.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,641.0 1030,641.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,905.0 1030,905.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,1169.0 1030,1169.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,1333.0 1030,1333.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,1447.0 1030,1447.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,855.0 C 995,855.0 995,1561.0 1030,1561.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="530" y="828.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="546" y="857.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 一键安装 Sing-box</text>
+<path d="M 1460,149.0 C 1495,149.0 1495,149.0 1530,149.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1030" y="122.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="151.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">步骤① 检查IP / Warp / IPv6环境</text>
+<rect x="1530" y="94.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="123.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】检测IPv4/IPv6/Warp；纯IPv6</text>
+<text x="1546" y="151.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">分支会写NAT64 DNS；已有Warp服务可能临</text>
+<text x="1546" y="179.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">时重启。</text>
+<path d="M 1460,377.0 C 1495,377.0 1495,263.0 1530,263.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 1460,377.0 C 1495,377.0 1495,363.0 1530,363.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 1460,377.0 C 1495,377.0 1495,477.0 1530,477.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1030" y="350.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="379.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">步骤② 是否开放端口、关闭防火墙</text>
+<path d="M 1960,263.0 C 1995,263.0 1995,263.0 2030,263.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="236.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="265.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 开放端口 / 关闭防火墙（默认）</text>
+<rect x="2030" y="222.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="251.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】会清理规则，请先评估其他业</text>
+<text x="2046" y="279.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">务；云厂商安全组仍需自行设置。</text>
+<path d="M 1960,363.0 C 1995,363.0 1995,363.0 2030,363.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="336.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="365.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 跳过防火墙更改</text>
+<rect x="2030" y="322.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="351.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】由用户自行放行代理TCP/UDP</text>
+<text x="2046" y="379.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">端口。</text>
+<rect x="1530" y="422.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="451.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】选1（默认）会关闭/清理整机防火墙</text>
+<text x="1546" y="479.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">规则，并可能停用Web服务；有其他业务建议</text>
+<text x="1546" y="507.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">选2自行放行。</text>
+<path d="M 1460,641.0 C 1495,641.0 1495,591.0 1530,591.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 1460,641.0 C 1495,641.0 1495,691.0 1530,691.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1030" y="614.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="643.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">步骤③ 选择Sing-box内核</text>
+<path d="M 1960,591.0 C 1995,591.0 1995,591.0 2030,591.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="564.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="593.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 安装最新正式版（默认）</text>
+<rect x="2030" y="550.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="579.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】下载校验、归档和配置检查；</text>
+<text x="2046" y="607.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">具体版本以本次获取结果为准。</text>
+<path d="M 1960,691.0 C 1995,691.0 1995,691.0 2030,691.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="664.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="693.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 安装旧1.10.7分支</text>
+<rect x="2030" y="650.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="679.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】保留geosite/IP优先设置，无</text>
+<text x="2046" y="707.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">AnyTLS；不要据此认为兼容所有新配置。</text>
+<path d="M 1460,905.0 C 1495,905.0 1495,791.0 1530,791.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 1460,905.0 C 1495,905.0 1495,891.0 1530,891.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 1460,905.0 C 1495,905.0 1495,1005.0 1530,1005.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1030" y="878.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="907.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">步骤④ 选择自签或Acme证书</text>
+<path d="M 1960,791.0 C 1995,791.0 1995,791.0 2030,791.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="764.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="793.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 使用自签证书（默认）</text>
+<rect x="2030" y="750.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="779.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】若已有Acme证书则拒绝切换使</text>
+<text x="2046" y="807.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">用；否则不申请。</text>
+<path d="M 1960,891.0 C 1995,891.0 1995,891.0 2030,891.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="864.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="893.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 使用 / 申请Acme证书</text>
+<rect x="2030" y="850.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="879.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】有证书则使用已有；没有时调</text>
+<text x="2046" y="907.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">用外部Acme脚本，失败退回自签。</text>
+<rect x="1530" y="950.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="979.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】自签模式默认关闭VMess入站TLS，</text>
+<text x="1546" y="1007.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">REALITY仍保留；Acme证书影响相关TLS入站</text>
+<text x="1546" y="1035.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">，不等于给REALITY伪装域名申请证书。</text>
+<path d="M 1460,1169.0 C 1495,1169.0 1495,1119.0 1530,1119.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 1460,1169.0 C 1495,1169.0 1495,1219.0 1530,1219.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1030" y="1142.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="1171.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">步骤⑤ 自动 / 自定义协议端口</text>
+<path d="M 1960,1119.0 C 1995,1119.0 1995,1119.0 2030,1119.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="1092.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="1121.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 随机端口（默认）</text>
+<rect x="2030" y="1078.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="1107.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】大多在10000–65535；VMess</text>
+<text x="2046" y="1135.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">按TLS状态改选可用CDN标准端口。</text>
+<path d="M 1960,1219.0 C 1995,1219.0 1995,1219.0 2030,1219.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1530" y="1192.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="1221.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 依次自定义协议端口</text>
+<rect x="2030" y="1178.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="2046" y="1207.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】VLESS / VMess / HY2 / TUIC</text>
+<text x="2046" y="1235.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">，现代分支再设置AnyTLS。</text>
+<path d="M 1460,1333.0 C 1495,1333.0 1495,1333.0 1530,1333.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="1030" y="1306.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="1335.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">步骤⑥ 生成密钥、安装服务并导出节点</text>
+<rect x="1530" y="1278.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1546" y="1307.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】自动生成共用UUID、VMess路</text>
+<text x="1546" y="1335.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">径、REALITY密钥及Warp账户；XHTTP另行部</text>
+<text x="1546" y="1363.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">署。</text>
+<rect x="1030" y="1406.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="1435.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按提示处理IP/防火墙、核心、</text>
+<text x="1046" y="1463.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">证书和端口；不会自动部署XHTTP。</text>
+<rect x="1030" y="1506.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="1535.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】安装防火墙步骤1会关闭/清理防火墙</text>
+<text x="1046" y="1563.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">规则，影响不止本脚本；已有其他业务建议选2</text>
+<text x="1046" y="1591.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">自行放行。</text>
+<path d="M 960,1803.0 C 995,1803.0 995,1675.0 1030,1675.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,1803.0 C 995,1803.0 995,1789.0 1030,1789.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,1803.0 C 995,1803.0 995,1917.0 1030,1917.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="530" y="1762.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="546" y="1791.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 完整卸载本脚本（含独立XHTTP、隧道服务</text>
+<text x="546" y="1819.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">及配置密钥）</text>
+<rect x="1030" y="1634.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="1663.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】移除Sing-box、已部署XHTTP</text>
+<text x="1046" y="1691.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">及本机隧道/配置/密钥；操作前备份。</text>
+<rect x="1030" y="1734.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="1763.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】危险：完整卸载包含Sing-box、独立</text>
+<text x="1046" y="1791.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP、XHTTP固定Argo及本机配置和密钥；</text>
+<text x="1046" y="1819.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">先离线备份。</text>
+<rect x="1030" y="1862.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="1891.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】主菜单2完整卸载含独立XHTTP；</text>
+<text x="1046" y="1919.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4/5/6/8等Sing-box设置不会自动同步至独立</text>
+<text x="1046" y="1947.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP。</text>
+<path d="M 960,7221.0 C 995,7221.0 995,2431.0 1030,2431.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,3195.0 1030,3195.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,4059.0 1030,4059.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,4881.0 1030,4881.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,5339.0 1030,5339.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,5725.0 1030,5725.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,6139.0 1030,6139.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,6781.0 1030,6781.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,7523.0 1030,7523.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,8223.0 1030,8223.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,10385.0 1030,10385.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,12197.0 1030,12197.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,12283.0 1030,12283.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,7221.0 C 995,7221.0 995,12397.0 1030,12397.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="530" y="7180.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="546" y="7209.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 配置管理 【TLS/UUID/VMess-Argo/订阅/</text>
+<text x="546" y="7237.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">CDN/节点名称/独立XHTTP】</text>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2031.0 1530,2031.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2131.0 1530,2131.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2231.0 1530,2231.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2331.0 1530,2331.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2431.0 1530,2431.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2531.0 1530,2531.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2631.0 1530,2631.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2731.0 1530,2731.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,2431.0 C 1495,2431.0 1495,2831.0 1530,2831.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="2390.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="2419.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 更换Reality域名伪装地址、切换自签证书与</text>
+<text x="1046" y="2447.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Acme域名证书、开关TLS</text>
+<path d="M 1960,2031.0 C 1995,2031.0 1995,2031.0 2030,2031.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2004.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2033.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. VLESS REALITY伪装域名</text>
+<rect x="2030" y="1990.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2019.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入域名，回车默认</text>
+<text x="2046" y="2047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">apple.com；不是为该域名申请证书。</text>
+<path d="M 1960,2131.0 C 1995,2131.0 1995,2131.0 2030,2131.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2104.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2133.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. VMess WS的TLS切换</text>
+<rect x="2030" y="2090.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】Acme可用时切换TLS；VMess</text>
+<text x="2046" y="2147.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入站开启TLS后不能使用此VMess Argo菜单。</text>
+<path d="M 1960,2231.0 C 1995,2231.0 1995,2231.0 2030,2231.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2204.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2233.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. Hysteria2证书切换</text>
+<rect x="2030" y="2190.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2219.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】自签证书与已有Acme证书切换</text>
+<text x="2046" y="2247.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">，随后更新客户端。</text>
+<path d="M 1960,2331.0 C 1995,2331.0 1995,2331.0 2030,2331.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2304.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2333.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. TUIC5证书切换</text>
+<rect x="2030" y="2290.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2319.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】自签证书与已有Acme证书切换</text>
+<text x="2046" y="2347.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<path d="M 1960,2431.0 C 1995,2431.0 1995,2431.0 2030,2431.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2404.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2433.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. AnyTLS证书切换</text>
+<rect x="2030" y="2390.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2419.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】现代核心分支可见；使用已有</text>
+<text x="2046" y="2447.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Acme证书或自签证书。</text>
+<path d="M 1960,2531.0 C 1995,2531.0 1995,2531.0 2030,2531.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2504.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2533.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="2490.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2519.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】证书申请入口在主菜单12，不</text>
+<text x="2046" y="2547.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">在本子菜单直接签发。</text>
+<rect x="1530" y="2590.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2619.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】选择协议，更换REALITY目标或</text>
+<text x="1546" y="2647.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">切换已有Acme / 自签证书、VMess TLS。</text>
+<rect x="1530" y="2690.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2719.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】条件：只有已申请Acme证书才显示2–</text>
+<text x="1546" y="2747.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5；1.10系列没有AnyTLS选项5。</text>
+<rect x="1530" y="2790.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2819.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】3→1的选项2–5受已申请Acme证书条</text>
+<text x="1546" y="2847.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">件控制；1.10分支不提供AnyTLS。</text>
+<path d="M 1460,3195.0 C 1495,3195.0 1495,2931.0 1530,2931.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,3195.0 C 1495,3195.0 1495,3031.0 1530,3031.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,3195.0 C 1495,3195.0 1495,3117.0 1530,3117.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,3195.0 C 1495,3195.0 1495,3203.0 1530,3203.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,3195.0 C 1495,3195.0 1495,3317.0 1530,3317.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,3195.0 C 1495,3195.0 1495,3445.0 1530,3445.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="3154.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="3183.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 更换Sing-box五协议UUID(密码)、VMess路</text>
+<text x="1046" y="3211.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">径（不含XHTTP）</text>
+<path d="M 1960,2931.0 C 1995,2931.0 1995,2931.0 2030,2931.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="2904.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="2933.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 设置共用UUID / 密码</text>
+<rect x="2030" y="2890.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="2919.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】五协议共用，回车随机生成；</text>
+<text x="2046" y="2947.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不改变独立XHTTP UUID。</text>
+<path d="M 1960,3031.0 C 1995,3031.0 1995,3031.0 2030,3031.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="3004.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="3033.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 修改VMess路径</text>
+<rect x="2030" y="2990.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3019.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】回车不变；只改VMess WS的</text>
+<text x="2046" y="3047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Path。</text>
+<path d="M 1960,3117.0 C 1995,3117.0 1995,3117.0 2030,3117.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="3090.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="3119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="3090.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】保留现有配置。</text>
+<rect x="1530" y="3162.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="3191.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】选择修改Sing-box共用UUID / </text>
+<text x="1546" y="3219.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">密码，或只修改VMess WS路径。</text>
+<rect x="1530" y="3262.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="3291.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】会改变Sing-box共享凭据或VMess路</text>
+<text x="1546" y="3319.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">径；更新后客户端重新拉取订阅；不改独立</text>
+<text x="1546" y="3347.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP。</text>
+<rect x="1530" y="3390.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="3419.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】改UUID、证书、VMess路径或端口后</text>
+<text x="1546" y="3447.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">，应刷新并重新拉取客户端订阅；这些设置不</text>
+<text x="1546" y="3475.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">改独立XHTTP。</text>
+<path d="M 1460,4059.0 C 1495,4059.0 1495,3709.0 1530,3709.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4059.0 C 1495,4059.0 1495,4109.0 1530,4109.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4059.0 C 1495,4059.0 1495,4359.0 1530,4359.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4059.0 C 1495,4059.0 1495,4459.0 1530,4459.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4059.0 C 1495,4059.0 1495,4559.0 1530,4559.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="4018.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="4047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 设置VMess的Argo临时隧道、固定隧道（</text>
+<text x="1046" y="4075.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP见11→9）</text>
+<path d="M 1960,3709.0 C 1995,3709.0 1995,3559.0 2030,3559.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,3709.0 C 1995,3709.0 1995,3659.0 2030,3659.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,3709.0 C 1995,3709.0 1995,3759.0 2030,3759.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,3709.0 C 1995,3709.0 1995,3859.0 2030,3859.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="3682.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="3711.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 临时隧道管理</text>
+<path d="M 2460,3559.0 C 2495,3559.0 2495,3559.0 2530,3559.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="3532.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3561.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 重置临时域名 / 启动</text>
+<rect x="2530" y="3518.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="3547.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】启动本机VMess回源隧道；域</text>
+<text x="2546" y="3575.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">名会变化，更新客户端订阅。</text>
+<path d="M 2460,3659.0 C 2495,3659.0 2495,3659.0 2530,3659.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="3632.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3661.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 停止临时隧道</text>
+<rect x="2530" y="3618.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="3647.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】清理本项目临时隧道进程与任</text>
+<text x="2546" y="3675.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">务，不停止独立XHTTP隧道。</text>
+<path d="M 2460,3759.0 C 2495,3759.0 2495,3759.0 2530,3759.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="3732.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3761.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回Argo类型选择</text>
+<rect x="2530" y="3718.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="3747.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按脚本实际调用返回，不修改</text>
+<text x="2546" y="3775.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">现有设置。</text>
+<rect x="2030" y="3818.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3847.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】VMess入站必须关闭TLS；默认</text>
+<text x="2046" y="3875.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不需自有域名。</text>
+<path d="M 1960,4109.0 C 1995,4109.0 1995,3959.0 2030,3959.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,4109.0 C 1995,4109.0 1995,4059.0 2030,4059.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,4109.0 C 1995,4109.0 1995,4159.0 2030,4159.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,4109.0 C 1995,4109.0 1995,4259.0 2030,4259.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="4082.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4111.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 固定隧道管理</text>
+<path d="M 2460,3959.0 C 2495,3959.0 2495,3959.0 2530,3959.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="3932.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="3961.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 设置 / 重置固定隧道</text>
+<rect x="2530" y="3918.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="3947.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入Token和域名；云端HTTP</text>
+<text x="2546" y="3975.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">路由回源本机VMess端口。</text>
+<path d="M 2460,4059.0 C 2495,4059.0 2495,4059.0 2530,4059.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="4032.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4061.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 停止固定隧道</text>
+<rect x="2530" y="4018.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="4047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅停止本机VMess固定隧道，</text>
+<text x="2546" y="4075.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不删除Cloudflare云端对象。</text>
+<path d="M 2460,4159.0 C 2495,4159.0 2495,4159.0 2530,4159.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="4132.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4161.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回Argo类型选择</text>
+<rect x="2530" y="4118.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="4147.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按脚本实际调用返回，不修改</text>
+<text x="2546" y="4175.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">现有设置。</text>
+<rect x="2030" y="4218.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4247.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】准备Cloudflare隧道、域名和</text>
+<text x="2046" y="4275.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Token；回源端口为VMess端口。</text>
+<path d="M 1960,4359.0 C 1995,4359.0 1995,4359.0 2030,4359.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="4332.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4361.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="4318.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4347.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】临时/固定各自子菜单0返回</text>
+<text x="2046" y="4375.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Argo选择。</text>
+<rect x="1530" y="4418.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4447.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】选择管理VMess临时隧道或固</text>
+<text x="1546" y="4475.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">定隧道，再进入各自的重置 / 停止子菜单。</text>
+<rect x="1530" y="4518.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4547.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】条件：VMess入站TLS必须关闭；与3</text>
+<text x="1546" y="4575.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">→11→9的XHTTP固定Argo不是同一隧道。</text>
+<path d="M 1460,4881.0 C 1495,4881.0 1495,4645.0 1530,4645.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4881.0 C 1495,4881.0 1495,4717.0 1530,4717.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4881.0 C 1495,4881.0 1495,4803.0 1530,4803.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4881.0 C 1495,4881.0 1495,4903.0 1530,4903.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4881.0 C 1495,4881.0 1495,5003.0 1530,5003.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,4881.0 C 1495,4881.0 1495,5103.0 1530,5103.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="4840.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="4869.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 切换IPV4或IPV6的代理优先级 (仅1.10系列</text>
+<text x="1046" y="4897.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">内核可用，不影响独立XHTTP)</text>
+<path d="M 1960,4645.0 C 1995,4645.0 1995,4645.0 2030,4645.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="4618.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4647.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. IPv4优先</text>
+<rect x="2030" y="4618.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4647.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10系列；需要存在IPv4。</text>
+<path d="M 1960,4717.0 C 1995,4717.0 1995,4717.0 2030,4717.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="4690.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4719.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. IPv6优先</text>
+<rect x="2030" y="4690.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4719.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10系列；需要存在IPv6。</text>
+<path d="M 1960,4803.0 C 1995,4803.0 1995,4803.0 2030,4803.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="4776.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4805.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 仅IPv4</text>
+<rect x="2030" y="4762.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4791.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10系列；独立XHTTP出站</text>
+<text x="2046" y="4819.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不跟随。</text>
+<path d="M 1960,4903.0 C 1995,4903.0 1995,4903.0 2030,4903.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="4876.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4905.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 仅IPv6</text>
+<rect x="2030" y="4862.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="4891.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10系列；独立XHTTP出站</text>
+<text x="2046" y="4919.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不跟随。</text>
+<rect x="1530" y="4962.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="4991.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】设置Sing-box出站域名解析的</text>
+<text x="1546" y="5019.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">IPv4 / IPv6优先或仅用某地址族。</text>
+<rect x="1530" y="5062.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5091.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅Sing-box 1.10系列可用，需要相应</text>
+<text x="1546" y="5119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">IP存在；没有0返回选项，不影响独立XHTTP。</text>
+<path d="M 1460,5339.0 C 1495,5339.0 1495,5203.0 1530,5203.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,5339.0 C 1495,5339.0 1495,5289.0 1530,5289.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,5339.0 C 1495,5339.0 1495,5375.0 1530,5375.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,5339.0 C 1495,5339.0 1495,5475.0 1530,5475.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="5312.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="5341.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. 设置Telegram推送节点通知</text>
+<path d="M 1960,5203.0 C 1995,5203.0 1995,5203.0 2030,5203.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="5176.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5205.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 配置Telegram通知</text>
+<rect x="2030" y="5162.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="5191.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入机器人Token及用户ID；当</text>
+<text x="2046" y="5219.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">前配置会触发通知发送。</text>
+<path d="M 1960,5289.0 C 1995,5289.0 1995,5289.0 2030,5289.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="5262.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5291.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="5262.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="5291.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】手动发送通知入口为9→3。</text>
+<rect x="1530" y="5334.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5363.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】配置Telegram机器人与接收用</text>
+<text x="1546" y="5391.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">户，供节点通知使用。</text>
+<rect x="1530" y="5434.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5463.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】设置过程中会发送Telegram通知；不</text>
+<text x="1546" y="5491.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">要公开机器人Token、用户ID和节点凭据。</text>
+<path d="M 1460,5725.0 C 1495,5725.0 1495,5575.0 1530,5575.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,5725.0 C 1495,5725.0 1495,5675.0 1530,5675.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,5725.0 C 1495,5725.0 1495,5775.0 1530,5775.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,5725.0 C 1495,5725.0 1495,5875.0 1530,5875.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="5698.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="5727.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">6. 更换Warp-wireguard出站账户</text>
+<path d="M 1960,5575.0 C 1995,5575.0 1995,5575.0 2030,5575.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="5548.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5577.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 更换Warp WireGuard账户</text>
+<rect x="2030" y="5534.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="5563.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】显示当前参数及新随机账户；</text>
+<text x="2046" y="5591.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">输入私钥、IPv6和Reserved。</text>
+<path d="M 1960,5675.0 C 1995,5675.0 1995,5675.0 2030,5675.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="5648.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5677.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="5634.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="5663.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只影响Sing-box出站；参数显</text>
+<text x="2046" y="5691.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">示可能含私钥，勿公开日志。</text>
+<rect x="1530" y="5734.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5763.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】更新Sing-box的Warp </text>
+<text x="1546" y="5791.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">WireGuard出站账户参数。</text>
+<rect x="1530" y="5834.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5863.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】会显示WireGuard私钥等参数，不要</text>
+<text x="1546" y="5891.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">公开截图；只影响Sing-box出站。</text>
+<path d="M 1460,6139.0 C 1495,6139.0 1495,5989.0 1530,5989.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6139.0 C 1495,6139.0 1495,6103.0 1530,6103.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6139.0 C 1495,6139.0 1495,6203.0 1530,6203.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6139.0 C 1495,6139.0 1495,6303.0 1530,6303.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="6112.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="6141.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">7. 设置Gitlab订阅分享链接</text>
+<path d="M 1960,5989.0 C 1995,5989.0 1995,5989.0 2030,5989.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="5962.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="5991.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 设置 / 重置Gitlab订阅</text>
+<rect x="2030" y="5934.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="5963.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入邮箱、访问令牌、用户/项</text>
+<text x="2046" y="5991.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">目及可选分支；先生成再推送，不强制覆盖冲</text>
+<text x="2046" y="6019.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">突。</text>
+<path d="M 1960,6103.0 C 1995,6103.0 1995,6103.0 2030,6103.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="6076.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6105.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="6062.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="6091.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】远端配置好后日常发布用9→2</text>
+<text x="2046" y="6119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">；订阅URL包含凭据，勿公开。</text>
+<rect x="1530" y="6162.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6191.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】首次设置 / 重置Gitlab订阅远端</text>
+<text x="1546" y="6219.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">及访问凭据。</text>
+<rect x="1530" y="6262.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6291.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】Gitlab访问令牌和含令牌订阅URL均属</text>
+<text x="1546" y="6319.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">敏感信息；日常远端发布另走9→2。</text>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,6403.0 1530,6403.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,6503.0 1530,6503.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,6603.0 1530,6603.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,6703.0 1530,6703.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,6803.0 1530,6803.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,6903.0 1530,6903.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,7017.0 1530,7017.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,6781.0 C 1495,6781.0 1495,7145.0 1530,7145.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="6754.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="6783.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">8. 设置本地IP订阅分享链接</text>
+<path d="M 1960,6403.0 C 1995,6403.0 1995,6403.0 2030,6403.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="6376.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6405.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 安装 / 重置本地IP订阅</text>
+<rect x="2030" y="6362.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="6391.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】设置路径密码（默认当前UUID</text>
+<text x="2046" y="6419.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">）及端口（默认随机），启动HTTP文件服务。</text>
+<path d="M 1960,6503.0 C 1995,6503.0 1995,6503.0 2030,6503.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="6476.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6505.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 更换订阅路径密码</text>
+<rect x="2030" y="6462.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="6491.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】更新URL路径；客户端必须换用</text>
+<text x="2046" y="6519.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">新链接。</text>
+<path d="M 1960,6603.0 C 1995,6603.0 1995,6603.0 2030,6603.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="6576.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6605.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 更换本地订阅端口</text>
+<rect x="2030" y="6562.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="6591.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】未被占用的端口；还需处理云</text>
+<text x="2046" y="6619.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">端/系统防火墙。</text>
+<path d="M 1960,6703.0 C 1995,6703.0 1995,6703.0 2030,6703.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="6676.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6705.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 卸载本地IP订阅</text>
+<rect x="2030" y="6662.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="6691.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】停止文件服务、清理发布目录</text>
+<text x="2046" y="6719.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">及本项目开机任务。</text>
+<path d="M 1960,6803.0 C 1995,6803.0 1995,6803.0 2030,6803.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="6776.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6805.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="6762.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="6791.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只退出此设置页，不停代理服</text>
+<text x="2046" y="6819.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">务。</text>
+<rect x="1530" y="6862.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6891.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】通过本地HTTP文件服务发布配</text>
+<text x="1546" y="6919.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">置 / 聚合订阅，管理路径和端口。</text>
+<rect x="1530" y="6962.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="6991.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】HTTP文件服务不加密，路径密码不是</text>
+<text x="1546" y="7019.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">HTTPS；变更路径/端口后客户端要换链接，并</text>
+<text x="1546" y="7047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">检查防火墙。</text>
+<rect x="1530" y="7090.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】本地订阅为HTTP文件服务，路径密码</text>
+<text x="1546" y="7147.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不能代替传输加密；通过不可信网络拉取时需</text>
+<text x="1546" y="7175.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">自行做好可信HTTPS保护。</text>
+<path d="M 1460,7523.0 C 1495,7523.0 1495,7259.0 1530,7259.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,7523.0 C 1495,7523.0 1495,7359.0 1530,7359.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,7523.0 C 1495,7523.0 1495,7459.0 1530,7459.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,7523.0 C 1495,7523.0 1495,7559.0 1530,7559.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,7523.0 C 1495,7523.0 1495,7659.0 1530,7659.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,7523.0 C 1495,7523.0 1495,7773.0 1530,7773.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="7482.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="7511.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">9. 手动设置VMess主节点/Argo的CDN连接地</text>
+<text x="1046" y="7539.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">址（不含XHTTP）</text>
+<path d="M 1960,7259.0 C 1995,7259.0 1995,7259.0 2030,7259.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="7232.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7261.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 设置VMess主节点连接地址</text>
+<rect x="2030" y="7218.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="7247.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】手动填IP/域名；需要时提示</text>
+<text x="2046" y="7275.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Host/SNI，CDN回源域名需正确配置。</text>
+<path d="M 1960,7359.0 C 1995,7359.0 1995,7359.0 2030,7359.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="7332.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7361.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 清除主节点Host/SNI覆盖</text>
+<rect x="2030" y="7318.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="7347.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不是清除server连接地址；想改</text>
+<text x="2046" y="7375.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">连接地址需再选1。</text>
+<path d="M 1960,7459.0 C 1995,7459.0 1995,7459.0 2030,7459.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="7432.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7461.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 设置所有VMess Argo连接地址</text>
+<rect x="2030" y="7418.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="7447.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】固定/临时VMess Argo共用，</text>
+<text x="2046" y="7475.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不改XHTTP Argo；不会自动测速。</text>
+<path d="M 1960,7559.0 C 1995,7559.0 1995,7559.0 2030,7559.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="7532.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7561.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="7518.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="7547.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】XHTTP Argo独立连接地址见3</text>
+<text x="2046" y="7575.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">→11→9→8。</text>
+<rect x="1530" y="7618.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7647.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】手动设置VMess客户端的连接</text>
+<text x="1546" y="7675.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">地址、主节点Host/SNI或Argo共用地址。</text>
+<rect x="1530" y="7718.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7747.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】只改VMess，手动填地址，不测速、</text>
+<text x="1546" y="7775.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不保证提速。server连接地址与Host/SNI路由</text>
+<text x="1546" y="7803.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">身份不同。</text>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,7887.0 1530,7887.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,7973.0 1530,7973.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,8059.0 1530,8059.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,8145.0 1530,8145.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,8231.0 1530,8231.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,8331.0 1530,8331.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,8431.0 1530,8431.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,8223.0 C 1495,8223.0 1495,8545.0 1530,8545.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="8182.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="8211.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">10. 设置/清除节点名称前后缀（含XHTTP；初</text>
+<text x="1046" y="8239.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">始后缀为主机名）</text>
+<path d="M 1960,7887.0 C 1995,7887.0 1995,7887.0 2030,7887.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="7860.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7889.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 设置自定义后缀</text>
+<rect x="2030" y="7846.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="7875.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】退出无后缀模式；仅改显示名</text>
+<text x="2046" y="7903.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">称与分组引用。</text>
+<path d="M 1960,7973.0 C 1995,7973.0 1995,7973.0 2030,7973.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="7946.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="7975.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 恢复主机名后缀</text>
+<rect x="2030" y="7946.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="7975.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不修改系统主机名。</text>
+<path d="M 1960,8059.0 C 1995,8059.0 1995,8059.0 2030,8059.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="8032.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8061.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 设置自定义前缀</text>
+<rect x="2030" y="8018.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】前缀加在协议名前，包含已部</text>
+<text x="2046" y="8075.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">署XHTTP。</text>
+<path d="M 1960,8145.0 C 1995,8145.0 1995,8145.0 2030,8145.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="8118.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8147.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 清除前缀</text>
+<rect x="2030" y="8118.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8147.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】与后缀设置互不影响。</text>
+<path d="M 1960,8231.0 C 1995,8231.0 1995,8231.0 2030,8231.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="8204.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8233.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. 清除后缀</text>
+<rect x="2030" y="8190.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8219.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不显示自定义后缀或主机名；</text>
+<text x="2046" y="8247.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">保留前缀。</text>
+<path d="M 1960,8331.0 C 1995,8331.0 1995,8331.0 2030,8331.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="8304.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8333.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回配置菜单</text>
+<rect x="2030" y="8290.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8319.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】名称变更会刷新本地导出；</text>
+<text x="2046" y="8347.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Gitlab仍用9→2，客户端再拉取。</text>
+<rect x="1530" y="8390.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8419.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】设置或清除节点名称前缀、后</text>
+<text x="1546" y="8447.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">缀，支持恢复主机名后缀。</text>
+<rect x="1530" y="8490.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8519.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】只改节点显示名称及分组引用，不改</text>
+<text x="1546" y="8547.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">变协议、端口、UUID；含XHTTP，改后刷新客</text>
+<text x="1546" y="8575.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">户端。</text>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,8887.0 1530,8887.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9215.0 1530,9215.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9315.0 1530,9315.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9415.0 1530,9415.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9515.0 1530,9515.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9615.0 1530,9615.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9715.0 1530,9715.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,9829.0 1530,9829.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,10863.0 1530,10863.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,11883.0 1530,11883.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,11983.0 1530,11983.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1460,10385.0 C 1495,10385.0 1495,12097.0 1530,12097.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="10344.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="10373.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">11. 管理独立XHTTP：直连REALITY / 固定</text>
+<text x="1046" y="10401.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Argo</text>
+<path d="M 1960,8887.0 C 1995,8887.0 1995,8709.0 2030,8709.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,8887.0 C 1995,8887.0 1995,8859.0 2030,8859.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,8887.0 C 1995,8887.0 1995,8973.0 2030,8973.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,8887.0 C 1995,8887.0 1995,9101.0 2030,9101.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="8860.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="8889.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 部署直连节点</text>
+<path d="M 2460,8709.0 C 2495,8709.0 2495,8659.0 2530,8659.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,8709.0 C 2495,8709.0 2495,8759.0 2530,8759.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="8668.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8697.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">部署时输入：协议模式（不是XHTTP管理菜单</text>
+<text x="2046" y="8725.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">）</text>
+<path d="M 2960,8659.0 C 2995,8659.0 2995,8659.0 3030,8659.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2530" y="8632.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="8661.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. Encryption + Vision（默认）</text>
+<rect x="3030" y="8618.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="3046" y="8647.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】独立VLESS Encryption凭据；</text>
+<text x="3046" y="8675.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">路径/，保留外层REALITY。</text>
+<path d="M 2960,8759.0 C 2995,8759.0 2995,8759.0 3030,8759.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2530" y="8732.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="8761.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 普通XHTTP + REALITY</text>
+<rect x="3030" y="8718.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="3046" y="8747.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不添加VLESS Encryption与</text>
+<text x="3046" y="8775.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Vision；普通模式路径自动随机。</text>
+<rect x="2030" y="8818.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8847.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】先装Sing-box；选模式、独立</text>
+<text x="2046" y="8875.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">TCP端口（默认443）、REALITY目标域名。</text>
+<rect x="2030" y="8918.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="8947.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】直连：REALITY + XHTTP；默认额外</text>
+<text x="2046" y="8975.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">使用Encryption + Vision，mode:auto；先安</text>
+<text x="2046" y="9003.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">装Sing-box，TCP端口需空闲和放行。</text>
+<rect x="2030" y="9046.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9075.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】直连默认REALITY + VLESS </text>
+<text x="2046" y="9103.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Encryption（X25519认证）+ Vision，mode:</text>
+<text x="2046" y="9131.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">auto；普通模式不带额外Encryption/Vision。</text>
+<path d="M 1960,9215.0 C 1995,9215.0 1995,9215.0 2030,9215.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9188.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9217.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 查看节点并刷新本地订阅</text>
+<rect x="2030" y="9174.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9203.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】更新Xray客户端JSON、</text>
+<text x="2046" y="9231.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Mihomo和URI；远端仍用9→2。</text>
+<path d="M 1960,9315.0 C 1995,9315.0 1995,9315.0 2030,9315.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9288.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9317.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 检查配置并重启</text>
+<rect x="2030" y="9274.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9303.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只操作独立sbox-xhttp服务，</text>
+<text x="2046" y="9331.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不重启Sing-box。</text>
+<path d="M 1960,9415.0 C 1995,9415.0 1995,9415.0 2030,9415.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9388.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9417.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 停止直连服务</text>
+<rect x="2030" y="9374.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9403.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】保留配置；再次使用先重启，</text>
+<text x="2046" y="9431.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">停止不代表移除订阅节点。</text>
+<path d="M 1960,9515.0 C 1995,9515.0 1995,9515.0 2030,9515.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9488.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9517.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. 查看状态</text>
+<rect x="2030" y="9474.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9503.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】本机服务状态，不是公网测速</text>
+<text x="2046" y="9531.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">或客户端连接证明。</text>
+<path d="M 1960,9615.0 C 1995,9615.0 1995,9615.0 2030,9615.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9588.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9617.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">6. 查看日志</text>
+<rect x="2030" y="9574.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9603.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】独立服务journal或OpenRC日</text>
+<text x="2046" y="9631.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">志。</text>
+<path d="M 1960,9715.0 C 1995,9715.0 1995,9715.0 2030,9715.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9688.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9717.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">7. 仅卸载直连XHTTP</text>
+<rect x="2030" y="9674.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9703.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】需输入yes；删除本机直连配置</text>
+<text x="2046" y="9731.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">/密钥，保留XHTTP Argo。</text>
+<path d="M 1960,9829.0 C 1995,9829.0 1995,9829.0 2030,9829.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="9802.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="9831.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">8. 已有普通节点升级文章模式</text>
+<rect x="2030" y="9774.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="9803.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】先备份；保留端口/</text>
+<text x="2046" y="9831.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">UUID/REALITY密钥，启用Encryption/Vision</text>
+<text x="2046" y="9859.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">并改路径/；必须换客户端配置。</text>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10021.0 2030,10021.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10199.0 2030,10199.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10299.0 2030,10299.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10399.0 2030,10399.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10499.0 2030,10499.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10599.0 2030,10599.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,10699.0 2030,10699.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,11063.0 2030,11063.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,11427.0 2030,11427.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,11527.0 2030,11527.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,11641.0 2030,11641.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 1960,10863.0 C 1995,10863.0 1995,11769.0 2030,11769.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="10836.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="10865.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">9. 进入XHTTP固定Argo菜单</text>
+<path d="M 2460,10021.0 C 2495,10021.0 2495,9957.0 2530,9957.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,10021.0 C 2495,10021.0 2495,10085.0 2530,10085.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="9994.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10023.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 部署独立固定隧道节点</text>
+<path d="M 2960,9957.0 C 2995,9957.0 2995,9957.0 3030,9957.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2530" y="9930.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="9959.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">部署前准备：Cloudflare固定隧道与路由</text>
+<rect x="3030" y="9902.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="3046" y="9931.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】独立隧道路由：HTTP </text>
+<text x="3046" y="9959.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">127.0.0.1:18080，路径留空；端口与脚本输入</text>
+<text x="3046" y="9987.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">一致。</text>
+<rect x="2530" y="10030.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10059.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入完整域名、回环HTTP端口</text>
+<text x="2546" y="10087.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">（默认18080）、服务器上Token文件绝对路径</text>
+<text x="2546" y="10115.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<path d="M 2460,10199.0 C 2495,10199.0 2495,10199.0 2530,10199.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="10172.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10201.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 查看节点并刷新本地订阅</text>
+<rect x="2530" y="10158.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10187.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】Xray client.json、Mihomo与</text>
+<text x="2546" y="10215.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">聚合URI；Gitlab另用9→2。</text>
+<path d="M 2460,10299.0 C 2495,10299.0 2495,10299.0 2530,10299.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="10272.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10301.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 检查配置并重启</text>
+<rect x="2530" y="10258.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10287.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】操作sbox-xhttp-argo和</text>
+<text x="2546" y="10315.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">sbox-xhttp-argo-tunnel两服务。</text>
+<path d="M 2460,10399.0 C 2495,10399.0 2495,10399.0 2530,10399.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="10372.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10401.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 停止节点与固定隧道</text>
+<rect x="2530" y="10358.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10387.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】保留配置及Token；不影响</text>
+<text x="2546" y="10415.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">VMess Argo/直连REALITY。</text>
+<path d="M 2460,10499.0 C 2495,10499.0 2495,10499.0 2530,10499.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="10472.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10501.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. 查看两项服务状态</text>
+<rect x="2530" y="10458.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10487.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只证明本机服务状态，不证明</text>
+<text x="2546" y="10515.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">云端路由或客户端成功。</text>
+<path d="M 2460,10599.0 C 2495,10599.0 2495,10599.0 2530,10599.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="10572.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10601.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">6. 查看节点及隧道日志</text>
+<rect x="2530" y="10558.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10587.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】排查回源拒绝、隧道未连、认</text>
+<text x="2546" y="10615.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">证或握手错误。</text>
+<path d="M 2460,10699.0 C 2495,10699.0 2495,10699.0 2530,10699.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="10672.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="10701.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">7. 卸载本机固定Argo节点</text>
+<rect x="2530" y="10658.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10687.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入yes；删本机服务/配置/密</text>
+<text x="2546" y="10715.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">钥/Token，不删CF云端隧道/路由。</text>
+<path d="M 2460,11063.0 C 2495,11063.0 2495,10799.0 2530,10799.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,11063.0 C 2495,11063.0 2495,10899.0 2530,10899.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,11063.0 C 2495,11063.0 2495,10985.0 2530,10985.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,11063.0 C 2495,11063.0 2495,11071.0 2530,11071.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,11063.0 C 2495,11063.0 2495,11185.0 2530,11185.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 2460,11063.0 C 2495,11063.0 2495,11313.0 2530,11313.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="11036.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="11065.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">8. 独立连接地址设置</text>
+<path d="M 2960,10799.0 C 2995,10799.0 2995,10799.0 3030,10799.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2530" y="10772.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10801.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 设置优选域名 / IPv4 / IPv6</text>
+<rect x="3030" y="10758.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="3046" y="10787.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】无协议、端口、路径；仅改</text>
+<text x="3046" y="10815.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">server/address，Host/SNI保留隧道域名。</text>
+<path d="M 2960,10899.0 C 2995,10899.0 2995,10899.0 3030,10899.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2530" y="10872.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10901.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 恢复默认隧道域名</text>
+<rect x="3030" y="10858.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="3046" y="10887.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】移除自定义连接地址；不更改</text>
+<text x="3046" y="10915.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">UUID、Token或服务端口。</text>
+<path d="M 2960,10985.0 C 2995,10985.0 2995,10985.0 3030,10985.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2530" y="10958.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="10987.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 取消地址设置</text>
+<rect x="3030" y="10958.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="3046" y="10987.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不保存新设置。</text>
+<rect x="2530" y="11030.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="11059.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只改此XHTTP Argo，不受3→</text>
+<text x="2546" y="11087.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">9的VMess设置影响。</text>
+<rect x="2530" y="11130.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="11159.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】只改变该节点的server/address；必</text>
+<text x="2546" y="11187.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">须保留固定隧道域名的Host/SNI。与3→9的</text>
+<text x="2546" y="11215.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">VMess优选地址相互独立。</text>
+<rect x="2530" y="11258.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="11287.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】客户端server是连接地址；Host/SNI</text>
+<text x="2546" y="11315.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">是握手/路由身份。XHTTP Argo仅改变server</text>
+<text x="2546" y="11343.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">时必须保留原隧道Host/SNI。</text>
+<path d="M 2460,11427.0 C 2495,11427.0 2495,11427.0 2530,11427.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="2030" y="11400.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="11429.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 结束当前子菜单</text>
+<rect x="2530" y="11386.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2546" y="11415.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】云端对象不会随返回动作改变</text>
+<text x="2546" y="11443.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<rect x="2030" y="11486.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="11515.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】无需先部署直连节点，已有</text>
+<text x="2046" y="11543.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Sing-box即可单独部署。</text>
+<rect x="2030" y="11586.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="11615.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】独立固定Argo节点：TLS + XHTTP </text>
+<text x="2046" y="11643.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">packet-up + Encryption/Vision；不叠加</text>
+<text x="2046" y="11671.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">REALITY，保留直连节点。</text>
+<rect x="2030" y="11714.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="11743.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】固定Argo为TLS + XHTTP packet-up </text>
+<text x="2046" y="11771.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">+ Encryption/Vision；本机HTTP回源，不叠</text>
+<text x="2046" y="11799.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">加REALITY，也不是端到端REALITY。</text>
+<path d="M 1960,11883.0 C 1995,11883.0 1995,11883.0 2030,11883.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1530" y="11856.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="11885.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 结束当前子菜单</text>
+<rect x="2030" y="11842.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="2046" y="11871.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不停止服务，不保证自动重绘</text>
+<text x="2046" y="11899.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">主菜单。</text>
+<rect x="1530" y="11942.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="11971.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】管理独立Xray的XHTTP直连节</text>
+<text x="1546" y="11999.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">点；选9进入XHTTP固定Argo管理。</text>
+<rect x="1530" y="12042.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="12071.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】独立Xray服务：直连和固定Argo的服</text>
+<text x="1546" y="12099.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">务/凭据分离；主Sing-box启停/端口/UUID/核</text>
+<text x="1546" y="12127.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">心更新不自动同步。</text>
+<path d="M 1460,12197.0 C 1495,12197.0 1495,12197.0 1530,12197.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="12170.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="12199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回上层</text>
+<rect x="1530" y="12170.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="12199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】返回VPS主菜单。</text>
+<rect x="1030" y="12242.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="12271.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】证书、UUID、VMess Argo、</text>
+<text x="1046" y="12299.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">订阅、连接地址、节点名称和独立XHTTP。</text>
+<rect x="1030" y="12342.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="12371.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】选项1–9主要作用于Sing-box；</text>
+<text x="1046" y="12399.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP单独在11管理。名称设置10会同步已部</text>
+<text x="1046" y="12427.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">署XHTTP。</text>
+<path d="M 960,13625.0 C 995,13625.0 995,12511.0 1030,12511.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,12661.0 1030,12661.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,13161.0 1030,13161.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,13961.0 1030,13961.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,14411.0 1030,14411.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,14511.0 1030,14511.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,14611.0 1030,14611.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,13625.0 C 995,13625.0 995,14725.0 1030,14725.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="530" y="13584.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="546" y="13613.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. Sing-box五协议端口/UDP多端口转发（不</text>
+<text x="546" y="13641.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">含XHTTP）</text>
+<path d="M 1460,12511.0 C 1495,12511.0 1495,12511.0 1530,12511.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1030" y="12484.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="12513.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 更改VLESS REALITY主端口</text>
+<rect x="1530" y="12470.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="12499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅一个主端口；需同步客户端</text>
+<text x="1546" y="12527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">及防火墙。</text>
+<path d="M 1460,12661.0 C 1495,12661.0 1495,12611.0 1530,12611.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,12661.0 C 1495,12661.0 1495,12711.0 1530,12711.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1030" y="12634.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="12663.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 更改VMess WS主端口</text>
+<rect x="1530" y="12570.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="12599.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】临时Argo需重置；固定Argo的</text>
+<text x="1546" y="12627.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">CF回源端口需同步。</text>
+<rect x="1530" y="12670.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="12699.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】VMess端口变更后：临时Argo需重置</text>
+<text x="1546" y="12727.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">；固定Argo需同步Cloudflare回源端口。</text>
+<path d="M 1460,13161.0 C 1495,13161.0 1495,12811.0 1530,12811.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13161.0 C 1495,13161.0 1495,13061.0 1530,13061.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13161.0 C 1495,13161.0 1495,13311.0 1530,13311.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13161.0 C 1495,13161.0 1495,13411.0 1530,13411.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13161.0 C 1495,13161.0 1495,13511.0 1530,13511.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1030" y="13134.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="13163.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. Hysteria2端口管理</text>
+<path d="M 1960,12811.0 C 1995,12811.0 1995,12811.0 2030,12811.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="12784.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="12813.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 更换HY2主端口</text>
+<rect x="2030" y="12770.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="12799.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】原有多端口转发先清理，再生</text>
+<text x="2046" y="12827.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">成新导出。</text>
+<path d="M 1960,13061.0 C 1995,13061.0 1995,12911.0 2030,12911.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1960,13061.0 C 1995,13061.0 1995,13011.0 2030,13011.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1960,13061.0 C 1995,13061.0 1995,13111.0 2030,13111.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1960,13061.0 C 1995,13061.0 1995,13211.0 2030,13211.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="13034.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="13063.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 进入HY2添加多端口</text>
+<path d="M 2460,12911.0 C 2495,12911.0 2495,12911.0 2530,12911.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="2030" y="12884.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="12913.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 增加HY2范围端口</text>
+<rect x="2530" y="12870.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2546" y="12899.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入小数字:大数字，限制1000</text>
+<text x="2546" y="12927.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">–65535。</text>
+<path d="M 2460,13011.0 C 2495,13011.0 2495,13011.0 2530,13011.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="2030" y="12984.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13013.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 增加HY2单个端口</text>
+<rect x="2530" y="12970.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2546" y="12999.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入1000–65535，添加本项目</text>
+<text x="2546" y="13027.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">标记的UDP转发规则。</text>
+<path d="M 2460,13111.0 C 2495,13111.0 2495,13111.0 2530,13111.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="2030" y="13084.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13113.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回协议端口选择</text>
+<rect x="2530" y="13070.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2546" y="13099.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按脚本实际调用返回，不修改</text>
+<text x="2546" y="13127.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">现有设置。</text>
+<rect x="2030" y="13170.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】1范围端口，2单端口，0返回</text>
+<text x="2046" y="13227.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">HY2端口菜单。</text>
+<path d="M 1960,13311.0 C 1995,13311.0 1995,13311.0 2030,13311.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="13284.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="13313.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 删除HY2多端口</text>
+<rect x="2030" y="13270.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13299.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅清理识别为本项目的相关转</text>
+<text x="2046" y="13327.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">发，不清空整机NAT。</text>
+<path d="M 1960,13411.0 C 1995,13411.0 1995,13411.0 2030,13411.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="13384.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="13413.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回协议端口选择</text>
+<rect x="2030" y="13370.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13399.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按脚本实际调用返回，不修改</text>
+<text x="2046" y="13427.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">现有设置。</text>
+<rect x="1530" y="13470.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="13499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】主端口 / UDP多端口，支持跳</text>
+<text x="1546" y="13527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">跃。</text>
+<path d="M 1460,13961.0 C 1495,13961.0 1495,13611.0 1530,13611.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13961.0 C 1495,13961.0 1495,13861.0 1530,13861.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13961.0 C 1495,13961.0 1495,14111.0 1530,14111.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13961.0 C 1495,13961.0 1495,14211.0 1530,14211.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1460,13961.0 C 1495,13961.0 1495,14311.0 1530,14311.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1030" y="13934.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="13963.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. TUIC5端口管理</text>
+<path d="M 1960,13611.0 C 1995,13611.0 1995,13611.0 2030,13611.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="13584.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="13613.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 更换TUIC主端口</text>
+<rect x="2030" y="13570.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13599.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】原有TUIC多端口先清理，客户</text>
+<text x="2046" y="13627.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">端随后更新。</text>
+<path d="M 1960,13861.0 C 1995,13861.0 1995,13711.0 2030,13711.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1960,13861.0 C 1995,13861.0 1995,13811.0 2030,13811.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1960,13861.0 C 1995,13861.0 1995,13911.0 2030,13911.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 1960,13861.0 C 1995,13861.0 1995,14011.0 2030,14011.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="13834.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="13863.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 进入TUIC添加多端口</text>
+<path d="M 2460,13711.0 C 2495,13711.0 2495,13711.0 2530,13711.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="2030" y="13684.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13713.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 增加TUIC范围端口</text>
+<rect x="2530" y="13670.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2546" y="13699.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入小数字:大数字；服务器</text>
+<text x="2546" y="13727.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">UDP转发，不等于客户端自动跳跃。</text>
+<path d="M 2460,13811.0 C 2495,13811.0 2495,13811.0 2530,13811.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="2030" y="13784.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13813.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 增加TUIC单个端口</text>
+<rect x="2530" y="13770.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2546" y="13799.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入1000–65535；需自行处理</text>
+<text x="2546" y="13827.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">防火墙。</text>
+<path d="M 2460,13911.0 C 2495,13911.0 2495,13911.0 2530,13911.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="2030" y="13884.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13913.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回协议端口选择</text>
+<rect x="2530" y="13870.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2546" y="13899.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按脚本实际调用返回，不修改</text>
+<text x="2546" y="13927.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">现有设置。</text>
+<rect x="2030" y="13970.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="13999.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】1范围端口，2单端口，0返回</text>
+<text x="2046" y="14027.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">TUIC端口菜单。</text>
+<path d="M 1960,14111.0 C 1995,14111.0 1995,14111.0 2030,14111.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="14084.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="14113.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 删除TUIC多端口</text>
+<rect x="2030" y="14070.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="14099.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅清理识别为本项目的相关端</text>
+<text x="2046" y="14127.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">口转发。</text>
+<path d="M 1960,14211.0 C 1995,14211.0 1995,14211.0 2030,14211.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1530" y="14184.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="14213.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回协议端口选择</text>
+<rect x="2030" y="14170.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="2046" y="14199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按脚本实际调用返回，不修改</text>
+<text x="2046" y="14227.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">现有设置。</text>
+<rect x="1530" y="14270.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="14299.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】主端口 / UDP多端口；结构与</text>
+<text x="1546" y="14327.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">HY2相同，不导出客户端自动跳跃配置。</text>
+<path d="M 1460,14411.0 C 1495,14411.0 1495,14411.0 1530,14411.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1030" y="14384.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="14413.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. 更改AnyTLS主端口</text>
+<rect x="1530" y="14370.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="14399.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只在非1.10分支显示；只有一</text>
+<text x="1546" y="14427.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">个主端口。</text>
+<path d="M 1460,14511.0 C 1495,14511.0 1495,14511.0 1530,14511.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="1030" y="14484.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="14513.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回主菜单</text>
+<rect x="1530" y="14470.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1546" y="14499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】HY2/TUIC子菜单及添加子菜单</text>
+<text x="1546" y="14527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">各自0返回上层，不涉及独立XHTTP。</text>
+<rect x="1030" y="14570.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="14599.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】HY2/TUIC有多端口子菜单；</text>
+<text x="1046" y="14627.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP端口不在这里更改。</text>
+<rect x="1030" y="14670.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="14699.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】只改Sing-box端口；HY2/TUIC主端</text>
+<text x="1046" y="14727.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">口变更会清理原多端口。AnyTLS仅非1.10显示</text>
+<text x="1046" y="14755.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">；XHTTP端口不变。</text>
+<path d="M 960,16539.0 C 995,16539.0 995,15025.0 1030,15025.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,15511.0 1030,15511.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,16011.0 1030,16011.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,16497.0 1030,16497.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,16983.0 1030,16983.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,17483.0 1030,17483.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,17769.0 1030,17769.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,17855.0 1030,17855.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,17969.0 1030,17969.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,18097.0 1030,18097.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,16539.0 C 995,16539.0 995,18225.0 1030,18225.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="530" y="16498.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="546" y="16527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. Sing-box三通道域名分流（不影响独立</text>
+<text x="546" y="16555.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP）</text>
+<path d="M 1460,15025.0 C 1495,15025.0 1495,14839.0 1530,14839.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15025.0 C 1495,15025.0 1495,14939.0 1530,14939.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15025.0 C 1495,15025.0 1495,15039.0 1530,15039.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15025.0 C 1495,15025.0 1495,15125.0 1530,15125.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15025.0 C 1495,15025.0 1495,15211.0 1530,15211.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="14998.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="15027.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. Warp WireGuard IPv4优先</text>
+<path d="M 1960,14839.0 C 1995,14839.0 1995,14839.0 2030,14839.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="14812.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="14841.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 按后缀域名匹配</text>
+<rect x="2030" y="14798.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="14827.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】空格分隔，如example.com；</text>
+<text x="2046" y="14855.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回车清空该通道规则。</text>
+<path d="M 1960,14939.0 C 1995,14939.0 1995,14939.0 2030,14939.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="14912.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="14941.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 按geosite规则匹配</text>
+<rect x="2030" y="14898.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="14927.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用；现代分支仍</text>
+<text x="2046" y="14955.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">可能显示选项2，但选择后拒绝。</text>
+<path d="M 1960,15039.0 C 1995,15039.0 1995,15039.0 2030,15039.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15012.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15041.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 返回通道选择</text>
+<rect x="2030" y="14998.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15027.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不要把同一个域名/规则重复放</text>
+<text x="2046" y="15055.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入多个通道。</text>
+<rect x="1530" y="15098.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15127.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用。</text>
+<rect x="1530" y="15170.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅1.10系列可进入此通道的匹配方式</text>
+<text x="1546" y="15227.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">子菜单；现代核心会拒绝。</text>
+<path d="M 1460,15511.0 C 1495,15511.0 1495,15311.0 1530,15311.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15511.0 C 1495,15511.0 1495,15411.0 1530,15411.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15511.0 C 1495,15511.0 1495,15511.0 1530,15511.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15511.0 C 1495,15511.0 1495,15611.0 1530,15611.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,15511.0 C 1495,15511.0 1495,15711.0 1530,15711.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="15484.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="15513.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. Warp WireGuard IPv6优先</text>
+<path d="M 1960,15311.0 C 1995,15311.0 1995,15311.0 2030,15311.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15284.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15313.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 按后缀域名匹配</text>
+<rect x="2030" y="15270.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15299.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】空格分隔，如example.com；</text>
+<text x="2046" y="15327.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回车清空该通道规则。</text>
+<path d="M 1960,15411.0 C 1995,15411.0 1995,15411.0 2030,15411.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15384.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15413.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 按geosite规则匹配</text>
+<rect x="2030" y="15370.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15399.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用；现代分支仍</text>
+<text x="2046" y="15427.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">可能显示选项2，但选择后拒绝。</text>
+<path d="M 1960,15511.0 C 1995,15511.0 1995,15511.0 2030,15511.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15484.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15513.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 返回通道选择</text>
+<rect x="2030" y="15470.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不要把同一个域名/规则重复放</text>
+<text x="2046" y="15527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入多个通道。</text>
+<rect x="1530" y="15570.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15599.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】1.10和现代分支可进入；依赖</text>
+<text x="1546" y="15627.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">该通道网络可用。</text>
+<rect x="1530" y="15670.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15699.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】现代核心可进入；选项2 geosite仍会</text>
+<text x="1546" y="15727.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">显示，但仅1.10系列执行成功。</text>
+<path d="M 1460,16011.0 C 1495,16011.0 1495,15811.0 1530,15811.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16011.0 C 1495,16011.0 1495,15911.0 1530,15911.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16011.0 C 1495,16011.0 1495,16011.0 1530,16011.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16011.0 C 1495,16011.0 1495,16111.0 1530,16111.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16011.0 C 1495,16011.0 1495,16211.0 1530,16211.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="15984.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="16013.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 本机SOCKS5 IPv4优先</text>
+<path d="M 1960,15811.0 C 1995,15811.0 1995,15811.0 2030,15811.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15784.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15813.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 按后缀域名匹配</text>
+<rect x="2030" y="15770.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15799.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】空格分隔，如example.com；</text>
+<text x="2046" y="15827.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回车清空该通道规则。</text>
+<path d="M 1960,15911.0 C 1995,15911.0 1995,15911.0 2030,15911.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15884.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="15913.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 按geosite规则匹配</text>
+<rect x="2030" y="15870.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15899.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用；现代分支仍</text>
+<text x="2046" y="15927.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">可能显示选项2，但选择后拒绝。</text>
+<path d="M 1960,16011.0 C 1995,16011.0 1995,16011.0 2030,16011.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="15984.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16013.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 返回通道选择</text>
+<rect x="2030" y="15970.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="15999.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不要把同一个域名/规则重复放</text>
+<text x="2046" y="16027.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入多个通道。</text>
+<rect x="1530" y="16070.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16099.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】先通过13或14准备可用</text>
+<text x="1546" y="16127.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">SOCKS5服务。</text>
+<rect x="1530" y="16170.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】现代核心可进入；选项2 geosite仍会</text>
+<text x="1546" y="16227.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">显示，但仅1.10系列执行成功。</text>
+<path d="M 1460,16497.0 C 1495,16497.0 1495,16311.0 1530,16311.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16497.0 C 1495,16497.0 1495,16411.0 1530,16411.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16497.0 C 1495,16497.0 1495,16511.0 1530,16511.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16497.0 C 1495,16497.0 1495,16597.0 1530,16597.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16497.0 C 1495,16497.0 1495,16683.0 1530,16683.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="16470.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="16499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">4. 本机SOCKS5 IPv6优先</text>
+<path d="M 1960,16311.0 C 1995,16311.0 1995,16311.0 2030,16311.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="16284.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16313.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 按后缀域名匹配</text>
+<rect x="2030" y="16270.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="16299.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】空格分隔，如example.com；</text>
+<text x="2046" y="16327.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回车清空该通道规则。</text>
+<path d="M 1960,16411.0 C 1995,16411.0 1995,16411.0 2030,16411.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="16384.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16413.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 按geosite规则匹配</text>
+<rect x="2030" y="16370.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="16399.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用；现代分支仍</text>
+<text x="2046" y="16427.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">可能显示选项2，但选择后拒绝。</text>
+<path d="M 1960,16511.0 C 1995,16511.0 1995,16511.0 2030,16511.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="16484.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16513.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 返回通道选择</text>
+<rect x="2030" y="16470.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="16499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不要把同一个域名/规则重复放</text>
+<text x="2046" y="16527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入多个通道。</text>
+<rect x="1530" y="16570.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16599.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用。</text>
+<rect x="1530" y="16642.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16671.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅1.10系列可进入此通道的匹配方式</text>
+<text x="1546" y="16699.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">子菜单；现代核心会拒绝。</text>
+<path d="M 1460,16983.0 C 1495,16983.0 1495,16783.0 1530,16783.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16983.0 C 1495,16983.0 1495,16883.0 1530,16883.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16983.0 C 1495,16983.0 1495,16983.0 1530,16983.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16983.0 C 1495,16983.0 1495,17083.0 1530,17083.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,16983.0 C 1495,16983.0 1495,17183.0 1530,17183.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="16956.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="16985.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">5. VPS本地IPv4优先</text>
+<path d="M 1960,16783.0 C 1995,16783.0 1995,16783.0 2030,16783.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="16756.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16785.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 按后缀域名匹配</text>
+<rect x="2030" y="16742.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="16771.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】空格分隔，如example.com；</text>
+<text x="2046" y="16799.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回车清空该通道规则。</text>
+<path d="M 1960,16883.0 C 1995,16883.0 1995,16883.0 2030,16883.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="16856.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16885.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 按geosite规则匹配</text>
+<rect x="2030" y="16842.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="16871.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用；现代分支仍</text>
+<text x="2046" y="16899.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">可能显示选项2，但选择后拒绝。</text>
+<path d="M 1960,16983.0 C 1995,16983.0 1995,16983.0 2030,16983.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="16956.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="16985.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 返回通道选择</text>
+<rect x="2030" y="16942.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="16971.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不要把同一个域名/规则重复放</text>
+<text x="2046" y="16999.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入多个通道。</text>
+<rect x="1530" y="17042.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17071.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】走本地出站，仍受当前可用地</text>
+<text x="1546" y="17099.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">址族限制。</text>
+<rect x="1530" y="17142.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17171.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅1.10系列可进入此通道的匹配方式</text>
+<text x="1546" y="17199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">子菜单；现代核心会拒绝。</text>
+<path d="M 1460,17483.0 C 1495,17483.0 1495,17283.0 1530,17283.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,17483.0 C 1495,17483.0 1495,17383.0 1530,17383.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,17483.0 C 1495,17483.0 1495,17483.0 1530,17483.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,17483.0 C 1495,17483.0 1495,17583.0 1530,17583.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 1460,17483.0 C 1495,17483.0 1495,17683.0 1530,17683.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="17456.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="17485.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">6. VPS本地IPv6优先</text>
+<path d="M 1960,17283.0 C 1995,17283.0 1995,17283.0 2030,17283.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="17256.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17285.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 按后缀域名匹配</text>
+<rect x="2030" y="17242.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="17271.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】空格分隔，如example.com；</text>
+<text x="2046" y="17299.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回车清空该通道规则。</text>
+<path d="M 1960,17383.0 C 1995,17383.0 1995,17383.0 2030,17383.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="17356.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17385.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 按geosite规则匹配</text>
+<rect x="2030" y="17342.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="17371.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅1.10分支可用；现代分支仍</text>
+<text x="2046" y="17399.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">可能显示选项2，但选择后拒绝。</text>
+<path d="M 1960,17483.0 C 1995,17483.0 1995,17483.0 2030,17483.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1530" y="17456.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17485.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 返回通道选择</text>
+<rect x="2030" y="17442.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="2046" y="17471.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不要把同一个域名/规则重复放</text>
+<text x="2046" y="17499.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">入多个通道。</text>
+<rect x="1530" y="17542.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17571.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】走本地出站，仍受当前可用地</text>
+<text x="1546" y="17599.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">址族限制。</text>
+<rect x="1530" y="17642.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17671.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅1.10系列可进入此通道的匹配方式</text>
+<text x="1546" y="17699.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">子菜单；现代核心会拒绝。</text>
+<path d="M 1460,17769.0 C 1495,17769.0 1495,17769.0 1530,17769.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="1030" y="17742.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="17771.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回主菜单</text>
+<rect x="1530" y="17742.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1546" y="17771.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不撤销已经保存的分流规则。</text>
+<rect x="1030" y="17814.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="17843.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】Warp WireGuard / SOCKS5 / </text>
+<text x="1046" y="17871.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">本地出站；限制随核心分支变化。</text>
+<rect x="1030" y="17914.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="17943.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】只作用于Sing-box出站；无网络的分</text>
+<text x="1046" y="17971.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">流通道可能阻断目标网站。现代核心只支持这</text>
+<text x="1046" y="17999.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">里的通道2、3。</text>
+<rect x="1030" y="18042.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="18071.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】5→分流：1.10支持1–6通道与geosite</text>
+<text x="1046" y="18099.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">；现代分支1、4不可用。geosite选项可能仍显</text>
+<text x="1046" y="18127.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">示，但选择会被拒绝。</text>
+<rect x="1030" y="18170.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="18199.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】分流通道不可用时目标网站可能被阻</text>
+<text x="1046" y="18227.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">断；这些规则只作用于Sing-box五协议，独立</text>
+<text x="1046" y="18255.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP仍走独立出站。</text>
+<path d="M 960,18553.0 C 995,18553.0 995,18339.0 1030,18339.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 960,18553.0 C 995,18553.0 995,18503.0 1030,18503.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 960,18553.0 C 995,18553.0 995,18667.0 1030,18667.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 960,18553.0 C 995,18553.0 995,18767.0 1030,18767.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<rect x="530" y="18526.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="546" y="18555.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">6. 关闭/重启 Sing-box（不影响独立XHTTP）</text>
+<path d="M 1460,18339.0 C 1495,18339.0 1495,18339.0 1530,18339.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<rect x="1030" y="18312.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="18341.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 重启Sing-box</text>
+<rect x="1530" y="18298.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1546" y="18327.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】先做配置检查；独立XHTTP不</text>
+<text x="1546" y="18355.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">跟随。</text>
+<path d="M 1460,18503.0 C 1495,18503.0 1495,18439.0 1530,18439.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 1460,18503.0 C 1495,18503.0 1495,18553.0 1530,18553.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<rect x="1030" y="18476.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="18505.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 关闭Sing-box</text>
+<rect x="1530" y="18398.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1546" y="18427.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】停止主服务；独立XHTTP和其</text>
+<text x="1546" y="18455.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">他辅助服务并非一起停止。</text>
+<rect x="1530" y="18498.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#0369a1" stroke-width="2"/>
+<text x="1546" y="18527.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】systemd环境下不仅停止Sing-box，</text>
+<text x="1546" y="18555.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">还禁用该服务的开机自启；Alpine分支仅停止</text>
+<text x="1546" y="18583.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">服务。</text>
+<rect x="1030" y="18626.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="18655.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】仅主服务；不控制XHTTP、</text>
+<text x="1046" y="18683.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP Argo的独立服务。</text>
+<rect x="1030" y="18726.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="18755.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅Sing-box主服务；不会同时重启/停</text>
+<text x="1046" y="18783.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">止独立XHTTP或XHTTP Argo。</text>
+<path d="M 960,19031.0 C 995,19031.0 995,18867.0 1030,18867.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,19031.0 C 995,19031.0 995,18967.0 1030,18967.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,19031.0 C 995,19031.0 995,19067.0 1030,19067.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,19031.0 C 995,19031.0 995,19181.0 1030,19181.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="530" y="19004.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="546" y="19033.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">7. 更新 Sing-box-yg 脚本</text>
+<rect x="1030" y="18826.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="18855.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】更新菜单和脚本版本；不会自</text>
+<text x="1046" y="18883.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">动升级Sing-box/Xray内核。</text>
+<rect x="1030" y="18926.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="18955.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】先暂存校验、备份，再替换；</text>
+<text x="1046" y="18983.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不更新Sing-box/Xray核心，不部署XHTTP。</text>
+<rect x="1030" y="19026.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="19055.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅更新脚本，不等于更新Sing-box内</text>
+<text x="1046" y="19083.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">核或Xray；网络失败不应显示已更新。</text>
+<rect x="1030" y="19126.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="19155.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】菜单信息可短期缓存：IP/地区60秒、</text>
+<text x="1046" y="19183.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">版本5分钟；SB_MENU_REFRESH=1 sb强刷元</text>
+<text x="1046" y="19211.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">数据，不自动执行更新。</text>
+<path d="M 960,19559.0 C 995,19559.0 995,19295.0 1030,19295.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,19559.0 C 995,19559.0 995,19395.0 1030,19395.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,19559.0 C 995,19559.0 995,19495.0 1030,19495.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,19559.0 C 995,19559.0 995,19595.0 1030,19595.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,19559.0 C 995,19559.0 995,19695.0 1030,19695.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,19559.0 C 995,19559.0 995,19809.0 1030,19809.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="530" y="19532.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="546" y="19561.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">8. 更新/切换/指定 Sing-box 内核版本</text>
+<path d="M 1460,19295.0 C 1495,19295.0 1495,19295.0 1530,19295.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="19268.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="19297.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 切换最新正式版核心</text>
+<rect x="1530" y="19254.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="19283.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】重新查询可用版本，下载检查</text>
+<text x="1546" y="19311.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">；配置/服务失败尝试回滚。</text>
+<path d="M 1460,19395.0 C 1495,19395.0 1495,19395.0 1530,19395.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="19368.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="19397.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 切换最新测试版核心</text>
+<rect x="1530" y="19354.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="19383.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】测试版本风险较高；现有配置</text>
+<text x="1546" y="19411.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">必须适配。</text>
+<path d="M 1460,19495.0 C 1495,19495.0 1495,19495.0 1530,19495.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="19468.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="19497.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 指定版本核心</text>
+<rect x="1530" y="19454.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="19483.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】输入数字.数字.数字或带</text>
+<text x="1546" y="19511.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">alpha/beta/rc后缀；需1.10及以上。</text>
+<path d="M 1460,19595.0 C 1495,19595.0 1495,19595.0 1530,19595.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="19568.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="19597.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回主菜单</text>
+<rect x="1530" y="19554.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="19583.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不会仅因打开页面就切换核心</text>
+<text x="1546" y="19611.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<rect x="1030" y="19654.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="19683.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】正式版、测试版或指定版本；</text>
+<text x="1046" y="19711.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">检查现有配置，失败回滚。</text>
+<rect x="1030" y="19754.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="19783.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅Sing-box；目标版本需通过现有配</text>
+<text x="1046" y="19811.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">置检查，否则回滚。不更新Xray；1.10系列没</text>
+<text x="1046" y="19839.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">有AnyTLS。</text>
+<path d="M 960,20251.0 C 995,20251.0 995,19923.0 1030,19923.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,20251.0 C 995,20251.0 995,20023.0 1030,20023.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,20251.0 C 995,20251.0 995,20123.0 1030,20123.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,20251.0 C 995,20251.0 995,20223.0 1030,20223.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,20251.0 C 995,20251.0 995,20323.0 1030,20323.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,20251.0 C 995,20251.0 995,20437.0 1030,20437.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,20251.0 C 995,20251.0 995,20565.0 1030,20565.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="530" y="20210.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="546" y="20239.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">9. 节点与订阅 【本地刷新/Mihomo与</text>
+<text x="546" y="20267.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Sing-box配置/Gitlab推送/TG】</text>
+<path d="M 1460,19923.0 C 1495,19923.0 1495,19923.0 1530,19923.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="19896.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="19925.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 刷新本地订阅 / 查看节点</text>
+<rect x="1530" y="19882.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="19911.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】生成分享链接、二维码及聚合</text>
+<text x="1546" y="19939.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">订阅；不推送Gitlab。</text>
+<path d="M 1460,20023.0 C 1495,20023.0 1495,20023.0 1530,20023.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="19996.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="20025.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 配置查看 / Gitlab发布</text>
+<rect x="1530" y="19982.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="20011.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】刷新本地Mihomo/Sing-box配</text>
+<text x="1546" y="20039.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">置；若已设置Gitlab，同时推送远端。</text>
+<path d="M 1460,20123.0 C 1495,20123.0 1495,20123.0 1530,20123.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="20096.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="20125.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. Telegram通知</text>
+<rect x="1530" y="20082.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="20111.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】刷新本地节点后调用已配置的</text>
+<text x="1546" y="20139.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">通知脚本；不等于Gitlab发布。</text>
+<path d="M 1460,20223.0 C 1495,20223.0 1495,20223.0 1530,20223.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="20196.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="20225.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回主菜单</text>
+<rect x="1530" y="20182.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="20211.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】客户端需要主动重新拉取，脚</text>
+<text x="1546" y="20239.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">本不能代替客户端刷新。</text>
+<rect x="1030" y="20282.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="20311.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】本地刷新、Gitlab远端推送、</text>
+<text x="1046" y="20339.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Telegram通知分开处理。</text>
+<rect x="1030" y="20382.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="20411.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】本地刷新、Gitlab发布、客户端拉取是</text>
+<text x="1046" y="20439.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">三个动作。Mihomo导出含XHTTP，官方</text>
+<text x="1046" y="20467.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Sing-box JSON不含XHTTP。</text>
+<rect x="1030" y="20510.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="20539.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅导出给兼容的Mihomo/Xray客户端</text>
+<text x="1046" y="20567.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">及通用分享；官方Sing-box JSON不含XHTTP</text>
+<text x="1046" y="20595.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<path d="M 960,20757.0 C 995,20757.0 995,20707.0 1030,20707.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,20757.0 C 995,20757.0 995,20835.0 1030,20835.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="530" y="20730.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="546" y="20759.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">10. 查看 Sing-box 运行日志</text>
+<rect x="1030" y="20638.0" width="430" height="138" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="20667.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】跟随systemd的Sing-box </text>
+<text x="1046" y="20695.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">journal日志；Ctrl+C退出。Alpine下本菜单暂</text>
+<text x="1046" y="20723.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不支持；独立XHTTP日志见3→11→6或3→11</text>
+<text x="1046" y="20751.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">→9→6。</text>
+<rect x="1030" y="20794.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="20823.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】日志跟随需Ctrl+C退出；Alpine下本</text>
+<text x="1046" y="20851.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">菜单暂不支持查看，不代表无日志。</text>
+<path d="M 960,21163.0 C 995,21163.0 995,20935.0 1030,20935.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,21163.0 C 995,21163.0 995,21035.0 1030,21035.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,21163.0 C 995,21163.0 995,21135.0 1030,21135.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,21163.0 C 995,21163.0 995,21249.0 1030,21249.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,21163.0 C 995,21163.0 995,21377.0 1030,21377.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="530" y="21136.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="546" y="21165.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">11. 调用外部BBR/FQ优化脚本（不保证提速）</text>
+<rect x="1030" y="20894.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="20923.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按虚拟化条件拦截；不保证提</text>
+<text x="1046" y="20951.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">速，外部菜单非本仓库固定。</text>
+<rect x="1030" y="20994.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="21023.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】LXC/OpenVZ分支拦截；否则</text>
+<text x="1046" y="21051.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">调用teddysun/across的bbr.sh。</text>
+<rect x="1030" y="21094.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="21123.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】本仓库仅提供外部脚本入口，</text>
+<text x="1046" y="21151.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不编造外部程序的子菜单。</text>
+<rect x="1030" y="21194.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="21223.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】外部在线脚本；不保证提速，</text>
+<text x="1046" y="21251.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">LXC/OpenVZ不支持这里的原版BBR；执行前</text>
+<text x="1046" y="21279.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">检查来源和系统影响。</text>
+<rect x="1030" y="21322.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="21351.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】11/12/13在线取得外部脚本：图仅列</text>
+<text x="1046" y="21379.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">本仓库入口，无法固定它们未来变化的子菜单</text>
+<text x="1046" y="21407.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">；执行前自行检查来源、权限和影响。</text>
+<path d="M 960,21655.0 C 995,21655.0 995,21491.0 1030,21491.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 960,21655.0 C 995,21655.0 995,21591.0 1030,21591.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 960,21655.0 C 995,21655.0 995,21691.0 1030,21691.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<path d="M 960,21655.0 C 995,21655.0 995,21805.0 1030,21805.0" fill="none" stroke="#0369a1" stroke-width="2"/>
+<rect x="530" y="21628.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="546" y="21657.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">12. 管理 Acme 申请域名IP证书</text>
+<rect x="1030" y="21450.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="21479.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】申请/管理证书；申请后可在3</text>
+<text x="1046" y="21507.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">→1切换证书模式。</text>
+<rect x="1030" y="21550.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="21579.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】调用yonggekkk/acme-yg；具</text>
+<text x="1046" y="21607.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">体签发模式与菜单由外部脚本提供。</text>
+<rect x="1030" y="21650.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="21679.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】本仓库仅提供外部脚本入口，</text>
+<text x="1046" y="21707.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不编造外部程序的子菜单。</text>
+<rect x="1030" y="21750.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#0369a1" stroke-width="2"/>
+<text x="1046" y="21779.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】外部Acme脚本，子菜单以实时下载的</text>
+<text x="1046" y="21807.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">外部脚本为准；本项目不固定其菜单。证书切</text>
+<text x="1046" y="21835.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">换在3→1。</text>
+<path d="M 960,22069.0 C 995,22069.0 995,21919.0 1030,21919.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,22069.0 C 995,22069.0 995,22019.0 1030,22019.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,22069.0 C 995,22069.0 995,22119.0 1030,22119.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<path d="M 960,22069.0 C 995,22069.0 995,22219.0 1030,22219.0" fill="none" stroke="#0f766e" stroke-width="2"/>
+<rect x="530" y="22042.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="546" y="22071.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">13. 管理 Warp 查看Netflix/ChatGPT解锁情况</text>
+<rect x="1030" y="21878.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="21907.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】Warp及解锁检测；菜单来自外</text>
+<text x="1046" y="21935.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">部下载脚本。</text>
+<rect x="1030" y="21978.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="22007.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】调用yonggekkk/warp-yg；不</text>
+<text x="1046" y="22035.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">会自动把XHTTP接入Sing-box分流。</text>
+<rect x="1030" y="22078.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="22107.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】本仓库仅提供外部脚本入口，</text>
+<text x="1046" y="22135.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不编造外部程序的子菜单。</text>
+<rect x="1030" y="22178.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#0f766e" stroke-width="2"/>
+<text x="1046" y="22207.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】外部Warp脚本，子菜单以实时脚本为</text>
+<text x="1046" y="22235.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">准；可能改出站/路由，并非部署新入站协议。</text>
+<path d="M 960,22719.0 C 995,22719.0 995,22369.0 1030,22369.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,22719.0 C 995,22719.0 995,22619.0 1030,22619.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,22719.0 C 995,22719.0 995,22819.0 1030,22819.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,22719.0 C 995,22719.0 995,22919.0 1030,22919.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,22719.0 C 995,22719.0 995,23019.0 1030,23019.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 960,22719.0 C 995,22719.0 995,23119.0 1030,23119.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="530" y="22678.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="546" y="22707.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">14. 添加 WARP-plus-Socks5 代理模式 【本地</text>
+<text x="546" y="22735.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">Warp/多地区Psiphon-VPN】</text>
+<path d="M 1460,22369.0 C 1495,22369.0 1495,22319.0 1530,22319.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 1460,22369.0 C 1495,22369.0 1495,22419.0 1530,22419.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="22342.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="22371.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 启用 / 重置本地Warp代理</text>
+<path d="M 1960,22319.0 C 1995,22319.0 1995,22319.0 2030,22319.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1530" y="22292.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22321.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">输入步骤：设置本地SOCKS5端口</text>
+<rect x="2030" y="22278.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="2046" y="22307.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】回车默认40000；检测端口占</text>
+<text x="2046" y="22335.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">用，随后重启辅助进程并写入开机任务。</text>
+<rect x="1530" y="22378.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22407.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】需检测到IPv4；设置端口默认</text>
+<text x="1546" y="22435.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">40000；会更换辅助进程。</text>
+<path d="M 1460,22619.0 C 1495,22619.0 1495,22519.0 1530,22519.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 1460,22619.0 C 1495,22619.0 1495,22619.0 1530,22619.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<path d="M 1460,22619.0 C 1495,22619.0 1495,22719.0 1530,22719.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="22592.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="22621.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 启用 / 重置Psiphon代理</text>
+<path d="M 1960,22519.0 C 1995,22519.0 1995,22519.0 2030,22519.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1530" y="22492.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22521.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">输入步骤：设置本地SOCKS5端口</text>
+<rect x="2030" y="22478.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="2046" y="22507.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】回车默认40000；检测端口占</text>
+<text x="2046" y="22535.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">用，随后重启辅助进程并写入开机任务。</text>
+<path d="M 1960,22619.0 C 1995,22619.0 1995,22619.0 2030,22619.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1530" y="22592.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22621.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">输入步骤：选择Psiphon国家代码</text>
+<rect x="2030" y="22578.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="2046" y="22607.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】按终端列出的国家代码选择；</text>
+<text x="2046" y="22635.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">能否获得可用IP取决于实际连通性。</text>
+<rect x="1530" y="22678.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22707.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】同样设置本机SOCKS5端口，再</text>
+<text x="1546" y="22735.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">输入国家地区两位代码。</text>
+<path d="M 1460,22819.0 C 1495,22819.0 1495,22819.0 1530,22819.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="22792.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="22821.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">3. 停止辅助代理</text>
+<rect x="1530" y="22778.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22807.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】只停止本项辅助进程；依赖它</text>
+<text x="1546" y="22835.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">的分流可能不可用。</text>
+<path d="M 1460,22919.0 C 1495,22919.0 1495,22919.0 1530,22919.0" fill="none" stroke="#2563eb" stroke-width="2"/>
+<rect x="1030" y="22892.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="22921.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 返回主菜单</text>
+<rect x="1530" y="22878.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1546" y="22907.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不代表卸载已安装的全部代理</text>
+<text x="1546" y="22935.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<rect x="1030" y="22978.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="23007.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】WARP-plus-Socks5辅助进程</text>
+<text x="1046" y="23035.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">，不是新客户端入站协议。</text>
+<rect x="1030" y="23078.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#2563eb" stroke-width="2"/>
+<text x="1046" y="23107.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】辅助本地SOCKS5进程，不是新增客户</text>
+<text x="1046" y="23135.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">端协议；修改它会影响依赖该SOCKS5的分流。</text>
+<path d="M 960,23575.0 C 995,23575.0 995,23219.0 1030,23219.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,23575.0 C 995,23575.0 995,23319.0 1030,23319.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,23575.0 C 995,23575.0 995,23419.0 1030,23419.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,23575.0 C 995,23575.0 995,23533.0 1030,23533.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,23575.0 C 995,23575.0 995,23647.0 1030,23647.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,23575.0 C 995,23575.0 995,23775.0 1030,23775.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<path d="M 960,23575.0 C 995,23575.0 995,23917.0 1030,23917.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="530" y="23534.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="546" y="23563.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">15. 更换IP刷新本地IP、调整IPV4/IPV6配置输</text>
+<text x="546" y="23591.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">出</text>
+<path d="M 1460,23219.0 C 1495,23219.0 1495,23219.0 1530,23219.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="23192.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23221.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">1. 双栈使用IPv4输出（默认）</text>
+<rect x="1530" y="23178.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="23207.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】先刷新本地IP；用于导出地址，</text>
+<text x="1546" y="23235.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">不设置系统网卡IP。</text>
+<path d="M 1460,23319.0 C 1495,23319.0 1495,23319.0 1530,23319.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="23292.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23321.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">2. 双栈使用IPv6输出</text>
+<rect x="1530" y="23278.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="23307.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】URI加方括号，配置字段使用裸</text>
+<text x="1546" y="23335.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">IPv6；客户端网络需可达。</text>
+<path d="M 1460,23419.0 C 1495,23419.0 1495,23419.0 1530,23419.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="23392.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23421.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">条件 / 说明：自动获取当前可用IP</text>
+<rect x="1530" y="23378.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="23407.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】无双栈选择；更新后刷新本地</text>
+<text x="1546" y="23435.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">订阅，远端仍需9→2。</text>
+<path d="M 1460,23533.0 C 1495,23533.0 1495,23533.0 1530,23533.0" fill="none" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1030" y="23506.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23535.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">条件 / 说明：导出地址与实际连接参数</text>
+<rect x="1530" y="23478.0" width="430" height="110" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1546" y="23507.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】直连XHTTP随公共导出地址读</text>
+<text x="1546" y="23535.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">取；自定义XHTTP Argo server不受此项覆盖</text>
+<text x="1546" y="23563.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">。</text>
+<rect x="1030" y="23606.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23635.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】双栈可选IPv4/IPv6；更新导出</text>
+<text x="1046" y="23663.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">地址，不改变系统IP分配。</text>
+<rect x="1030" y="23706.0" width="430" height="138" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23735.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】需Sing-box在运行；双栈才出现1/2选</text>
+<text x="1046" y="23763.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">择，单栈自动处理。直连XHTTP导出地址随公</text>
+<text x="1046" y="23791.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">共地址刷新，XHTTP Argo自定义server不受覆</text>
+<text x="1046" y="23819.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">盖；不修改系统网卡IP。</text>
+<rect x="1030" y="23862.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#7c3aed" stroke-width="2"/>
+<text x="1046" y="23891.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】检测到Warp运行时，会尝试先停止、</text>
+<text x="1046" y="23919.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">刷新后再启动Warp相关服务；可能短暂影响网</text>
+<text x="1046" y="23947.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">络。</text>
+<path d="M 960,24131.0 C 995,24131.0 995,24031.0 1030,24031.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,24131.0 C 995,24131.0 995,24131.0 1030,24131.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<path d="M 960,24131.0 C 995,24131.0 995,24231.0 1030,24231.0" fill="none" stroke="#b45309" stroke-width="2"/>
+<rect x="530" y="24104.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="546" y="24133.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">16. 本fork使用说明/菜单导航/上游教程</text>
+<rect x="1030" y="23990.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="24019.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】项目说明、兼容说明、独立</text>
+<text x="1046" y="24047.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">XHTTP范围及Serv00迁移说明。</text>
+<rect x="1030" y="24090.0" width="430" height="82" rx="9" fill="#ffffff" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="24119.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】项目README、兼容说明、菜</text>
+<text x="1046" y="24147.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">单路径、缓存强刷与Serv00迁移链接。</text>
+<rect x="1030" y="24190.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#b45309" stroke-width="2"/>
+<text x="1046" y="24219.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】显示本fork说明与上游教程链接，无数</text>
+<text x="1046" y="24247.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">字子菜单。</text>
+<path d="M 960,24431.0 C 995,24431.0 995,24317.0 1030,24317.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,24431.0 C 995,24431.0 995,24403.0 1030,24403.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<path d="M 960,24431.0 C 995,24431.0 995,24517.0 1030,24517.0" fill="none" stroke="#be123c" stroke-width="2"/>
+<rect x="530" y="24404.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="546" y="24433.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">0. 退出脚本</text>
+<rect x="1030" y="24290.0" width="430" height="54" rx="9" fill="#ffffff" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="24319.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【作用 / 说明】不主动停止已运行的服务。</text>
+<rect x="1030" y="24362.0" width="430" height="82" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="24391.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】仅退出脚本界面，不主动停止后台代</text>
+<text x="1046" y="24419.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">理、隧道服务。</text>
+<rect x="1030" y="24462.0" width="430" height="110" rx="9" fill="#fff7ed" stroke="#be123c" stroke-width="2"/>
+<text x="1046" y="24491.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">【注意】数字0在主菜单退出；多数子菜单0返</text>
+<text x="1046" y="24519.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">回或结束当前子菜单，XHTTP子菜单选择一次</text>
+<text x="1046" y="24547.0" font-family="Microsoft YaHei,sans-serif" font-size="19" fill="#0f172a">后结束，不保证自动重新绘制上层菜单。</text>
+</svg>

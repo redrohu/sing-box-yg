@@ -6,7 +6,7 @@
 
 [打开离线图册](MENU-GUIDE.html) · [机器可读菜单数据](menu-guide.json) · [重新生成脚本](build_menu_guide.py)
 
-图册共 7 张，每张均有 SVG（可无损缩放）与 PNG。下方文字表与图由同一份数据生成；协议参数、服务与菜单分发不因图册而改变。
+仅保留三份图形产物：[可编辑XMind](MENU-ACTUAL-TREE.xmind)、[完整展开SVG](menu-maps/vps-actual-menu-full.svg)、[菜单速览PNG](menu-maps/vps-actual-menu-overview.png)。下方是按专题检索的文字详表，不是导图层级；真实菜单树请打开XMind或完整SVG。
 
 ## 读图规则
 
@@ -20,10 +20,6 @@
 ## 01 · VPS 主菜单总览
 
 从安装到维护：先选择管理范围，再进入对应子菜单。
-
-![VPS 主菜单总览](menu-maps/01-overview.svg)
-
-[SVG 原图](menu-maps/01-overview.svg) · [PNG 图片](menu-maps/01-overview.png)
 
 ### 部署与日常连接
 
@@ -60,10 +56,6 @@
 ## 02 · 配置子菜单：证书、身份与隧道
 
 入口3的选项1–6；VMess Argo与独立XHTTP Argo不要混用。
-
-![配置子菜单：证书、身份与隧道](menu-maps/02-connection.svg)
-
-[SVG 原图](menu-maps/02-connection.svg) · [PNG 图片](menu-maps/02-connection.png)
 
 ### 3 → 1　证书 / REALITY域名
 
@@ -118,10 +110,6 @@
 
 入口3的选项7–10及主菜单9：生成、发布、拉取是三件事。
 
-![订阅、连接地址与节点名称](menu-maps/03-subscriptions.svg)
-
-[SVG 原图](menu-maps/03-subscriptions.svg) · [PNG 图片](menu-maps/03-subscriptions.png)
-
 ### 3 → 7 / 3 → 8　订阅发布
 
 | 输入路径 | 功能 | 说明与限制 |
@@ -172,10 +160,6 @@
 
 入口3→11；两个节点共存，但凭据、服务、配置与启停分离。
 
-![独立 XHTTP：直连与固定Argo](menu-maps/04-xhttp.svg)
-
-[SVG 原图](menu-maps/04-xhttp.svg) · [PNG 图片](menu-maps/04-xhttp.png)
-
 ### 3 → 11　直连REALITY节点
 
 | 输入路径 | 功能 | 说明与限制 |
@@ -220,10 +204,6 @@
 ## 05 · 安装、协议端口与域名分流
 
 条件选项按核心和证书状态显示；说明限制，不创造隐藏功能。
-
-![安装、协议端口与域名分流](menu-maps/05-install-routing.svg)
-
-[SVG 原图](menu-maps/05-install-routing.svg) · [PNG 图片](menu-maps/05-install-routing.png)
 
 ### 1　安装交互顺序
 
@@ -286,10 +266,6 @@
 
 版本查询、脚本更新、核心切换和客户端刷新不可互相替代。
 
-![服务、版本、日志与外部工具](menu-maps/06-maintenance.svg)
-
-[SVG 原图](menu-maps/06-maintenance.svg) · [PNG 图片](menu-maps/06-maintenance.png)
-
 ### 6 / 7 / 8 / 10　服务与版本
 
 | 输入路径 | 功能 | 说明与限制 |
@@ -338,10 +314,6 @@
 ## 07 · Serv00 / Hostuno 独立菜单
 
 与VPS菜单不是同一套编号；这里的S只用来标识平台，不需输入。
-
-![Serv00 / Hostuno 独立菜单](menu-maps/07-serv00.svg)
-
-[SVG 原图](menu-maps/07-serv00.svg) · [PNG 图片](menu-maps/07-serv00.png)
 
 ### S　主菜单0–9
 
@@ -395,6 +367,6 @@ python docs/build_menu_guide.py
 python docs/build_menu_guide.py --check
 ```
 
-仅使用 Python 标准库生成 SVG、文字详表及离线图册。PNG 用可选工具 `python docs/render_menu_maps.py --browser <本机Chromium绝对路径>` 生成，需要 Playwright 与已有浏览器，不自动下载；中文字体需预先安装。`png-manifest.json` 绑定 SVG/PNG 哈希，防止仅改文字后沿用旧图片。图册不访问外网、不执行菜单、没有遥测。修改菜单后请同步数据并重新生成；`--check` 检查生成物是否过期，相关回归测试检查编号与分发。
+本脚本仅生成文字详表和离线查看页，不生成旧专题图。实际菜单XMind由 `python docs/build_xmind_guide.py` 生成并用 `--check` 校验；完整SVG与速览PNG由 `python docs/render_actual_menu_tree.py` 生成（可选Pillow与Windows中文字体）。详见[导图维护说明](XMIND-GUIDE.md)。所有图形产物只保留上述三份，查看页不访问外网、不执行菜单、没有遥测。
 
 对于动态外部菜单、条件隐藏项、当前代码仍存在的限制，以实际提示和本图的说明栏为准；本图不会凭空增加功能。

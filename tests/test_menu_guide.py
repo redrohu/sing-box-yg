@@ -1,6 +1,5 @@
 """Guide coverage, deterministic generated output and offline artifact contracts."""
 import json
-import hashlib
 from pathlib import Path
 import re
 import struct
@@ -52,26 +51,22 @@ class MenuGuide(unittest.TestCase):
                            cwd=ROOT, capture_output=True)
         self.assertEqual(p.returncode, 0, (p.stdout + p.stderr).decode('utf8', 'replace'))
 
-    def test_svg_png_dimensions_and_full_text(self):
-        manifest = json.loads((self.docs / 'menu-maps/png-manifest.json').read_text())
-        for section in self.data['sections']:
-            svg = self.docs / 'menu-maps' / (section['id'] + '.svg')
-            png = svg.with_suffix('.png')
-            root = ET.fromstring(svg.read_text(encoding='utf8'))
-            raw = png.read_bytes()
-            self.assertEqual(hashlib.sha256(raw).hexdigest(), manifest[section['id']]['png_sha256'])
-            self.assertEqual(hashlib.sha256(svg.read_bytes()).hexdigest(), manifest[section['id']]['svg_sha256'])
-            self.assertEqual(raw[:8], b'\x89PNG\r\n\x1a\n')
-            w, h = struct.unpack('>II', raw[16:24])
-            self.assertEqual((w, h), (int(root.attrib['width']), int(root.attrib['height'])))
-            words = ''.join(root.itertext())
-            for group in section['groups']:
-                for item in group['items']:
-                    self.assertIn(item['path'], words)
-            self.assertIn(section['title'], words)
+    def test_only_three_requested_diagrams_remain(self):
+        maps = self.docs / 'menu-maps'
+        self.assertEqual({p.name for p in maps.iterdir()},
+                         {'vps-actual-menu-full.svg', 'vps-actual-menu-overview.png'})
+        self.assertEqual({p.name for p in self.docs.glob('*.xmind')}, {'MENU-ACTUAL-TREE.xmind'})
+        root = ET.fromstring((maps / 'vps-actual-menu-full.svg').read_text(encoding='utf8'))
+        self.assertGreater(int(root.attrib['height']), 1000)
+        words = ''.join(root.itertext())
+        for title in ['配置管理', '独立XHTTP', '【注意】', '【作用 / 说明】']:
+            self.assertIn(title, words)
+        raw = (maps / 'vps-actual-menu-overview.png').read_bytes()
+        self.assertEqual(raw[:8], b'\x89PNG\r\n\x1a\n')
+        self.assertGreater(min(struct.unpack('>II', raw[16:24])), 1000)
 
     def test_all_local_document_links_resolve(self):
-        for file in ['MENU-GUIDE.md', 'MENU-GUIDE.html']:
+        for file in ['MENU-GUIDE.md', 'MENU-GUIDE.html', 'XMIND-GUIDE.md']:
             text = (self.docs / file).read_text(encoding='utf8')
             links = re.findall(r'(?:src|href)="([^"]+)"', text) if file.endswith('.html') else re.findall(r'\]\(([^)]+)\)', text)
             for target in links:
@@ -91,7 +86,9 @@ class MenuGuide(unittest.TestCase):
     def test_browser_document_is_offline_and_has_no_actions(self):
         text = (self.docs / 'MENU-GUIDE.html').read_text(encoding='utf8')
         self.assertNotRegex(text, r'<script|<iframe|<form|https?://|fetch\(')
-        self.assertEqual(text.count('<section id='), 7)
+        self.assertEqual(text.count('<section id='), 2)
+        self.assertIn('MENU-ACTUAL-TREE.xmind', text)
+        self.assertNotIn('7张', text)
 
 
 if __name__ == '__main__':
