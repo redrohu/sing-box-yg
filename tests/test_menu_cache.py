@@ -19,7 +19,7 @@ class MenuCache(unittest.TestCase):
         (cls.out/'commands.json').write_text(json.dumps(cls.records,ensure_ascii=False,indent=2),encoding='utf8')
     def run_case(self,name,body):
         d=self.out/name;d.mkdir(exist_ok=True);src=self.src.replace('/etc/s-box',bashpath(d))
-        helpers=''.join(function(src,n) for n in ['sb_info_valid','sb_info_cache_get','sb_info_cache_put','sb_script_version_info','v4v6','lapre'])
+        helpers=''.join(function(src,n) for n in ['sb_info_valid','sb_info_cache_get','sb_info_cache_put','sb_script_version_info','v4v6','lapre','sb_menu_ip_probe_hint'])
         jq='"'+bashpath(JQ or CORE_ROOT/'jq.exe')+'" -b' if os.name=='nt' else 'command jq'
         script='set +e\n'+helpers+r'''
 red(){ echo "$*" >&2; }
@@ -73,6 +73,15 @@ v4v6 || exit 1
 [[ ! -e cache/menu-network.json ]] || exit 3
 ''')
         self.assertEqual(self.records[-1]['stderr'], '')
+
+    def test_ip_probe_hint_reports_missing_route_only_when_confirmed(self):
+        self.run_case('probe-hint', r'''
+ip(){ [[ $* == '-6 route show table all default' ]]; }
+[[ $(sb_menu_ip_probe_hint 6) == *'没有 IPv6 默认路由'* ]] || exit 1
+[[ $(sb_menu_ip_probe_hint 4) == *'请检查对应的出站网络、DNS 或探测站点'* ]] || exit 2
+ip(){ echo 'default via fe80::1 dev eth0'; }
+[[ $(sb_menu_ip_probe_hint 6) == *'请检查对应的出站网络、DNS 或探测站点'* ]] || exit 3
+''')
 
     def test_versions_cached_but_installed_version_is_live(self):
         self.run_case('cores',r'''

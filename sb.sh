@@ -393,6 +393,15 @@ local -a values
 mapfile -t values < <(jq -r '.ipv4,.ipv6,.region4,.region6' <<< "$data")
 v4=${values[0]}; v6=${values[1]}; v4dq=${values[2]}; v6dq=${values[3]}
 }
+sb_menu_ip_probe_hint(){
+local family=$1 defaults
+if defaults=$(ip "-$family" route show table all default 2>/dev/null) && [[ -z $defaults ]]; then
+printf 'IPv%s 未探测到公网地址：系统没有 IPv%s 默认路由；未配置该协议出网时属于正常现象。\n' "$family" "$family"
+else
+printf 'IPv%s 未探测到公网地址：查询未返回有效结果，请检查对应的出站网络、DNS 或探测站点。\n' "$family"
+fi
+}
+
 warpcheck(){
 wgcfv6=$(curl -s6m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
 wgcfv4=$(curl -s4m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
@@ -5418,11 +5427,11 @@ fi
 if [[ "$v4" == "104.28"* ]]; then
 w4="【WARP】"
 fi
-[[ -z $v4 ]] && showv4='IPV4地址丢失，请切换至IPV6或者重装Sing-box' || showv4=$v4$w4
-[[ -z $v6 ]] && showv6='IPV6地址丢失，请切换至IPV4或者重装Sing-box' || showv6=$v6$w6
+[[ -z $v4 ]] && showv4='未探测到公网IPv4地址' || showv4=$v4$w4
+[[ -z $v6 ]] && showv6='未探测到公网IPv6地址' || showv6=$v6$w6
 if [[ -z $v4 ]]; then
-vps_ipv4='无IPV4'      
-vps_ipv6="$v6"
+vps_ipv4='未探测到'
+vps_ipv6="${v6:-未探测到}"
 location="$v6dq"
 elif [[ -n $v4 &&  -n $v6 ]]; then
 vps_ipv4="$v4"    
@@ -5430,11 +5439,13 @@ vps_ipv6="$v6"
 location="$v4dq"
 else
 vps_ipv4="$v4"    
-vps_ipv6='无IPV6'
+vps_ipv6='未探测到'
 location="$v4dq"
 fi
 echo -e "本地IPV4地址：$blue$vps_ipv4$w4$plain   本地IPV6地址：$blue$vps_ipv6$w6$plain"
-echo -e "服务器地区：$blue$location$plain"
+if [[ -z $v4 ]]; then sb_menu_ip_probe_hint 4; fi
+if [[ -z $v6 ]]; then sb_menu_ip_probe_hint 6; fi
+echo -e "服务器地区：$blue${location:-未探测到}$plain"
 if [[ "$sbnh" == "1.10" ]]; then
 rpip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[0].domain_strategy') 2>/dev/null
 if [[ $rpip = 'prefer_ipv6' ]]; then
