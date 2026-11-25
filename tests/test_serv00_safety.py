@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from config_harness import ROOT, BASH, function
+from config_harness import ROOT, BASH, JQ, bashpath, function, jq_shell_function
 
 NODE = os.environ.get('NODE_BIN') or shutil.which('node')
 HARNESS = r"""
@@ -295,6 +295,141 @@ echo 'Whitespace and shell metacharacters preserved as data; token not logged.'
         self.assertIn('max_workers=4', script)
         lines = script.splitlines()[2:-1]
         compile('\n'.join(line[10:] for line in lines), 'workflow-keepalive', 'exec')
+
+    # ---- Account workflows (serv00.yml / SSH.yml): credentials only via Secrets, nothing sensitive logged.
+    SECRET_PASS = 'P@ss word;$(touch PWNED)'
+    SECRET_TOKEN = 'MOCKTOKEN WITH SPACES'
+    SECRET_UUID = '11111111-2222-3333-4444-555555555555'
+
+    def account_workflow(self, name):
+        import yaml
+        data = yaml.safe_load((ROOT / name).read_text(encoding='utf8'))
+        job = data['jobs']['keep_servers_alive']
+        step = next(s for s in job['steps'] if 'ACCOUNTS' in (s.get('env') or {}))
+        return data, job, step
+
+    def jq_prelude(self):
+        if os.name == 'nt':
+            if not JQ:
+                self.skipTest('jq unavailable')
+            return jq_shell_function() + 'export -f jq\n'
+        if not shutil.which('jq'):
+            self.skipTest('jq unavailable')
+        return ''
+
+    def run_account_workflow(self, name, accounts, mock, checks):
+        _, _, step = self.account_workflow(name)
+        self.assertNotIn('WORKFLOW_EOF', step['run'])
+        accounts_json = json.dumps(accounts, ensure_ascii=False)
+        self.assertNotIn('JSON_EOF', accounts_json)
+        self.shell(self.jq_prelude() + f"""
+export HOME="$PWD/home"; mkdir -p "$HOME"
+cat > workflow.sh <<'WORKFLOW_EOF'
+{step['run']}
+WORKFLOW_EOF
+cat > accounts.json <<'JSON_EOF'
+{accounts_json}
+JSON_EOF
+sleep(){{ :; }}
+{mock}
+export -f sleep sshpass
+export ACCOUNTS="$(cat accounts.json)" KNOWN_HOSTS=''
+rc=0; bash --noprofile --norc -eo pipefail workflow.sh > out 2>&1 || rc=$?
+grep -v '^::add-mask::' out > visible || :
+! grep -qF -e {self.sh(self.SECRET_PASS)} -e {self.sh(self.SECRET_TOKEN)} -e {self.sh(self.SECRET_UUID)} -e user1 -e user2 -e s1.example.test visible
+grep -qxF {self.sh('::add-mask::' + self.SECRET_PASS)} out
+[ ! -e PWNED ]
+{checks}
+""")
+
+    @staticmethod
+    def sh(value):
+        return "'" + value.replace("'", "'\"'\"'") + "'"
+
+    def test_account_workflows_keep_credentials_in_secrets(self):
+        for name in ('serv00.yml', 'SSH.yml'):
+            source = (ROOT / name).read_text(encoding='utf8')
+            data, job, step = self.account_workflow(name)
+            self.assertEqual(data.get('permissions'), {}, name)
+            self.assertNotIn('env', job, name)
+            self.assertEqual(step['env']['ACCOUNTS'], '${{ secrets.SERV00_ACCOUNTS }}', name)
+            for s in job['steps']:
+                self.assertNotIn('${{', s.get('run', ''), name)
+            for forbidden in ('StrictHostKeyChecking=no', 'sshpass -p', 'list.txt', 'with command:',
+                              'yonggekkk/sing-box-yg/main', 'for account in $(', 'ACCOUNTS: >', 'eyJ'):
+                self.assertNotIn(forbidden, source, name)
+            self.assertIn('read -r account <&3', step['run'], name)
+        self.assertIn('read -r account <&3', (ROOT / 'kp.sh').read_text(encoding='utf8'))
+
+    def test_serv00_workflow_deploys_with_quoted_stdin_and_redacted_logs(self):
+        accounts = [
+            {'RES': 'n', 'REP': 'n', 'SSH_USER': 'user1', 'SSH_PASS': self.SECRET_PASS, 'HOST': 's1.example.test',
+             'REALITY': 'example.test;touch INJECTED', 'SUUID': self.SECRET_UUID, 'TCP1_PORT': '', 'TCP2_PORT': '20002',
+             'UDP_PORT': '', 'ARGO_DOMAIN': 'fixed.example.test', 'ARGO_AUTH': self.SECRET_TOKEN},
+            {'RES': 'n', 'REP': 'n', 'SSH_USER': 'user2', 'SSH_PASS': self.SECRET_PASS, 'HOST': 's1.example.test'},
+            {'RES': 'n', 'REP': 'n', 'SSH_USER': 'bad user', 'SSH_PASS': self.SECRET_PASS, 'HOST': 's1.example.test'},
+        ]
+        # Mock ssh consumes stdin like the real client; odd process checks fail, even ones pass.
+        mock = r"""
+sshpass(){
+  [ "$1" = -e ] && [ "$SSHPASS" = 'P@ss word;$(touch PWNED)' ] || return 9
+  shift; printf '%s\n' "$*" >> argv.log
+  n=$(( $(cat calls 2>/dev/null || echo 0) + 1 )); echo "$n" > calls
+  cat > "stdin.$n"
+  case "${@: -1}" in
+    exit|-s) return 0;;
+    *) c=$(( $(cat checks 2>/dev/null || echo 0) + 1 )); echo "$c" > checks; [ $((c % 2)) -eq 0 ];;
+  esac
+}
+"""
+        checks = r"""
+[ "$rc" -eq 1 ]
+[ "$(grep -c ' exit$' argv.log)" -eq 2 ]
+[ "$(grep -c ' bash -s$' argv.log)" -eq 2 ]
+[ "$(cat checks)" -eq 4 ]
+grep -q '完成：正常 2，失败 1' visible
+grep -q 'StrictHostKeyChecking=accept-new' argv.log
+! grep -qF -e 'MOCKTOKEN' -e 'P@ss' argv.log
+deploy=$(grep -l '^export reym=' stdin.* | head -n 1)
+head -n 1 "$deploy" > exports-only
+bash -c '. ./exports-only; [ "$reym" = "example.test;touch INJECTED" ] && [ "$ARGO_AUTH" = "MOCKTOKEN WITH SPACES" ] &&
+  [ "$vmess_port" = 20002 ] && [ "$SERV00_SCRIPT_URL" = https://raw.githubusercontent.com/redrohu/sing-box-yg/main/serv00keep.sh ]'
+[ ! -e INJECTED ]
+echo 'All valid accounts processed; secrets masked, quoted over stdin and absent from argv/logs.'
+"""
+        self.run_account_workflow('serv00.yml', accounts, mock, checks)
+
+    def test_ssh_workflow_logs_in_every_account_without_leaking(self):
+        accounts = [
+            {'SSH_USER': 'user1', 'SSH_PASS': self.SECRET_PASS, 'HOST': 's1.example.test'},
+            {'SSH_USER': 'user2', 'SSH_PASS': self.SECRET_PASS, 'HOST': 's1.example.test'},
+        ]
+        mock = r"""
+sshpass(){
+  [ "$1" = -e ] && [ "$SSHPASS" = 'P@ss word;$(touch PWNED)' ] || return 9
+  shift; printf '%s\n' "$*" >> argv.log; cat > /dev/null
+  [ "${@: -1}" = exit ] || return 7
+  case "$*" in *user2@*) return 255;; esac
+}
+"""
+        checks = r"""
+[ "$rc" -eq 1 ]
+[ "$(wc -l < argv.log)" -eq 2 ]
+grep -q '完成：成功 1，失败 1' visible
+echo 'Every account attempted; failure reported; credentials masked.'
+"""
+        self.run_account_workflow('SSH.yml', accounts, mock, checks)
+
+    def test_account_workflows_require_secret(self):
+        for name in ('serv00.yml', 'SSH.yml'):
+            _, _, step = self.account_workflow(name)
+            self.shell(self.jq_prelude() + f"""
+cat > workflow.sh <<'WORKFLOW_EOF'
+{step['run']}
+WORKFLOW_EOF
+rc=0; ACCOUNTS='' bash --noprofile --norc -eo pipefail workflow.sh > out 2>&1 || rc=$?
+[ "$rc" -ne 0 ] && grep -q '::error::.*SERV00_ACCOUNTS' out
+""")
 
 
 if __name__ == '__main__':

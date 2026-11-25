@@ -2,3 +2,13 @@
 *.py text eol=lf
 *.json text eol=lf
 *.yml text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+version text eol=lf
+sversion text eol=lf
+
+# Prebuilt binaries and generated assets: never normalize or diff as text
+sbwpph_* binary
+*.png binary
+*.xmind binary

@@ -2,14 +2,25 @@ name: Generated sing-box configurations
 
 on:
   push:
-    paths: ['*.sh', 'tests/**', '.github/workflows/config-tests.yml']
+    # *.yml / *.js / docs / README are covered by the workflow, Serv00 web and menu-guide tests.
+    paths: ['*.sh', '*.yml', '*.js', '*.md', 'version', 'sversion', 'docs/**', 'tests/**',
+            '.github/workflows/config-tests.yml', '.github/workflows/main.yml']
   pull_request:
-    paths: ['*.sh', 'tests/**', '.github/workflows/config-tests.yml']
+    paths: ['*.sh', '*.yml', '*.js', '*.md', 'version', 'sversion', 'docs/**', 'tests/**',
+            '.github/workflows/config-tests.yml', '.github/workflows/main.yml']
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: config-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check-configurations:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,6 +57,28 @@ jobs:
           chmod +x "$MIHOMO_TEST_BIN"
           python -m pip install -r tests/requirements.txt
           python -m unittest discover -s tests -v
+      - name: Re-run jq-dependent tests with jq 1.8
+        # Ubuntu's jq is 1.7; jq 1.8 parses "A and B as $x | C" differently, and VPS distributions
+        # already ship 1.8. The official binary is verified against the same release's sha256sum.txt.
+        env:
+          SB_TEST_CORES: ${{ runner.temp }}/sbcheck
+          SB_TEST_OUTPUT: ${{ runner.temp }}/config-results/jq-1.8
+          XRAY_TEST_BIN: ${{ runner.temp }}/xray/xray
+          MIHOMO_TEST_BIN: ${{ runner.temp }}/mihomo/mihomo
+        run: |
+          dir="$RUNNER_TEMP/jq18"
+          mkdir -p "$dir"
+          base=https://github.com/jqlang/jq/releases/download/jq-1.8.2
+          curl -fL --retry 3 "$base/jq-linux-amd64" -o "$dir/jq-linux-amd64"
+          curl -fL --retry 3 "$base/sha256sum.txt" -o "$dir/sha256sum.txt"
+          (cd "$dir" && grep -E '[ *]jq-linux-amd64$' sha256sum.txt | sha256sum -c -)
+          mv "$dir/jq-linux-amd64" "$dir/jq"
+          chmod +x "$dir/jq"
+          export PATH="$dir:$PATH"
+          jq --version
+          cd tests
+          python -m unittest -v test_xhttp_argo test_config_edits test_sb_helpers test_sbwpph \
+            test_export_fields test_subscription_safety test_menu_cache test_update_log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

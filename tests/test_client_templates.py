@@ -11,7 +11,7 @@ from config_harness import ROOT, RECORDS, function, generate_vps, check, save_re
 class ClientTemplates(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.before = (ROOT / 'review-artifacts/2026-11-21/refactor/before/sb.sh').read_text(encoding='utf8')
+        cls.before = (ROOT / 'tests/fixtures/sb-before-refactor-fork15.sh').read_text(encoding='utf8')
         cls.after = Path(os.environ.get('SB_UNDER_TEST', ROOT / 'sb.sh')).read_text(encoding='utf8')
         cls.out = Path(os.environ.get('SB_TEST_OUTPUT', tempfile.mkdtemp(prefix='client-template-'))) / 'client-templates'
         cls.out.mkdir(parents=True, exist_ok=True)

@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from urllib.parse import parse_qs, quote, urlsplit
 
-from config_harness import ROOT, BASH, CORE_ROOT, bashpath, function, generate_vps, parameters
+from config_harness import ROOT, BASH, CORE_ROOT, JQ, bashpath, function, generate_vps, parameters
 
 
 class SubscriptionSafety(unittest.TestCase):
@@ -191,7 +191,7 @@ clash_sb_share
 
     def test_gitlab_url_encoding_keeps_token_out_of_jq_argv(self):
         token = 'FAKE+TOKEN&NAME#WITH=SYMBOLS'
-        jq_command = '"' + bashpath(CORE_ROOT / 'jq.exe') + '" -b' if os.name == 'nt' else 'command jq'
+        jq_command = '"' + bashpath(JQ or CORE_ROOT / 'jq.exe') + '" -b' if os.name == 'nt' else 'command jq'
         body = '''
 readp(){ case "$2" in
 menu) menu=1;; email) email=test@example.org;; token) token='FAKE+TOKEN&NAME#WITH=SYMBOLS';;

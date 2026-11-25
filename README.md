@@ -3,6 +3,23 @@
 
 > 本 fork 已从初始版本重新适配官方 sing-box 新配置格式，默认导出 1.14 客户端配置；保留原菜单和协议，不使用第三方十入站模板。版本兼容、更新说明及验证范围见 [CONFIG-COMPATIBILITY.md](CONFIG-COMPATIBILITY.md)。
 
+### 仓库结构（本 fork）
+
+| 路径 | 内容 |
+| --- | --- |
+| `sb.sh` | VPS 一键脚本（快捷命令 `sb`） |
+| `serv00.sh`、`serv00keep.sh`、`app.js`、`index.html` | Serv00/Hostuno 安装、保活与认证网页管理 |
+| `kp.sh`、`serv00.yml`、`SSH.yml`、`workers_keep.js` | 自建保活/远程部署模板；账号与令牌只放 Secrets，见[迁移说明](docs/SERV00-MANAGEMENT-MIGRATION.md) |
+| `version`、`sversion` | VPS / Serv00 脚本更新日志（脚本在线读取，勿改格式） |
+| `sbwpph_amd64`、`sbwpph_arm64` | WARP-plus Socks5 预编译程序，由菜单 14 下载 |
+| `docs/` | 菜单功能图与说明、Serv00 迁移说明 |
+| `docs/validation/` | XHTTP / Mihomo / 实机验证与问题诊断记录 |
+| `docs/history/` | 2026-11-21 代码审查、修复与重构交付记录 |
+| `tests/` | 本地回归测试（真实 Sing-box / Xray / Mihomo 内核校验），`python -m unittest discover -s tests -v` |
+| `.github/workflows/` | CI：`config-tests.yml` 完整回归，`lint.yml` 语法与仓库卫生检查；`main.yml` 为手动认证保活 |
+
+本地审查证据（`review-artifacts/`）与个人工作目录不纳入 Git。
+
 ### 当前菜单导航（VPS）
 
 **实际菜单功能图：**[可编辑XMind](docs/MENU-ACTUAL-TREE.xmind) · [完整展开SVG](docs/menu-maps/vps-actual-menu-full.svg) · [菜单速览PNG](docs/menu-maps/vps-actual-menu-overview.png)。按实际主菜单及子菜单展示作用和注意事项；另有[文字详表](docs/MENU-GUIDE.md)和[离线查看页](docs/MENU-GUIDE.html)。终端菜单 **16** 也提供入口。

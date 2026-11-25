@@ -15,7 +15,7 @@ import tarfile
 import tempfile
 import unittest
 
-from config_harness import BASH, ROOT, CORE_ROOT, bashpath, function, run, RECORDS, save_records
+from config_harness import BASH, ROOT, CORE_ROOT, JQ, bashpath, function, run, RECORDS, save_records
 
 
 SOURCE_PATH = Path(os.environ.get("SB_UNDER_TEST", ROOT / "sb.sh"))
@@ -89,7 +89,7 @@ class UpdateSafety(unittest.TestCase):
         definitions = "\n".join(function(src, name) for name in dict.fromkeys(names))
         script = f'''#!/bin/bash
 export LANG=C.UTF-8 LC_ALL=C.UTF-8
-{('jq() { "' + bashpath(CORE_ROOT / 'jq.exe') + '" -b "$@"; }') if os.name == 'nt' else ''}
+{('jq() { "' + bashpath(JQ or CORE_ROOT / 'jq.exe') + '" -b "$@"; }') if os.name == 'nt' else ''}
 {('apk() { :; }; rc-service() { systemctl "$2" "$1"; }') if scenario == 'openrc' else ''}
 # Deliberately no `set -e`: production menus also run without errexit.
 {definitions}

@@ -10,7 +10,7 @@
 - 修正范围包括 `sb.sh`、`serv00.sh`、`serv00keep.sh` 生成的 sing-box 服务端与客户端 JSON。
 - Mihomo YAML 模板和通用节点分享协议不按 sing-box schema 改写。
 - 可选 XHTTP + REALITY 节点从独立 Xray 配置生成到 Mihomo `clmi.yaml`，加入三个代理组；不写入不支持 XHTTP 的官方 sing-box `sbox.json`。Mihomo 验证版本为 v1.19.34，旧内核需先更新。
-- fork.11 默认部署文章同款 VLESS + XHTTP + REALITY + VLESS Encryption（X25519认证）+ Vision；普通模式仍可选。既有普通节点可用 **3→11→8** 备份升级；Mihomo 和通用链接同步导出 `encryption`、`flow`，服务端 `decryption` 不导出。实机结果见 [ARTICLE-XHTTP-VPS-VALIDATION.md](ARTICLE-XHTTP-VPS-VALIDATION.md)。
+- fork.11 默认部署文章同款 VLESS + XHTTP + REALITY + VLESS Encryption（X25519认证）+ Vision；普通模式仍可选。既有普通节点可用 **3→11→8** 备份升级；Mihomo 和通用链接同步导出 `encryption`、`flow`，服务端 `decryption` 不导出。实机结果见 [ARTICLE-XHTTP-VPS-VALIDATION.md](docs/validation/ARTICLE-XHTTP-VPS-VALIDATION.md)。
 - 本 fork 的脚本下载/自更新地址指向 `redrohu/sing-box-yg`，避免更新时重新取回未修正的上游脚本。
 
 ## 官方依据

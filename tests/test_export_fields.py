@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from config_harness import BASH, CORE_ROOT, ROOT, bashpath, function
+from config_harness import BASH, CORE_ROOT, JQ, ROOT, bashpath, function
 
 
 def server_fields(anytls=True):
@@ -48,7 +48,7 @@ class ExportFields(unittest.TestCase):
             (directory / file).write_text(contents, encoding="utf8")
         (directory / "sb.json").write_text(raw if raw is not None else json.dumps(config), encoding="utf8")
         source = self.source.replace("/etc/s-box", bashpath(directory)).replace("/root/ygkkkca", bashpath(directory / "ca"))
-        jq = '"' + bashpath(CORE_ROOT / "jq.exe") + '" -b' if os.name == "nt" else "command jq"
+        jq = '"' + bashpath(JQ or CORE_ROOT / "jq.exe") + '" -b' if os.name == "nt" else "command jq"
         script = "set +e\n" + function(source, "result_vl_vm_hy_tu") + '''
 red(){ echo "$*" >&2; }
 sb_port_hop_manage(){ :; }

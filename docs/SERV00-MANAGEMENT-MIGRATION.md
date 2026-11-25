@@ -50,6 +50,26 @@
 
 本次没有开启定时计划；原有 `schedule` 注释仍保留。管理命令可能下载或检查内核，响应耗时会比旧的“立刻返回成功”更长。
 
+## GitHub Actions 账户工作流（`serv00.yml` / `SSH.yml`）
+
+这两个文件是供复制到自己仓库 `.github/workflows/` 的模板。旧版把账号、密码、Argo Token 直接写在工作流 `env.ACCOUNTS` 中，并把远程命令（含 Token）和 `list.txt` 节点信息打印到 Actions 日志；公开仓库任何人都能看到。新版要求迁移：
+
+1. **立即轮换**：如果旧模板曾填入真实信息并推送或运行过，请修改 Serv00 密码、重新生成 Argo Tunnel Token，并删除含凭据的历史运行日志。仅删除文件不能从 Git 历史和已有日志中移除凭据。
+2. 在仓库 **Settings → Secrets and variables → Actions** 新建 Secret **`SERV00_ACCOUNTS`**，内容为原 `ACCOUNTS` 的 JSON 数组（字段名不变）。`SSH.yml` 可共用同一 Secret，只读取 `SSH_USER`、`SSH_PASS`、`HOST`。
+3. 可选但推荐：新建 Secret **`SERV00_KNOWN_HOSTS`**，填入在可信网络用 `ssh-keyscan sX.serv00.com` 获取并核对指纹后的主机公钥。设置后严格校验；未设置时使用 `accept-new`，由于运行器每次都是新环境，它无法发现主机密钥被替换，工作流会给出警告。
+4. 可选：新建 Variable **`SERV00_SCRIPT_URL`**，把远程执行的 `serv00keep.sh` 固定到某个提交，例如 `https://raw.githubusercontent.com/redrohu/sing-box-yg/<提交号>/serv00keep.sh`。仅接受 `raw.githubusercontent.com` 上的 `serv00keep.sh`；默认是本 fork 的 `main`，不再执行上游仓库脚本。
+
+行为变化：
+
+- 不再 checkout 仓库，`permissions: {}`；同一工作流不并发运行。
+- 逐个字段加 `::add-mask::`（GitHub 只会自动遮蔽整个 Secret，不会遮蔽 JSON 中的单个字段）；日志只显示第几个账户及结果，不显示账号、服务器、远程命令、部署输出或节点/订阅。查看节点请用 SSH 或 `/list/<UUID>`。
+- 密码通过 `SSHPASS` 环境变量传给 `sshpass -e`，不出现在进程参数中；部署变量与 `kp.sh` 一样经 shell 安全引用后通过 stdin 传给远程 Bash。
+- 账户逐行解析，带空格的字段不会被拆开；校验账号/服务器格式、`RES`/`REP` 为 `y`/`n`、端口为 1–65535 或留空，无效账户跳过并计为失败。
+- 存活检查与 `kp.sh` 相同，按生成的进程名判断，不把 Argo Token 拼进查询。部署后会再次检查进程，未通过即计为失败；任一账户失败时工作流失败，不再只打印“恭喜”。
+- `serv00.yml` 的定时计划仍保持注释；`SSH.yml` 保留原定时登录（每月 1、9、17、25 日 15:00 UTC），只登录，不执行命令。
+
+同时修复了 `kp.sh` 与新工作流共有的循环问题：账户列表改从文件描述符 3 读取，避免 `ssh` 读取标准输入后吞掉后续账户，导致只处理第一个账户。
+
 ## 手动操作与令牌轮换
 
 手动调用时，在可信客户端中使用 HTTPS、POST 和 Authorization 请求头；不要把令牌放进查询字符串。`/rp` 会改变三个节点端口，应手动使用，不要添加到定时保活任务。使用固定 Argo 隧道时，还需按新 VMess 端口调整 Cloudflare 的回源服务地址。

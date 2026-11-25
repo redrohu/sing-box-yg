@@ -11,6 +11,8 @@ BASH = os.environ.get("BASH_BIN") or shutil.which("bash")
 if os.name == "nt":
     BASH = os.environ.get("BASH_BIN", r"C:\Program Files\Git\bin\bash.exe")
 CORE_ROOT = Path(os.environ.get("SB_TEST_CORES", str(Path(os.environ.get("TEMP", "/tmp")) / "sbcheck")))
+# jq for the Windows wrapper: JQ_BIN, then <cores>/jq.exe, then PATH (e.g. `winget install jqlang.jq`).
+JQ = os.environ.get("JQ_BIN") or (str(CORE_ROOT / "jq.exe") if (CORE_ROOT / "jq.exe").exists() else shutil.which("jq"))
 RECORDS = []
 
 
@@ -56,13 +58,32 @@ def core(version):
     return CORE_ROOT / ("sing-box-" + version + "-" + suffix)
 
 
+def jq_shell_function():
+    """Bash `jq` wrapper for Windows. Git Bash rewrites every argument that starts with "/" into a Windows
+    path before running a native .exe, which would change values such as --arg v "/path". Disable that and
+    convert only arguments that are existing files (not --arg/--argjson values), so jq sees Linux semantics."""
+    if os.name != "nt" or not JQ:
+        return ""
+    return f"""jq() {{
+  local arg skip=0
+  local -a args=()
+  for arg in "$@"; do
+    if (( skip > 0 )); then args+=("$arg"); skip=$((skip - 1)); continue; fi
+    case $arg in
+      --arg|--argjson) args+=("$arg"); skip=2 ;;
+      /*) if [[ -e $arg ]]; then args+=("$(cygpath -w "$arg")"); else args+=("$arg"); fi ;;
+      *) args+=("$arg") ;;
+    esac
+  done
+  MSYS2_ARG_CONV_EXCL='*' MSYS_NO_PATHCONV=1 "{bashpath(JQ)}" -b "${{args[@]}}"
+}}
+"""
+
+
 def shell(script, directory):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    jq = CORE_ROOT / "jq.exe"
-    prelude = "set -e\n"
-    if os.name == "nt":
-        prelude += f'jq() {{ "{bashpath(jq)}" -b "$@"; }}\n'
+    prelude = "set -e\n" + jq_shell_function()
     file = directory / "generate.sh"
     file.write_text(prelude + script, encoding="utf8", newline="\n")
     p = run([BASH, bashpath(file)], cwd=directory)

@@ -1,2 +1,19 @@
 __pycache__/
 *.pyc
+
+# Local review evidence, restore tools and test sandboxes. They contain absolute local paths and may
+# include real node/subscription data; keep them out of Git. Frozen test inputs live in tests/fixtures/.
+review-artifacts/
+
+# Local AI-assistant workspace notes
+.workbuddy/
+
+# Credentials and deployment state that must never be committed
+.env
+.env.*
+*.token
+*-token.txt
+gitlabtoken.txt
+.serv00-management-token
+known_hosts
+*_known_hosts

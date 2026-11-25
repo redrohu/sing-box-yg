@@ -231,7 +231,7 @@ sbnh=1.10; cl_node_refs > legacy
                 for filename, labels in [('modern', base + ['anytls']), ('legacy', base)]:
                     self.assertEqual((d / filename).read_text(encoding='utf8').splitlines(),
                                      ['    - "RN ' + label + ' test-vps"' for label in labels])
-                source = (ROOT / 'review-artifacts/2026-11-21/refactor/before/sb.sh').read_text(encoding='utf8')
+                source = (ROOT / 'tests/fixtures/sb-before-refactor-fork15.sh').read_text(encoding='utf8')
             template = function(source, name).replace("${node_suffix_label}", " $hostname").replace("$node_suffix", "$hostname")
             template = template.replace("${node_prefix_label}", "")
             template = re.sub(r'^(\s*- (?:name: )?)"([^"\n]*\$hostname)"$', r'\1\2', template, flags=re.M)

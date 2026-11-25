@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from config_harness import ROOT, CORE_ROOT, BASH, bashpath, function
+from config_harness import ROOT, CORE_ROOT, JQ, BASH, bashpath, function
 
 
 class MenuCache(unittest.TestCase):
@@ -20,7 +20,7 @@ class MenuCache(unittest.TestCase):
     def run_case(self,name,body):
         d=self.out/name;d.mkdir(exist_ok=True);src=self.src.replace('/etc/s-box',bashpath(d))
         helpers=''.join(function(src,n) for n in ['sb_info_valid','sb_info_cache_get','sb_info_cache_put','sb_script_version_info','v4v6','lapre'])
-        jq='"'+bashpath(CORE_ROOT/'jq.exe')+'" -b' if os.name=='nt' else 'command jq'
+        jq='"'+bashpath(JQ or CORE_ROOT/'jq.exe')+'" -b' if os.name=='nt' else 'command jq'
         script='set +e\n'+helpers+r'''
 red(){ echo "$*" >&2; }
 jq(){ __JQ__ "$@"; }
