@@ -373,11 +373,11 @@ local data stage file failed=0 status=0 SB_MENU_REFRESH=${SB_MENU_REFRESH:-0}
 [[ ${1:-} != refresh ]] || SB_MENU_REFRESH=1
 if ! data=$(sb_info_cache_get network 60); then
 stage=$(umask 077; mktemp -d /etc/s-box/.network-info.XXXXXX) || return 1
-# Four independent requests are bounded and run in parallel (not 4x the timeout).
-(if curl -fsS4 --connect-timeout 2 --max-time 5 https://icanhazip.com > "$stage/ipv4"; then echo 0; else echo $?; fi > "$stage/status4") & local p4=$!
-(if curl -fsS6 --connect-timeout 2 --max-time 5 https://icanhazip.com > "$stage/ipv6"; then echo 0; else echo $?; fi > "$stage/status6") & local p6=$!
-(if curl -fsS4 --connect-timeout 2 --max-time 5 https://ip.fm > "$stage/geo4"; then echo 0; else echo $?; fi > "$stage/statusg4") & local g4=$!
-(if curl -fsS6 --connect-timeout 2 --max-time 5 https://ip.fm > "$stage/geo6"; then echo 0; else echo $?; fi > "$stage/statusg6") & local g6=$!
+# Four bounded probes run in parallel. An unavailable IP family is normal; keep curl stderr out of the menu.
+(if curl -fsS4 --connect-timeout 2 --max-time 5 https://icanhazip.com > "$stage/ipv4" 2>/dev/null; then echo 0; else echo $?; fi > "$stage/status4") & local p4=$!
+(if curl -fsS6 --connect-timeout 2 --max-time 5 https://icanhazip.com > "$stage/ipv6" 2>/dev/null; then echo 0; else echo $?; fi > "$stage/status6") & local p6=$!
+(if curl -fsS4 --connect-timeout 2 --max-time 5 https://ip.fm > "$stage/geo4" 2>/dev/null; then echo 0; else echo $?; fi > "$stage/statusg4") & local g4=$!
+(if curl -fsS6 --connect-timeout 2 --max-time 5 https://ip.fm > "$stage/geo6" 2>/dev/null; then echo 0; else echo $?; fi > "$stage/statusg6") & local g6=$!
 wait "$p4" "$p6" "$g4" "$g6"
 for file in status4 status6 statusg4 statusg6; do [[ $(cat "$stage/$file") == 0 ]] || failed=1; done
 # On single-stack hosts do not cache partial failures; retry the missing family next time.

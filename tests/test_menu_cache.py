@@ -59,6 +59,21 @@ v4v6; NOW=1200; FAIL=1; v4v6
 FAIL=0;v4v6
 [[ $(wc -l < calls) == 12 ]] || exit 2
 ''')
+    def test_ipv4_only_network_does_not_print_ipv6_probe_errors(self):
+        self.run_case('ipv4-only', r'''
+curl(){
+case "$*" in
+*-fsS6*) echo 'curl: (7) Failed to connect' >&2; return 7 ;;
+*icanhazip*) echo 192.0.2.1 ;;
+*ip.fm*) echo 'Location: South Korea' ;;
+esac
+}
+v4v6 || exit 1
+[[ $v4 == 192.0.2.1 && $v4dq == 'South Korea' && -z $v6 && -z $v6dq ]] || exit 2
+[[ ! -e cache/menu-network.json ]] || exit 3
+''')
+        self.assertEqual(self.records[-1]['stderr'], '')
+
     def test_versions_cached_but_installed_version_is_live(self):
         self.run_case('cores',r'''
 printf '#!/bin/bash\necho "sing-box version 1.14.3"\n' > sing-box;chmod +x sing-box
